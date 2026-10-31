@@ -30,8 +30,9 @@ The engine in [`public/stockfish`](./public/stockfish) is the Stockfish 19 `lite
 build of [Stockfish.js](https://github.com/nmrugg/stockfish.js), copied unmodified from version
 19.0.1. The engine code is Copyright the Stockfish team and Chess.com, LLC, licensed under the
 [GNU General Public License, version 3](https://www.gnu.org/licenses/gpl-3.0.html), which the
-AGPL-3.0-or-later of this app combines with. The corresponding source is the upstream tag
-[`v19.0.1`](https://github.com/nmrugg/stockfish.js/tree/v19.0.1).
+AGPL-3.0-or-later of this app combines with. The licence text ships as
+[`public/stockfish/COPYING`](./public/stockfish/COPYING). The corresponding source is the upstream
+tag [`v19.0.1`](https://github.com/nmrugg/stockfish.js/tree/v19.0.1).
 
 The app is licensed under the [AGPL-3.0-or-later](./LICENSE), which covers the code but neither the
 piece set, the puzzle data nor the engine.
