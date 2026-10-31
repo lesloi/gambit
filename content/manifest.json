@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "name": "Lichess puzzle database",
+    "url": "https://database.lichess.org/lichess_db_puzzle.csv.zst",
+    "lastModified": "2026-10-02T08:51:45Z",
+    "csvSha256": "ec2dd1a8f9cbd139ebb4aee228f72e77f8e2a581a24d25f61f71e6cf306b10f8",
+    "csvBytes": 1139783132
+  },
+  "filters": {
+    "minRating": 800,
+    "maxRating": 2200,
+    "minPlays": 300,
+    "minPopularity": 85,
+    "maxRatingDeviation": 100
+  },
+  "selection": {
+    "target": 12000,
+    "bandSize": 100,
+    "grid": "one bucket per motif and rating band, equal shares, best first"
+  },
+  "counts": {
+    "rows": 6157341,
+    "puzzles": 12000,
+    "duplicates": 0,
+    "rejected": {
+      "filtered": 3537573,
+      "malformed": 0,
+      "no-motif": 524202,
+      "illegal": 0
+    },
+    "themes": {
+      "advancedPawn": 210,
+      "anastasiaMate": 204,
+      "arabianMate": 202,
+      "attackingF2F7": 208,
+      "attraction": 210,
+      "backRankMate": 207,
+      "balestraMate": 197,
+      "bishopEndgame": 210,
+      "blindSwineMate": 202,
+      "bodenMate": 188,
+      "capturingDefender": 209,
+      "castling": 125,
+      "clearance": 210,
+      "collinearMove": 196,
+      "cornerMate": 203,
+      "defensiveMove": 210,
+      "deflection": 210,
+      "discoveredAttack": 210,
+      "discoveredCheck": 208,
+      "doubleBishopMate": 174,
+      "doubleCheck": 210,
+      "dovetailMate": 204,
+      "enPassant": 162,
+      "epauletteMate": 205,
+      "exposedKing": 210,
+      "fork": 210,
+      "hangingPiece": 210,
+      "hookMate": 206,
+      "interference": 209,
+      "intermezzo": 210,
+      "killBoxMate": 203,
+      "kingsideAttack": 210,
+      "knightEndgame": 210,
+      "mateIn1": 208,
+      "mateIn2": 210,
+      "mateIn3": 210,
+      "mateIn4": 209,
+      "mateIn5": 177,
+      "morphysMate": 201,
+      "operaMate": 206,
+      "pawnEndgame": 210,
+      "pillsburysMate": 206,
+      "pin": 210,
+      "promotion": 210,
+      "queenEndgame": 210,
+      "queenRookEndgame": 210,
+      "queensideAttack": 210,
+      "quietMove": 210,
+      "rookEndgame": 210,
+      "sacrifice": 210,
+      "skewer": 210,
+      "smotheredMate": 197,
+      "swallowstailMate": 203,
+      "trappedPiece": 209,
+      "triangleMate": 204,
+      "underPromotion": 192,
+      "vukovicMate": 198,
+      "xRayAttack": 208,
+      "zugzwang": 210
+    },
+    "bands": {
+      "800": 821,
+      "900": 843,
+      "1000": 853,
+      "1100": 862,
+      "1200": 862,
+      "1300": 875,
+      "1400": 872,
+      "1500": 870,
+      "1600": 870,
+      "1700": 867,
+      "1800": 860,
+      "1900": 862,
+      "2000": 843,
+      "2100": 840
+    }
+  },
+  "files": {
+    "puzzles.jsonl.gz": {
+      "sha256": "db2fd73ce2d11eee958c3a2424d10f4b14d2bec069bb114e4647eba63803a5a5",
+      "bytes": 568873,
+      "jsonlSha256": "e6e3804dc17d3cf945e01c8473252334aee2bccfcb8de89f9ee871bb291390f1",
+      "jsonlBytes": 2061195
+    }
+  },
+  "tools": {
+    "chess.js": "1.4.0"
+  }
+}

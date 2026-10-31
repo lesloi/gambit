@@ -17,7 +17,8 @@
     "check": "prettier --check . && npm run lint && npm run typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "content:puzzles": "node scripts/build-puzzles.ts"
   },
   "dependencies": {
     "@lichess-org/chessground": "^10.5.0",
