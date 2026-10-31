@@ -29,19 +29,19 @@ The home screen, the installable app and the offline shell are available now.
 
 ## Getting started
 
-Requires [Node.js 26](https://nodejs.org/) and npm.
+Requires [Node.js 26](https://nodejs.org/) and [pnpm](https://pnpm.io/) 12.
 
 ```sh
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Then open **http://localhost:5173**.
 
 ```sh
-npm run build     # typecheck and build the static app into dist/
-npm run check     # formatting, lint, types
-npm test          # unit tests
+pnpm build     # typecheck and build the static app into dist/
+pnpm check     # formatting, lint, types
+pnpm test      # unit tests
 ```
 
 ## Docker

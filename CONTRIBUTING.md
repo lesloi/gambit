@@ -10,16 +10,16 @@ Issues and pull requests are welcome on [GitHub](https://github.com/lesloi/gambi
   issue.
 - [DESIGN.md](./docs/DESIGN.md) guides the interface.
 
-| Command            | What it does                                  |
-| ------------------ | --------------------------------------------- |
-| `npm run dev`      | Vite dev server on port 5173                  |
-| `npm run build`    | Typecheck, then build `dist/`                 |
-| `npm run check`    | Prettier, ESLint and types (workflow `Check`) |
-| `npm test`         | Unit tests (workflow `Web`)                   |
-| `npm run coverage` | Unit tests with coverage                      |
-| `npm run format`   | Rewrite every file with Prettier              |
+| Command         | What it does                                  |
+| --------------- | --------------------------------------------- |
+| `pnpm dev`      | Vite dev server on port 5173                  |
+| `pnpm build`    | Typecheck, then build `dist/`                 |
+| `pnpm check`    | Prettier, ESLint and types (workflow `Check`) |
+| `pnpm test`     | Unit tests (workflow `Web`)                   |
+| `pnpm coverage` | Unit tests with coverage                      |
+| `pnpm format`   | Rewrite every file with Prettier              |
 
-`npm run content:puzzles` regenerates the puzzle subset; see [content/README.md](./content/README.md).
+`pnpm content:puzzles` regenerates the puzzle subset; see [content/README.md](./content/README.md).
 
 ## Privacy-first rules
 

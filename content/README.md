@@ -40,7 +40,7 @@ curl -sSLO https://database.lichess.org/lichess_db_puzzle.csv.zst
 curl -sSI https://database.lichess.org/lichess_db_puzzle.csv.zst | grep -i last-modified
 zstd -d lichess_db_puzzle.csv.zst
 sha256sum lichess_db_puzzle.csv    # the csvSha256 of the current manifest
-npm run content:puzzles -- lichess_db_puzzle.csv --last-modified "2026-10-02T08:51:45Z"
+pnpm content:puzzles -- lichess_db_puzzle.csv --last-modified "2026-10-02T08:51:45Z"
 ```
 
 The run takes about half a minute, reads the export twice and prints what it rejected. Two runs from
@@ -51,7 +51,7 @@ Then check that the app still builds and commit `content/` with the script chang
 drift apart:
 
 ```sh
-npm test && npm run build
+pnpm test && pnpm build
 git add content scripts
 ```
 

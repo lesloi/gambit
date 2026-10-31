@@ -26,7 +26,7 @@ entry only for a choice that is costly to reverse and whose reason the code does
 
 ## Working
 
-- After a change: `npm run check`, then `npm test` and `npm run build` for what you touched.
+- After a change: `pnpm check`, then `pnpm test` and `pnpm build` for what you touched.
 - Tests come first: write the failing test, then the minimum code, then refactor. A test follows
   Arrange–Act–Assert and is named by the behaviour it protects.
 - Do not write unit tests for design or layout; a flow gets an end-to-end test later.

@@ -22,7 +22,7 @@
  *   curl -sSLO https://database.lichess.org/lichess_db_puzzle.csv.zst
  *   curl -sSI https://database.lichess.org/lichess_db_puzzle.csv.zst | grep -i last-modified
  *   zstd -d lichess_db_puzzle.csv.zst
- *   npm run content:puzzles -- lichess_db_puzzle.csv --last-modified "2026-10-02T08:51:45Z"
+ *   pnpm content:puzzles -- lichess_db_puzzle.csv --last-modified "2026-10-02T08:51:45Z"
  */
 import { createHash } from 'node:crypto';
 import { createReadStream, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -63,7 +63,7 @@ function flag(name: string): string | undefined {
 function usage(message: string): never {
   console.error(`${message}\n`);
   console.error(
-    'Usage: npm run content:puzzles -- <export.csv> --last-modified <ISO date>\n' +
+    'Usage: pnpm content:puzzles -- <export.csv> --last-modified <ISO date>\n' +
       '  Get the date with: curl -sI https://database.lichess.org/lichess_db_puzzle.csv.zst | grep -i last-modified',
   );
   process.exit(1);
