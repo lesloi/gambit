@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_PUZZLE_FILTERS,
   loadPuzzles,
@@ -129,4 +129,35 @@ describe('puzzle content', () => {
 
     await expect(loadPuzzles(url)).rejects.toThrow('empty archive');
   });
+
+  it('reads an archive a proxy compressed a second time', async () => {
+    // A proxy in front of the app may compress the response a second time, so the browser strips
+    // that layer and hands back the archive itself under a `content-encoding: gzip` header it has
+    // already honoured.
+    const { gzipSync } = await import('node:zlib');
+    const archive = gzipSync(Buffer.from(`${JSON.stringify(puzzles[0])}\n`, 'utf8'));
+    vi.stubGlobal(
+      'fetch',
+      async () => new Response(archive, { headers: { 'content-encoding': 'gzip' } }),
+    );
+
+    await expect(loadPuzzles('/assets/puzzles.jsonl.gz')).resolves.toEqual([puzzles[0]]);
+  });
+
+  it('reads an archive the server already decoded', async () => {
+    // A server with `gzip_static` decompresses the file itself and still labels the response gzip.
+    vi.stubGlobal(
+      'fetch',
+      async () =>
+        new Response(`${JSON.stringify(puzzles[1])}\n`, {
+          headers: { 'content-encoding': 'gzip' },
+        }),
+    );
+
+    await expect(loadPuzzles('/assets/puzzles.jsonl.gz')).resolves.toEqual([puzzles[1]]);
+  });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
