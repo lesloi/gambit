@@ -9,6 +9,12 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   and a game are played on the device, and the engine runs there too. A backend would add an
   account, a copy of the progression and a privacy surface for no feature the user asks for. The
   delivered artefact is one nginx image serving the build.
+- **The shell and the puzzle archive are precached, and a deploy waits for the user.** The service
+  worker caches the build and the archive, so a cold start works offline after the first launch.
+  It never reloads itself: a new worker stays waiting and a banner offers "Recharger" or "Plus
+  tard", the latter applying the update at the next cold start. The check runs when the app
+  returns to the foreground, not on a timer, so an idle app makes no request. A browser may evict
+  the cache under storage pressure; the app then falls back to the network and the loader's retry.
 - **French only, English code.** The owner practises in French, and a second language is a cost on
   every string and every test. Strings live in `src/i18n/fr.ts`, so adding one later is a file and
   a type, not a rewrite.

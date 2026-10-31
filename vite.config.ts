@@ -8,7 +8,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // A deploy shows a prompt instead of reloading the page under the user.
+      registerType: 'prompt',
+      injectRegister: false,
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'Gambit — Entraînement aux échecs',
@@ -33,9 +35,13 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,gz}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,gz,wasm}'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
+        // The prompt sends SKIP_WAITING to the new worker. Without claiming the clients, that
+        // worker would activate but leave the page on the old one, and the reload would never
+        // happen.
+        clientsClaim: true,
       },
     }),
   ],

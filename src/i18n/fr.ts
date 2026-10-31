@@ -3,6 +3,12 @@ export const fr = {
     name: 'Gambit',
     tagline: 'Entraînement aux échecs',
   },
+  pwa: {
+    updateAvailable: 'Une nouvelle version est prête.',
+    reload: 'Recharger',
+    later: 'Plus tard',
+    updating: 'Mise à jour…',
+  },
   home: {
     skipToContent: 'Aller au contenu',
     sessionTitle: 'Session du jour',

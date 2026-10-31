@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { HomePage } from '../features/home/HomePage';
 import { PuzzleScreen } from '../features/puzzles/PuzzleScreen';
+import { UpdatePrompt } from './UpdatePrompt';
 
 type View = 'home' | 'puzzle';
 
@@ -11,9 +12,14 @@ export function App() {
     window.scrollTo(0, 0);
   }, [view]);
 
-  return view === 'puzzle' ? (
-    <PuzzleScreen onExit={() => setView('home')} />
-  ) : (
-    <HomePage onStartPuzzle={() => setView('puzzle')} />
+  return (
+    <>
+      {view === 'puzzle' ? (
+        <PuzzleScreen onExit={() => setView('home')} />
+      ) : (
+        <HomePage onStartPuzzle={() => setView('puzzle')} />
+      )}
+      <UpdatePrompt />
+    </>
   );
 }
