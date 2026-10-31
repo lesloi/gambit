@@ -13,14 +13,9 @@ export function HomePage({ onStartPuzzle }: { onStartPuzzle: () => void }) {
       </a>
 
       <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-5 pt-8 pb-8 sm:px-8">
-        <header className="flex items-baseline justify-between gap-4">
-          <div>
-            <h1 className="font-serif text-3xl leading-none tracking-tight">{fr.app.name}</h1>
-            <p className="text-ink-muted mt-1 text-sm">{fr.app.tagline}</p>
-          </div>
-          <span className="border-line bg-paper-raised text-ink-muted rounded-full border px-2.5 py-1 text-[11px] tracking-widest">
-            v{__APP_VERSION__}
-          </span>
+        <header>
+          <h1 className="font-serif text-3xl leading-none tracking-tight">{fr.app.name}</h1>
+          <p className="text-ink-muted mt-1 text-sm">{fr.app.tagline}</p>
         </header>
 
         <main id="main" className="flex-1">
