@@ -35,7 +35,6 @@ export function HomePage({ onStartPuzzle }: { onStartPuzzle: () => void }) {
                 <p className="text-ink-muted mt-2 text-sm leading-relaxed">
                   {fr.home.sessionEmptyBody}
                 </p>
-                <p className="text-ink-muted mt-3 text-xs">{fr.home.sessionReviews}</p>
               </div>
             </div>
           </section>

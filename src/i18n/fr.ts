@@ -9,7 +9,6 @@ export const fr = {
     sessionEmptyTitle: 'Le plateau est prêt',
     sessionEmptyBody:
       "Les puzzles, les finales et les ouvertures arrivent avec le prochain lot. La session se remplira d'elle-même.",
-    sessionReviews: 'Aucune révision enregistrée',
     trainTitle: "S'entraîner",
     trainHint: 'Trois façons de travailler une position, révisées au bon moment.',
     playTitle: 'Jouer',

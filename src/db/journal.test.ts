@@ -3,7 +3,7 @@ import { Rating, type Grade } from 'ts-fsrs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { GambitDatabase } from './db';
 import { SCHEDULER, replayCard } from './fsrs';
-import { appendReview, cardState, countReviews, dueCards } from './journal';
+import { appendReview, cardState, dueCards } from './journal';
 
 const MINUTE = 60_000;
 const DAY = 86_400_000;
@@ -32,7 +32,7 @@ describe('appendReview', () => {
       reviewedAt: START + MINUTE,
     });
 
-    expect(await countReviews(database)).toBe(2);
+    expect(await database.reviews.count()).toBe(2);
     expect(await database.reviews.get(first)).toMatchObject({
       cardId: 'puzzle:demo',
       rating: Rating.Good,
@@ -89,6 +89,10 @@ describe('cardState', () => {
 });
 
 describe('dueCards', () => {
+  it('has nothing due on an empty journal', async () => {
+    expect(await dueCards(database, START)).toEqual([]);
+  });
+
   it('holds a card back until its due date, then gives it back', async () => {
     await appendReview(database, {
       cardId: 'puzzle:demo',
@@ -153,7 +157,8 @@ describe('the database', () => {
     const reopened = new GambitDatabase(name);
     try {
       expect(reopened.verno).toBe(1);
-      expect(await countReviews(reopened)).toBe(1);
+      expect(await reopened.reviews.count()).toBe(1);
+      expect(await reopened.meta.get('scheduler')).toEqual({ key: 'scheduler', ...SCHEDULER });
     } finally {
       reopened.close();
     }

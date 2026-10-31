@@ -51,7 +51,3 @@ export async function dueCards(database: GambitDatabase, now = Date.now()): Prom
     .filter((card): card is CardState => card !== null && card.due <= now)
     .sort((a, b) => a.due - b.due || a.cardId.localeCompare(b.cardId));
 }
-
-export function countReviews(database: GambitDatabase): Promise<number> {
-  return database.reviews.count();
-}
