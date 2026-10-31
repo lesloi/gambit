@@ -71,3 +71,29 @@ and more arrive with the endgame content issue.
 
 The engine that serves them is the `lite single-threaded` build of Stockfish.js, kept unmodified
 in [`public/stockfish`](../public/stockfish) and attributed in [CREDITS.md](../CREDITS.md).
+
+## Opening lines
+
+`openings.json` holds the curated repertoire: one entry per line, with a stable id, a name, the
+colour the user plays (`color`) and the moves in UCI from the initial position. The app answers
+for the other side; a line may stop on either side's move, and it is a card: an attempt is scored
+as a whole, not move by move.
+
+```json
+{
+  "id": "london-vs-d5",
+  "name": "London contre ...d5",
+  "color": "white",
+  "moves": ["d2d4", "d7d5", "c1f4", "g8f6", "e2e3"]
+}
+```
+
+The moves are book moves written by hand, checked for legality, not engine-verified: an engine
+would say what is best, not what the repertoire plays. The set covers the London and Queen's
+Gambit with White and the French and Slav with Black; it follows standard theory, not a single
+published source. A move outside the line stops the attempt and names the expected one; the
+alternatives are strict on purpose. Sibling lines deliberately share their first moves, so
+revising one repeats a prefix of another: that redundancy is the training, not a defect.
+
+The parser is strict about the colour: a line must contain at least one move for the user, and
+every move must be legal from the initial position.

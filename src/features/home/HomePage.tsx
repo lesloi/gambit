@@ -6,10 +6,12 @@ import { MODES } from './modes';
 export function HomePage({
   onStartPuzzle,
   onStartEndgame,
+  onStartOpening,
   onShowCredits,
 }: {
   onStartPuzzle: () => void;
   onStartEndgame: () => void;
+  onStartOpening: () => void;
   onShowCredits: () => void;
 }) {
   return (
@@ -60,7 +62,9 @@ export function HomePage({
                           ? onStartPuzzle
                           : id === 'endgames'
                             ? onStartEndgame
-                            : undefined
+                            : id === 'openings'
+                              ? onStartOpening
+                              : undefined
                       }
                       disabled={!available}
                       className="border-line bg-paper-raised hover:border-accent/40 flex h-full w-full flex-col gap-3 rounded-xl border p-4 text-left transition-colors disabled:cursor-default disabled:opacity-100"

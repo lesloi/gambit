@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { CreditsPage } from '../features/credits/CreditsPage';
 import { EndgameScreen } from '../features/endgames/EndgameScreen';
 import { HomePage } from '../features/home/HomePage';
+import { OpeningScreen } from '../features/openings/OpeningScreen';
 import { PuzzleScreen } from '../features/puzzles/PuzzleScreen';
 import { UpdatePrompt } from './UpdatePrompt';
 
-type View = 'home' | 'puzzle' | 'endgame' | 'credits';
+type View = 'home' | 'puzzle' | 'endgame' | 'opening' | 'credits';
 
 export function App() {
   const [view, setView] = useState<View>('home');
@@ -20,12 +21,15 @@ export function App() {
         <PuzzleScreen onExit={() => setView('home')} />
       ) : view === 'endgame' ? (
         <EndgameScreen onExit={() => setView('home')} />
+      ) : view === 'opening' ? (
+        <OpeningScreen onExit={() => setView('home')} />
       ) : view === 'credits' ? (
         <CreditsPage onExit={() => setView('home')} />
       ) : (
         <HomePage
           onStartPuzzle={() => setView('puzzle')}
           onStartEndgame={() => setView('endgame')}
+          onStartOpening={() => setView('opening')}
           onShowCredits={() => setView('credits')}
         />
       )}
