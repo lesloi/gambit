@@ -12,6 +12,10 @@ export interface Puzzle {
 
 export type PuzzleOutcome = 'playing' | 'solved' | 'failed' | 'revealed';
 
+export type PromotionPiece = 'q' | 'r' | 'b' | 'n';
+
+const PROMOTION_ORDER: readonly PromotionPiece[] = ['q', 'r', 'b', 'n'];
+
 export interface PuzzleState {
   puzzle: Puzzle;
   outcome: PuzzleOutcome;
@@ -48,13 +52,18 @@ export function startPuzzle(puzzle: Puzzle): PuzzleState {
   };
 }
 
-export function playMove(state: PuzzleState, from: string, to: string): PuzzleState {
+export function playMove(
+  state: PuzzleState,
+  from: string,
+  to: string,
+  promotion?: PromotionPiece,
+): PuzzleState {
   if (state.outcome !== 'playing' || !state.expected) return state;
 
   const chess = new Chess(state.fen);
   let move: Move;
   try {
-    move = chess.move({ from, to, promotion: 'q' });
+    move = chess.move({ from, to, promotion });
   } catch {
     return state;
   }
@@ -116,6 +125,18 @@ export function revealSolution(state: PuzzleState): PuzzleState {
     lastMove,
     expected: null,
   };
+}
+
+/** The pieces the move can promote to, in the order the chooser shows them. Empty otherwise. */
+export function promotionPieces(fen: string, from: string, to: string): PromotionPiece[] {
+  const chess = new Chess(fen);
+  const legal = new Set(
+    chess
+      .moves({ verbose: true })
+      .filter((move) => move.from === from && move.to === to)
+      .map((move) => move.promotion),
+  );
+  return PROMOTION_ORDER.filter((piece) => legal.has(piece));
 }
 
 /** The legal destinations of the side to move, in the shape chessground expects. */
