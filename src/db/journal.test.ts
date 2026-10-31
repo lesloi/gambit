@@ -3,7 +3,7 @@ import { Rating, type Grade } from 'ts-fsrs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { GambitDatabase } from './db';
 import { SCHEDULER, replayCard } from './fsrs';
-import { appendReview, cardState, dueCards } from './journal';
+import { appendReview, cardState, cardStates, dueCards } from './journal';
 
 const MINUTE = 60_000;
 const DAY = 86_400_000;
@@ -85,6 +85,31 @@ describe('cardState', () => {
 
   it('has no state for a card the journal does not know', async () => {
     expect(await cardState(database, 'puzzle:missing')).toBeNull();
+  });
+});
+
+describe('cardStates', () => {
+  it('returns the state of every card the journal knows, keyed by card id', async () => {
+    await appendReview(database, {
+      cardId: 'puzzle:a',
+      rating: Rating.Good,
+      reviewedAt: START,
+    });
+    await appendReview(database, {
+      cardId: 'opening:b',
+      rating: Rating.Again,
+      reviewedAt: START,
+    });
+
+    const states = await cardStates(database);
+
+    expect([...states.keys()]).toEqual(['puzzle:a', 'opening:b']);
+    expect(states.get('puzzle:a')).toMatchObject({ cardId: 'puzzle:a', reviews: 1 });
+    expect(states.get('opening:b')).toMatchObject({ cardId: 'opening:b', reviews: 1 });
+  });
+
+  it('has no state on an empty journal', async () => {
+    expect((await cardStates(database)).size).toBe(0);
   });
 });
 

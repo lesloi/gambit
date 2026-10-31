@@ -78,8 +78,8 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
 - **The opening repertoire is curated, not imported.** A hand-written set of lines for both
   colours (London and Queen's Gambit with White, French and Slav with Black) is small, coherent
   and reviewable. An opening explorer would grow an unbounded tree the user has to prune by hand.
-  The trainer itself comes after the puzzles and FSRS: revising a line by playing it is the least
-  proven mechanic of the plan, and the content costs nothing while it waits.
+  The trainer plays a line back move by move: the app answers for the opponent, and a move outside
+  the line stops the attempt, because a line is a card, not a search for any playable move.
 - **Endgames are a fixed set of classic positions.** The expected result (win or draw) is part of
   the content, Stockfish plays the opponent, and the app checks the conversion locally. No
   tablebase call: a local Syzygy set would add gigabytes, and the remote one would be the only

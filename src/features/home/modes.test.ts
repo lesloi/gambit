@@ -18,6 +18,7 @@ describe('training modes', () => {
     expect(MODES.filter((mode) => mode.available).map((mode) => mode.id)).toEqual([
       'puzzles',
       'endgames',
+      'openings',
     ]);
   });
 

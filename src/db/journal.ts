@@ -35,8 +35,8 @@ export async function cardState(
   return replayCard(reviews);
 }
 
-/** Every card whose journal puts it at or before `now`, the most urgent first. */
-export async function dueCards(database: GambitDatabase, now = Date.now()): Promise<CardState[]> {
+/** The state of every card the journal knows, keyed by card id, in one pass over the journal. */
+export async function cardStates(database: GambitDatabase): Promise<Map<string, CardState>> {
   const reviews = await database.reviews.toArray();
 
   const byCard = new Map<string, ReviewEntry[]>();
@@ -46,8 +46,18 @@ export async function dueCards(database: GambitDatabase, now = Date.now()): Prom
     else byCard.set(review.cardId, [review]);
   }
 
-  return [...byCard.values()]
-    .map((list) => replayCard(list))
-    .filter((card): card is CardState => card !== null && card.due <= now)
+  const states = new Map<string, CardState>();
+  for (const list of byCard.values()) {
+    const card = replayCard(list);
+    if (card) states.set(card.cardId, card);
+  }
+  return states;
+}
+
+/** Every card whose journal puts it at or before `now`, the most urgent first. */
+export async function dueCards(database: GambitDatabase, now = Date.now()): Promise<CardState[]> {
+  const states = await cardStates(database);
+  return [...states.values()]
+    .filter((card) => card.due <= now)
     .sort((a, b) => a.due - b.due || a.cardId.localeCompare(b.cardId));
 }
