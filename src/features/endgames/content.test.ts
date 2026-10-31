@@ -42,6 +42,13 @@ describe('endgame content parsing', () => {
         goal: 'Mater.',
       },
       { id: 'no-goal', name: 'Sans but', fen: '8/8/8/4k3/8/8/5K2/6Q1 w - - 0 1', result: 'win' },
+      {
+        id: 'over',
+        name: 'Terminée',
+        fen: '8/8/8/4k3/8/8/4K3/8 w - - 0 1',
+        result: 'draw',
+        goal: 'Nulle.',
+      },
     ]);
 
     expect(parseEndgames(text).map((endgame) => endgame.id)).toEqual(['good']);

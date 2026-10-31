@@ -1,6 +1,6 @@
 import { Chess } from 'chess.js';
 import source from '../../../content/endgames.json?raw';
-import type { Endgame, EndgameResult } from './endgame';
+import { endgameEnd, type Endgame, type EndgameResult } from './endgame';
 
 const RESULTS: readonly EndgameResult[] = ['win', 'draw'];
 
@@ -19,6 +19,9 @@ function toEndgame(entry: unknown): Endgame | null {
   } catch {
     return null;
   }
+  // A position that is already over would judge itself before the user moves, with no way to retry.
+  if (endgameEnd(fen, [fen]) !== null) return null;
+
   return { id, name, fen, result: result as EndgameResult, goal };
 }
 
