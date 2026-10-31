@@ -14,7 +14,7 @@ export default defineConfig({
         name: 'Gambit — Entraînement aux échecs',
         short_name: 'Gambit',
         description:
-          'Puzzles, motifs, finales, ouvertures et parties contre le moteur. Sans compte, hors ligne.',
+          'Puzzles, finales, ouvertures et parties contre le moteur. Sans compte, hors ligne.',
         lang: 'fr',
         start_url: '/',
         scope: '/',
@@ -33,7 +33,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,gz}'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
       },

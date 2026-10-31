@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { DEMO_PUZZLES } from './demo';
 import {
   legalDests,
   playMove,
@@ -10,7 +9,14 @@ import {
   type Puzzle,
 } from './puzzle';
 
-const puzzle = DEMO_PUZZLES[0];
+const puzzle: Puzzle = {
+  id: 'test-back-rank',
+  fen: 'r5k1/5ppp/8/3Q4/8/8/PPP2PPP/3R2K1 w - - 0 1',
+  solution: ['d5d8', 'a8d8', 'd1d8'],
+  themes: ['backRankMate', 'mateIn2', 'sacrifice'],
+  rating: 1500,
+};
+
 const solvedFen = '3R2k1/5ppp/8/8/8/8/PPP2PPP/6K1 b - - 0 2';
 const promotionPuzzle: Puzzle = {
   id: 'test-under-promotion',
@@ -18,6 +24,24 @@ const promotionPuzzle: Puzzle = {
   solution: ['g7g8n'],
   themes: ['underPromotion'],
   rating: 1200,
+};
+
+/** Two rooks on the back rank: Ra8# and Rb8# are both mates, the stored answer is one of them. */
+const doubleMate: Puzzle = {
+  id: 'test-double-mate',
+  fen: '6k1/5ppp/8/8/8/8/5PPP/RR4K1 w - - 0 1',
+  solution: ['a1a8'],
+  themes: ['backRankMate', 'mateIn1'],
+  rating: 900,
+};
+
+/** Ra8# is available, but the stored answer is a quiet move: the puzzle is not a mate in one. */
+const quietAnswer: Puzzle = {
+  id: 'test-quiet-answer',
+  fen: '7k/6pp/8/8/8/8/1Q6/R5K1 w - - 0 1',
+  solution: ['b2b3'],
+  themes: ['fork'],
+  rating: 1000,
 };
 
 describe('puzzle session', () => {
@@ -78,6 +102,21 @@ describe('puzzle session', () => {
     expect(dests.get('a2')).toEqual(['a3', 'a4']);
   });
 
+  it('solves on any mating move when the answer is mate in one', () => {
+    const state = playMove(startPuzzle(doubleMate), 'b1', 'b8');
+
+    expect(state.outcome).toBe('solved');
+    expect(state.expected).toBeNull();
+    expect(state.lastMove).toEqual(['b1', 'b8']);
+  });
+
+  it('refuses a mating move when the stored answer is not a mate', () => {
+    const state = playMove(startPuzzle(quietAnswer), 'a1', 'a8');
+
+    expect(state.outcome).toBe('failed');
+    expect(state.bestSan).toBe('Qb3');
+  });
+
   it('solves when the chosen under-promotion matches the solution', () => {
     const state = playMove(startPuzzle(promotionPuzzle), 'g7', 'g8', 'n');
 
@@ -104,20 +143,18 @@ describe('puzzle session', () => {
     expect(promotionPieces(promotionPuzzle.fen, 'g1', 'g2')).toEqual([]);
   });
 
-  it('replays every demo line to the end', () => {
-    for (const demo of DEMO_PUZZLES) {
-      let state = startPuzzle(demo);
-      for (let ply = 0; ply < demo.solution.length; ply += 2) {
-        const uci = demo.solution[ply];
-        const promotion = uci.slice(4);
-        state = playMove(
-          state,
-          uci.slice(0, 2),
-          uci.slice(2, 4),
-          promotion === '' ? undefined : (promotion as PromotionPiece),
-        );
-      }
-      expect(state.outcome, demo.id).toBe('solved');
+  it('replays a stored line to the end', () => {
+    let state = startPuzzle(puzzle);
+    for (let ply = 0; ply < puzzle.solution.length; ply += 2) {
+      const uci = puzzle.solution[ply]!;
+      state = playMove(
+        state,
+        uci.slice(0, 2),
+        uci.slice(2, 4),
+        (uci.slice(4) || undefined) as PromotionPiece | undefined,
+      );
     }
+
+    expect(state.outcome).toBe('solved');
   });
 });

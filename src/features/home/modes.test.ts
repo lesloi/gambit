@@ -14,7 +14,7 @@ describe('training modes', () => {
     }
   });
 
-  it('marks the puzzle demo as the only available mode', () => {
+  it('marks puzzles as the only available mode', () => {
     expect(MODES.filter((mode) => mode.available).map((mode) => mode.id)).toEqual(['puzzles']);
   });
 

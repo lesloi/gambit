@@ -11,8 +11,8 @@ afterAll(async () => {
 
 describe('puzzleReview', () => {
   it('names the card after the puzzle, so every attempt lands on one card', () => {
-    expect(puzzleReview('demo-back-rank', Rating.Good, 1_767_258_000_000)).toEqual({
-      cardId: 'puzzle:demo-back-rank',
+    expect(puzzleReview('005gP', Rating.Good, 1_767_258_000_000)).toEqual({
+      cardId: 'puzzle:005gP',
       rating: Rating.Good,
       reviewedAt: 1_767_258_000_000,
     });
@@ -36,10 +36,10 @@ describe('recordPuzzleReview', () => {
   it('writes the rating into the journal of the app', async () => {
     const before = Date.now();
 
-    await recordPuzzleReview('demo-back-rank', Rating.Good);
+    await recordPuzzleReview('005gP', Rating.Good);
 
-    const card = await cardState(database, 'puzzle:demo-back-rank');
-    expect(card).toMatchObject({ cardId: 'puzzle:demo-back-rank', reviews: 1 });
+    const card = await cardState(database, 'puzzle:005gP');
+    expect(card).toMatchObject({ cardId: 'puzzle:005gP', reviews: 1 });
     expect(card?.lastReview).toBeGreaterThanOrEqual(before);
   });
 });

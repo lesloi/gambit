@@ -49,4 +49,6 @@ The puzzle subset, the opening lines and the endgame positions are shipped in th
 puzzle subset is committed in `content/`: a clone, a build and a release work without network
 access. Regenerating it is a deliberate, offline act: the script reads a dated Lichess export
 (CC0), writes `content/`, and the next release rebuilds the image. The manifest records the date
-of the export it came from. Nothing is fetched at runtime.
+of the export it came from. Nothing is fetched from a third party at runtime. The archive is
+decompressed in the browser with `DecompressionStream`, so the app needs a current browser (Safari
+16.4+, Firefox 113+, Chrome 80+).

@@ -23,7 +23,10 @@ the shape the app reads:
   already applied.
 - `solution` is the rest of the line in UCI, starting with the user's move; the sides alternate.
 - `themes` are the motifs only. Tags that describe the export (`short`, `crushing`, `middlegame`,
-  `master`…) are left out: a motif is what the puzzles are filtered by.
+  `master`…) are left out: a motif is what the puzzle teaches once it is solved.
+
+The app fetches this archive from its own origin and decompresses it in the browser, so nothing
+leaves the origin and the content stays out of the JS bundle.
 
 `manifest.json` records where the file came from and what it holds: the export's Last-Modified
 date, the SHA-256 of the CSV that was read, the filters, the counts per motif and per rating band,
