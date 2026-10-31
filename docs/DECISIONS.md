@@ -66,9 +66,11 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   `SharedArrayBuffer`, so COOP and COEP headers, which complicate the CSP and every embed. The
   single-threaded build plays strong enough at every level the trainer offers, and the app stays a
   plain static site.
-- **The engine sits behind one interface, so Maia can replace it later.** Maia plays like a human
-  and is a better opponent for training, but its weights are large and its licence has to be
-  checked. It is tracked as an issue of documentation first.
+- **The engine sits behind one interface, so Maia can join Stockfish as a second opponent.** Maia
+  predicts the move a player of a given rating would play, which is a better training partner than
+  a perfect one; Stockfish keeps the endgames and the post-game analysis. Its versions, weights,
+  licence and offline cost are documented in [MAIA.md](./MAIA.md), and the game mode picks the
+  opponent when it is built.
 
 ## Persistence
 
