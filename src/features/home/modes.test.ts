@@ -14,8 +14,11 @@ describe('training modes', () => {
     }
   });
 
-  it('marks puzzles as the only available mode', () => {
-    expect(MODES.filter((mode) => mode.available).map((mode) => mode.id)).toEqual(['puzzles']);
+  it('marks the modes with a working flow as available', () => {
+    expect(MODES.filter((mode) => mode.available).map((mode) => mode.id)).toEqual([
+      'puzzles',
+      'endgames',
+    ]);
   });
 
   it('groups the three training modes apart from playing', () => {

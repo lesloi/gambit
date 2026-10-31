@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import { fr } from '../../i18n/fr';
-import type { PromotionPiece } from './puzzle';
+import { fr } from '../i18n/fr';
+import type { PromotionPiece } from '../lib/chess';
 
 const LABEL: Record<PromotionPiece, string> = {
-  q: fr.puzzle.promotion.queen,
-  r: fr.puzzle.promotion.rook,
-  b: fr.puzzle.promotion.bishop,
-  n: fr.puzzle.promotion.knight,
+  q: fr.promotion.queen,
+  r: fr.promotion.rook,
+  b: fr.promotion.bishop,
+  n: fr.promotion.knight,
 };
 
 const ROLE: Record<PromotionPiece, string> = { q: 'Q', r: 'R', b: 'B', n: 'N' };
@@ -16,6 +16,27 @@ export interface PromotionAnchor {
   x: number;
   y: number;
   size: number;
+}
+
+/** The viewport centre of a square, for the board as it is oriented on screen. */
+export function promotionAnchor(
+  host: HTMLElement | null,
+  square: string,
+  orientation: 'white' | 'black',
+): PromotionAnchor | null {
+  if (!host) return null;
+
+  const bounds = host.getBoundingClientRect();
+  const size = bounds.width / 8;
+  const file = square.charCodeAt(0) - 97;
+  const rank = Number(square[1]);
+  const column = orientation === 'white' ? file : 7 - file;
+  const row = orientation === 'white' ? 8 - rank : rank - 1;
+  return {
+    x: bounds.left + (column + 0.5) * size,
+    y: bounds.top + (row + 0.5) * size,
+    size,
+  };
 }
 
 export interface PromotionDialogProps {
@@ -120,7 +141,7 @@ export function PromotionDialog({
       className="border-line bg-paper-raised text-ink fixed inset-auto m-0 w-33 rounded-2xl border p-2 shadow-xl backdrop:bg-ink/20"
     >
       <h2 id="promotion-title" className="sr-only">
-        {fr.puzzle.promotion.title}
+        {fr.promotion.title}
       </h2>
 
       <div className="grid grid-cols-2 gap-1">
@@ -147,7 +168,7 @@ export function PromotionDialog({
         onClick={cancel}
         className="text-ink-muted hover:text-ink mt-1.5 min-h-11 w-full rounded-lg text-sm"
       >
-        {fr.puzzle.promotion.cancel}
+        {fr.promotion.cancel}
       </button>
     </dialog>
   );

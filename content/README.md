@@ -59,3 +59,15 @@ git add content scripts
 ```
 
 The puzzles are attributed to Lichess in [CREDITS.md](../CREDITS.md).
+
+## Endgame positions
+
+`endgames.json` holds the curated endgames: the position, the side the user plays (the side to
+move in the FEN), the expected result (`win` or `draw`) and a one-line goal. The app plays the
+other side with Stockfish and checks the conversion locally: mate, insufficient material,
+stalemate, the fifty-move rule or a threefold repetition. A `win` card is solved only by mate;
+a `draw` card by any drawn end. The set is small on purpose: each position is checked by hand,
+and more arrive with the endgame content issue.
+
+The engine that serves them is the `lite single-threaded` build of Stockfish.js, kept unmodified
+in [`public/stockfish`](../public/stockfish) and attributed in [CREDITS.md](../CREDITS.md).
