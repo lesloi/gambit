@@ -1,27 +1,27 @@
 # Install
 
-Requirements: [Node.js 26](https://nodejs.org/) and npm. Docker and `kubectl` only for the image
-and the deployment.
+Requirements: [Node.js 26](https://nodejs.org/) and [pnpm](https://pnpm.io/) 12. Docker and `kubectl`
+only for the image and the deployment.
 
 ## Development
 
 ```sh
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 The app is served on **http://localhost:5173**, with hot reload. The service worker is disabled in
 development, so a reload always shows the current code.
 
-| Command            | What it does                     |
-| ------------------ | -------------------------------- |
-| `npm run dev`      | Vite dev server                  |
-| `npm run build`    | Typecheck, then build `dist/`    |
-| `npm run preview`  | Serve `dist/` on port 4173       |
-| `npm run check`    | Prettier, ESLint and types       |
-| `npm test`         | Unit tests                       |
-| `npm run coverage` | Unit tests with coverage         |
-| `npm run format`   | Rewrite every file with Prettier |
+| Command         | What it does                     |
+| --------------- | -------------------------------- |
+| `pnpm dev`      | Vite dev server                  |
+| `pnpm build`    | Typecheck, then build `dist/`    |
+| `pnpm preview`  | Serve `dist/` on port 4173       |
+| `pnpm check`    | Prettier, ESLint and types       |
+| `pnpm test`     | Unit tests                       |
+| `pnpm coverage` | Unit tests with coverage         |
+| `pnpm format`   | Rewrite every file with Prettier |
 
 The icons of the PWA are committed. To regenerate them after a change to the pawn:
 

@@ -5,12 +5,14 @@
 
 FROM node:26-slim AS build
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
+COPY package.json pnpm-lock.yaml ./
+# Node 26 ships no Corepack, so pnpm is installed at the version package.json pins.
+RUN npm install --global --no-audit --no-fund "$(node -p "require('./package.json').packageManager")"
+RUN pnpm install --frozen-lockfile
 COPY index.html tsconfig.json vite.config.ts vitest.config.ts ./
 COPY public ./public
 COPY src ./src
-RUN npm run build
+RUN pnpm run build
 
 FROM nginxinc/nginx-unprivileged:1.31-alpine AS runtime
 COPY nginx.conf /etc/nginx/nginx.conf
