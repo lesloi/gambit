@@ -9,9 +9,10 @@ COPY package.json pnpm-lock.yaml ./
 # Node 26 ships no Corepack, so pnpm is installed at the version package.json pins.
 RUN npm install --global --no-audit --no-fund "$(node -p "require('./package.json').packageManager")"
 RUN pnpm install --frozen-lockfile
-COPY index.html tsconfig.json vite.config.ts vitest.config.ts ./
-COPY public ./public
-COPY src ./src
+# One copy for the rest of the inputs: an enumerated list had silently stopped matching the build
+# when content/ appeared, and the release only failed once it reached main. .dockerignore holds
+# back what the build does not read, and only dist/ leaves this stage.
+COPY . .
 RUN pnpm run build
 
 FROM nginxinc/nginx-unprivileged:1.31-alpine AS runtime
