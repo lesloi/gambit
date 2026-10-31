@@ -39,9 +39,10 @@ docker run --rm -p 8080:8080 gambit
 Then open **http://localhost:8080**. The container runs as UID 101, listens on 8080, and keeps its
 temporary files on a writable `/tmp`; the rest of the filesystem can stay read-only.
 
-`Release` builds `linux/amd64` and `linux/arm64` and pushes `ghcr.io/lesloi/gambit` with the `sha`
-of the commit and `latest` on `main`, after `Check` and `Web` have passed. Nothing is published
-from a pull request.
+`Image` builds the image on every pull request and throws it away, so a Dockerfile that breaks
+fails there. It is built for `linux/amd64` only, the architecture the deployment runs. `Release`
+calls it once `Check` and `Web` have passed, and pushes `ghcr.io/lesloi/gambit` with the `sha` of
+the commit and `latest` on `main`.
 
 ## PWA
 
