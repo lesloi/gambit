@@ -90,23 +90,32 @@ export function parsePuzzles(text: string): Puzzle[] {
   return puzzles;
 }
 
+/** The two bytes every gzip member starts with, whatever the headers claim. */
+function isGzip(bytes: Uint8Array): boolean {
+  return bytes[0] === 0x1f && bytes[1] === 0x8b;
+}
+
 /**
  * The archive ships gzipped and is served from the app's own assets. Nothing leaves the origin;
- * decompressing in the browser keeps the 2 MB of JSONL out of the JS bundle. A server that sets
- * `Content-Encoding: gzip` (the dev server does) hands the body over already decoded.
+ * decompressing in the browser keeps the 2 MB of JSONL out of the JS bundle.
+ *
+ * `Content-Encoding: gzip` covers two different bodies, so it cannot decide: a server that labels
+ * the file (Vite in development, `gzip_static`) lets the browser decode it and hand us the JSONL,
+ * while a proxy that compresses the already-gzipped response once more leaves the archive itself
+ * behind the same header. Only the bytes say which one arrived.
  */
 export async function loadPuzzles(url: string = puzzlesUrl): Promise<Puzzle[]> {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Puzzle content: HTTP ${response.status}`);
 
-  const body = response.body;
-  if (!body) throw new Error('Puzzle content: empty response');
+  const archive = await response.blob();
+  const bytes = new Uint8Array(await archive.arrayBuffer());
+  if (bytes.length === 0) throw new Error('Puzzle content: empty response');
 
-  const stream =
-    response.headers.get('content-encoding') === 'gzip'
-      ? body
-      : body.pipeThrough(new DecompressionStream('gzip'));
-  const puzzles = parsePuzzles(await new Response(stream).text());
+  const text = isGzip(bytes)
+    ? await new Response(archive.stream().pipeThrough(new DecompressionStream('gzip'))).text()
+    : await archive.text();
+  const puzzles = parsePuzzles(text);
   // A body that decodes but holds no puzzle is a broken response, not an empty subset: every
   // filter would look empty. Surface it instead of serving an app that cannot play.
   if (puzzles.length === 0) throw new Error('Puzzle content: empty archive');
