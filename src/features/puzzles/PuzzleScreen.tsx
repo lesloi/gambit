@@ -5,10 +5,17 @@ import { Rating as FsrsRating, type Grade } from 'ts-fsrs';
 import { fr } from '../../i18n/fr';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { DEMO_PUZZLES } from './demo';
-import { legalDests, playMove, revealSolution, startPuzzle, type PuzzleOutcome } from './puzzle';
+import { PromotionDialog, type PromotionAnchor } from './PromotionDialog';
+import {
+  legalDests,
+  playMove,
+  promotionPieces,
+  revealSolution,
+  startPuzzle,
+  type PromotionPiece,
+  type PuzzleOutcome,
+} from './puzzle';
 import { missedAttemptRating, recordPuzzleReview } from './record';
-
-const puzzle = DEMO_PUZZLES[0];
 
 const RATINGS = ['again', 'hard', 'good', 'easy'] as const;
 type Rating = (typeof RATINGS)[number];
@@ -29,10 +36,36 @@ function themeLabel(theme: string): string {
   return (fr.puzzle.themes as Record<string, string>)[theme] ?? theme;
 }
 
+interface PendingPromotion {
+  from: string;
+  to: string;
+  options: PromotionPiece[];
+}
+
+/** The viewport centre of a square of the board, whose orientation is white on this screen. */
+function promotionAnchor(host: HTMLElement | null, square: string): PromotionAnchor | null {
+  if (!host) return null;
+
+  const bounds = host.getBoundingClientRect();
+  const size = bounds.width / 8;
+  const file = square.charCodeAt(0) - 97;
+  const rank = Number(square[1]);
+  return {
+    x: bounds.left + (file + 0.5) * size,
+    y: bounds.top + (8 - rank + 0.5) * size,
+    size,
+  };
+}
+
 export function PuzzleScreen({ onExit }: { onExit: () => void }) {
-  const [state, setState] = useState(() => startPuzzle(puzzle));
+  const [index, setIndex] = useState(0);
+  const puzzle = DEMO_PUZZLES[index];
+  const [state, setState] = useState(() => startPuzzle(DEMO_PUZZLES[0]));
   const [hint, setHint] = useState(false);
   const [rating, setRating] = useState<Rating | null>(null);
+  const [pending, setPending] = useState<PendingPromotion | null>(null);
+  const [resetKey, setResetKey] = useState(0);
+  const boardHost = useRef<HTMLDivElement>(null);
   const attemptRecorded = useRef(false);
 
   const turn = useMemo(
@@ -55,14 +88,19 @@ export function PuzzleScreen({ onExit }: { onExit: () => void }) {
           }).san,
       )
       .join(' ');
-  }, []);
+  }, [puzzle]);
 
-  const reset = () => {
-    setState(startPuzzle(puzzle));
+  const start = (nextIndex: number) => {
+    setIndex(nextIndex);
+    setState(startPuzzle(DEMO_PUZZLES[nextIndex]));
     setHint(false);
     setRating(null);
+    setPending(null);
     attemptRecorded.current = false;
   };
+
+  const reset = () => start(index);
+  const next = () => start((index + 1) % DEMO_PUZZLES.length);
 
   // A review is appended once and never edited, so the first rating is the review. A write that
   // fails is not surfaced: the buttons unlock so the user can rate again, and nothing else is said.
@@ -86,10 +124,34 @@ export function PuzzleScreen({ onExit }: { onExit: () => void }) {
     void recordPuzzleReview(puzzle.id, missed).catch(() => undefined);
   };
 
-  const move = (from: string, to: string) => {
-    const next = playMove(state, from, to);
+  const applyMove = (from: string, to: string, promotion?: PromotionPiece) => {
+    const next = playMove(state, from, to, promotion);
     setState(next);
     recordMissed(state.outcome, next.outcome);
+  };
+
+  const move = (from: string, to: string) => {
+    const options = promotionPieces(state.fen, from, to);
+    if (options.length > 0) {
+      setPending({ from, to, options });
+      return;
+    }
+    applyMove(from, to);
+  };
+
+  const promote = (piece: PromotionPiece) => {
+    if (!pending) return;
+    const { from, to } = pending;
+    setPending(null);
+    applyMove(from, to, piece);
+  };
+
+  // The pawn waits on the promotion square while the chooser is open; a cancel has to put it back
+  // by hand, since the position did not change in between.
+  const cancelPromotion = () => {
+    setPending(null);
+    setResetKey((key) => key + 1);
+    boardHost.current?.focus();
   };
 
   const reveal = () => {
@@ -111,20 +173,23 @@ export function PuzzleScreen({ onExit }: { onExit: () => void }) {
             <ChevronLeft size={22} />
           </button>
           <h1 className="font-serif text-lg">
-            {fr.puzzle.counter} 1 / {DEMO_PUZZLES.length}
+            {fr.puzzle.counter} {index + 1} / {DEMO_PUZZLES.length}
           </h1>
         </header>
 
         <div className="border-line bg-paper-raised mt-3 rounded-2xl border p-2.5 sm:p-3">
-          <ChessBoard
-            fen={state.fen}
-            orientation="white"
-            turn={turn}
-            lastMove={state.lastMove}
-            movable={state.outcome === 'playing'}
-            dests={dests}
-            onMove={move}
-          />
+          <div ref={boardHost} tabIndex={-1} aria-label={fr.puzzle.board} className="rounded-xl">
+            <ChessBoard
+              fen={state.fen}
+              orientation="white"
+              turn={turn}
+              lastMove={state.lastMove}
+              movable={state.outcome === 'playing'}
+              dests={dests}
+              onMove={move}
+              resetKey={resetKey}
+            />
+          </div>
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-3">
@@ -189,7 +254,7 @@ export function PuzzleScreen({ onExit }: { onExit: () => void }) {
 
               <button
                 type="button"
-                onClick={onExit}
+                onClick={next}
                 className="bg-accent mt-3 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
               >
                 {fr.puzzle.next}
@@ -245,6 +310,16 @@ export function PuzzleScreen({ onExit }: { onExit: () => void }) {
           ) : null}
         </div>
       </div>
+
+      {pending ? (
+        <PromotionDialog
+          color={turn}
+          options={pending.options}
+          measure={() => promotionAnchor(boardHost.current, pending.to)}
+          onChoose={promote}
+          onCancel={cancelPromotion}
+        />
+      ) : null}
     </div>
   );
 }

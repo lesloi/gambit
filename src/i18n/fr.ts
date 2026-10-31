@@ -38,6 +38,7 @@ export const fr = {
   },
   puzzle: {
     back: 'Retour',
+    board: 'Échiquier',
     counter: 'Puzzle',
     whiteToMove: 'Aux blancs',
     blackToMove: 'Aux noirs',
@@ -50,6 +51,14 @@ export const fr = {
     solutionTitle: 'Solution',
     retry: 'Rejouer',
     next: 'Puzzle suivant',
+    promotion: {
+      title: 'Promotion',
+      queen: 'Dame',
+      rook: 'Tour',
+      bishop: 'Fou',
+      knight: 'Cavalier',
+      cancel: 'Annuler',
+    },
     rating: {
       again: 'À revoir',
       hard: 'Difficile',
@@ -57,9 +66,14 @@ export const fr = {
       easy: 'Facile',
     },
     themes: {
+      advancedPawn: 'Pion avancé',
       backRankMate: 'Mat de fond',
+      cornerMate: 'Mat du coin',
+      mateIn1: 'Mat en 1',
       mateIn2: 'Mat en 2',
+      promotion: 'Promotion',
       sacrifice: 'Sacrifice',
+      underPromotion: 'Sous-promotion',
     },
   },
 } as const;

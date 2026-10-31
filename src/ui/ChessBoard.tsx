@@ -11,6 +11,8 @@ export interface ChessBoardProps {
   movable: boolean;
   dests: Map<string, string[]>;
   onMove: (from: string, to: string) => void;
+  /** Bumped to apply `fen` again after the board moved a piece without a state change. */
+  resetKey?: number;
 }
 
 function asKeys(dests: Map<string, string[]>): Map<Key, Key[]> {
@@ -29,6 +31,7 @@ export function ChessBoard({
   movable,
   dests,
   onMove,
+  resetKey = 0,
 }: ChessBoardProps) {
   const host = useRef<HTMLDivElement>(null);
   const api = useRef<Api | null>(null);
@@ -76,7 +79,7 @@ export function ChessBoard({
         dests: asKeys(dests),
       },
     });
-  }, [fen, orientation, turn, lastMove, movable, dests]);
+  }, [fen, orientation, turn, lastMove, movable, dests, resetKey]);
 
   return <div ref={host} className="aspect-square w-full overflow-hidden rounded-xl" />;
 }
