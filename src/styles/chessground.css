@@ -1,0 +1,74 @@
+/* Chessnut pieces for chessground, served by the app (no external request). */
+.cg-wrap piece.pawn.white {
+  background-image: url('/pieces/chessnut/wP.svg');
+}
+.cg-wrap piece.knight.white {
+  background-image: url('/pieces/chessnut/wN.svg');
+}
+.cg-wrap piece.bishop.white {
+  background-image: url('/pieces/chessnut/wB.svg');
+}
+.cg-wrap piece.rook.white {
+  background-image: url('/pieces/chessnut/wR.svg');
+}
+.cg-wrap piece.queen.white {
+  background-image: url('/pieces/chessnut/wQ.svg');
+}
+.cg-wrap piece.king.white {
+  background-image: url('/pieces/chessnut/wK.svg');
+}
+.cg-wrap piece.pawn.black {
+  background-image: url('/pieces/chessnut/bP.svg');
+}
+.cg-wrap piece.knight.black {
+  background-image: url('/pieces/chessnut/bN.svg');
+}
+.cg-wrap piece.bishop.black {
+  background-image: url('/pieces/chessnut/bB.svg');
+}
+.cg-wrap piece.rook.black {
+  background-image: url('/pieces/chessnut/bR.svg');
+}
+.cg-wrap piece.queen.black {
+  background-image: url('/pieces/chessnut/bQ.svg');
+}
+.cg-wrap piece.king.black {
+  background-image: url('/pieces/chessnut/bK.svg');
+}
+
+/* The board uses the app's wood, not a chessground theme. */
+.cg-wrap cg-board {
+  background-color: #f0d9b5;
+  background-image: repeating-conic-gradient(#f0d9b5 0% 25%, #b58863 0% 50%);
+  background-size: 25% 25%;
+}
+
+/* The brown theme's green highlights belong to Lichess; the app uses its accent. */
+.cg-wrap cg-board square.last-move {
+  background-color: rgb(180 85 45 / 0.3);
+}
+.cg-wrap cg-board square.selected {
+  background-color: rgb(180 85 45 / 0.45);
+}
+.cg-wrap cg-board square.move-dest {
+  background: radial-gradient(
+    rgb(180 85 45 / 0.55) 22%,
+    #b4552d 0,
+    rgb(0 0 0 / 0.25) 0,
+    rgb(0 0 0 / 0) 0
+  );
+}
+.cg-wrap cg-board square.oc.move-dest {
+  background: radial-gradient(transparent 0%, transparent 80%, rgb(180 85 45 / 0.35) 80%);
+}
+.cg-wrap cg-board square.move-dest:hover,
+.cg-wrap cg-board square.move-dest.hover {
+  background: rgb(180 85 45 / 0.35);
+}
+
+/* Coordinates are drawn over the squares; keep them readable but discreet. */
+.cg-wrap coords {
+  font-family: var(--font-sans);
+  font-size: 0.55rem;
+  opacity: 0.55;
+}

@@ -1,0 +1,48 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-paper: #f7f3ea;
+  --color-paper-raised: #fffdf8;
+  --color-ink: #2b251f;
+  --color-ink-muted: #6f6355;
+  --color-line: #e2d8c6;
+  --color-accent: #b4552d;
+  --color-accent-soft: #f3e4d8;
+  --color-board-light: #f0d9b5;
+  --color-board-dark: #b58863;
+  --color-ok: #3f5a32;
+  --color-ok-soft: #e8eede;
+  --color-bad: #7a2f22;
+  --color-bad-soft: #f5e2dd;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-accent outline-2 outline-offset-2;
+  }
+}
+
+/* White pieces need an outline to stay visible on the light squares. */
+.piece-white {
+  color: #fffdf8;
+  text-shadow:
+    0 0 1px #2b251f,
+    0 1px 1px #2b251f;
+}
+
+.piece-black {
+  color: #2b251f;
+  text-shadow: 0 0 1px rgb(255 253 248 / 0.6);
+}

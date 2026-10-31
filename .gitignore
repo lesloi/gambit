@@ -1,0 +1,12 @@
+dist/
+dev-dist/
+coverage/
+node_modules/
+test-results/
+playwright-report/
+.openchamber/
+
+# local build and editor files
+.DS_Store
+*.local
+.env*.local

@@ -1,0 +1,27 @@
+name: Vulnerabilities
+
+# A vulnerability is published without any change to the code, so the scan also runs every week.
+on:
+  pull_request:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # The shipped bundle holds the production dependencies only, so that is the scope of the scan.
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+      - run: npm audit --omit=dev --audit-level=high

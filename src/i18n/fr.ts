@@ -1,0 +1,66 @@
+export const fr = {
+  app: {
+    name: 'Gambit',
+    tagline: 'Entraînement aux échecs',
+  },
+  home: {
+    skipToContent: 'Aller au contenu',
+    sessionTitle: 'Session du jour',
+    sessionEmptyTitle: 'Le plateau est prêt',
+    sessionEmptyBody:
+      "Les puzzles, les finales et les ouvertures arrivent avec le prochain lot. La session se remplira d'elle-même.",
+    sessionReviews: 'Aucune révision enregistrée',
+    trainTitle: "S'entraîner",
+    trainHint: 'Trois façons de travailler une position, révisées au bon moment.',
+    playTitle: 'Jouer',
+    playHint: 'Une partie contre Stockfish, puis la relecture des gaffes.',
+    comingSoon: 'Bientôt',
+    privacy: 'Sans compte, sans pisteur. Tout reste dans ton navigateur.',
+    license: 'AGPL-3.0',
+    source: 'Code source',
+  },
+  modes: {
+    puzzles: {
+      name: 'Puzzles tactiques',
+      goal: 'Résous des positions réelles, du mat en un au sacrifice.',
+    },
+    endgames: {
+      name: 'Finales',
+      goal: 'Convertis les positions théoriques contre le moteur.',
+    },
+    openings: {
+      name: 'Ouvertures',
+      goal: 'Révise un répertoire solide avec les deux couleurs.',
+    },
+    play: {
+      name: 'Parties',
+      goal: 'Joue contre Stockfish, puis relis tes gaffes.',
+    },
+  },
+  puzzle: {
+    back: 'Retour',
+    counter: 'Puzzle',
+    whiteToMove: 'Aux blancs',
+    blackToMove: 'Aux noirs',
+    hint: 'Indice',
+    showSolution: 'Voir la solution',
+    hintPrefix: 'Motif :',
+    solved: 'Bien joué',
+    failed: 'Raté',
+    bestMove: 'Le bon coup était {move}.',
+    solutionTitle: 'Solution',
+    retry: 'Rejouer',
+    next: 'Puzzle suivant',
+    rating: {
+      again: 'À revoir',
+      hard: 'Difficile',
+      good: 'Bien',
+      easy: 'Facile',
+    },
+    themes: {
+      backRankMate: 'Mat de fond',
+      mateIn2: 'Mat en 2',
+      sacrifice: 'Sacrifice',
+    },
+  },
+} as const;
