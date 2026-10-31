@@ -1,15 +1,23 @@
 import { Chess } from 'chess.js';
 import { ChevronLeft } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { Rating as FsrsRating, type Grade } from 'ts-fsrs';
 import { fr } from '../../i18n/fr';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { DEMO_PUZZLES } from './demo';
-import { legalDests, playMove, revealSolution, startPuzzle } from './puzzle';
+import { legalDests, playMove, revealSolution, startPuzzle, type PuzzleOutcome } from './puzzle';
+import { missedAttemptRating, recordPuzzleReview } from './record';
 
 const puzzle = DEMO_PUZZLES[0];
 
 const RATINGS = ['again', 'hard', 'good', 'easy'] as const;
 type Rating = (typeof RATINGS)[number];
+const GRADE: Record<Rating, Grade> = {
+  again: FsrsRating.Again,
+  hard: FsrsRating.Hard,
+  good: FsrsRating.Good,
+  easy: FsrsRating.Easy,
+};
 const RATING_OPACITY: Record<Rating, string> = {
   again: 'bg-accent/40',
   hard: 'bg-accent/60',
@@ -25,6 +33,7 @@ export function PuzzleScreen({ onExit }: { onExit: () => void }) {
   const [state, setState] = useState(() => startPuzzle(puzzle));
   const [hint, setHint] = useState(false);
   const [rating, setRating] = useState<Rating | null>(null);
+  const attemptRecorded = useRef(false);
 
   const turn = useMemo(
     () => (new Chess(state.fen).turn() === 'w' ? 'white' : 'black'),
@@ -52,6 +61,41 @@ export function PuzzleScreen({ onExit }: { onExit: () => void }) {
     setState(startPuzzle(puzzle));
     setHint(false);
     setRating(null);
+    attemptRecorded.current = false;
+  };
+
+  // A review is appended once and never edited, so the first rating is the review. A write that
+  // fails is not surfaced: the buttons unlock so the user can rate again, and nothing else is said.
+  const rate = async (value: Rating) => {
+    if (rating) return;
+    setRating(value);
+    try {
+      await recordPuzzleReview(puzzle.id, GRADE[value]);
+    } catch {
+      setRating(null);
+    }
+  };
+
+  const recordMissed = (before: PuzzleOutcome, after: PuzzleOutcome) => {
+    // The first event that leaves `playing` is the attempt's review; a queued duplicate must not
+    // append a second one.
+    if (attemptRecorded.current) return;
+    const missed = missedAttemptRating(before, after);
+    if (missed === null) return;
+    attemptRecorded.current = true;
+    void recordPuzzleReview(puzzle.id, missed).catch(() => undefined);
+  };
+
+  const move = (from: string, to: string) => {
+    const next = playMove(state, from, to);
+    setState(next);
+    recordMissed(state.outcome, next.outcome);
+  };
+
+  const reveal = () => {
+    const next = revealSolution(state);
+    setState(next);
+    recordMissed(state.outcome, next.outcome);
   };
 
   return (
@@ -79,7 +123,7 @@ export function PuzzleScreen({ onExit }: { onExit: () => void }) {
             lastMove={state.lastMove}
             movable={state.outcome === 'playing'}
             dests={dests}
-            onMove={(from, to) => setState((current) => playMove(current, from, to))}
+            onMove={move}
           />
         </div>
 
@@ -98,7 +142,7 @@ export function PuzzleScreen({ onExit }: { onExit: () => void }) {
               </button>
               <button
                 type="button"
-                onClick={() => setState((current) => revealSolution(current))}
+                onClick={reveal}
                 className="text-ink-muted hover:text-ink rounded-full px-3 py-2 text-xs"
               >
                 {fr.puzzle.showSolution}
@@ -129,7 +173,8 @@ export function PuzzleScreen({ onExit }: { onExit: () => void }) {
                     key={value}
                     type="button"
                     aria-pressed={rating === value}
-                    onClick={() => setRating(value)}
+                    disabled={rating !== null}
+                    onClick={() => void rate(value)}
                     className={`rounded-lg border px-1 py-2 text-[11px] transition-colors ${
                       rating === value
                         ? 'border-ok text-ink font-semibold'
@@ -171,7 +216,7 @@ export function PuzzleScreen({ onExit }: { onExit: () => void }) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setState((current) => revealSolution(current))}
+                  onClick={reveal}
                   className="border-line text-ink-muted flex-1 rounded-xl border px-4 py-3 text-sm"
                 >
                   {fr.puzzle.showSolution}

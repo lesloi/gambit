@@ -19,8 +19,9 @@ One of the five activities: puzzles, motifs, endgames, openings, games. A card b
 _Avoid_: Category, section, tab
 
 **Review** _(révision)_:
-One attempt at a card and the rating the user gives it. Reviews are appended to the journal and
-never edited; they are the source of truth of the progression.
+One attempt at a card and the rating recorded for it: the user's choice after a solve, `again` when
+the attempt is missed. Reviews are appended to the journal and never edited; they are the source of
+truth of the progression.
 _Avoid_: Attempt, answer, result
 
 **Card** _(fiche)_:
@@ -33,7 +34,8 @@ The date at which a card should be reviewed again. A due card is what a session 
 _Avoid_: Deadline, next date
 
 **Rating** _(note)_:
-What the user says of a review: again, hard, good or easy. It feeds FSRS and the statistics.
+What a review is worth to the scheduler: chosen by the user after a solve, `again` when the attempt
+is missed. It feeds FSRS and the statistics.
 _Avoid_: Grade, score, result
 
 **Full line** _(ligne complète)_:

@@ -75,12 +75,15 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
 - **The `reviews` journal is the source of truth; FSRS state is derived from it.** A review is
   appended and never edited. The statistics, the due dates and an undo are then computations, and
   a backup is a dump of a small log. Exporting only card states would freeze a scheduler version
-  and lose the history.
+  and lose the history. The scheduler is therefore pinned with its parameters, fuzzing is off, and
+  the short steps (1 min, 10 min) are kept: replaying the same journal must give the same due
+  date, and the scheduler that produced it is written in the database's `meta` table.
 - **A backup is a file, not a sync.** Two devices would need an account, a server, conflict
   resolution and a second image; the owner uses one device. Import replaces the local data after
-  showing what the file holds, so no merge or tombstone is needed. `navigator.storage.persist()`
-  is requested at first launch. There is no automatic export, no date and no reminder: the two
-  buttons live in the settings, and a backup is a deliberate act, not an obligation.
+  showing what the file holds, so no merge or tombstone is needed. There is no automatic export,
+  no date and no reminder: the two buttons live in the settings, and a backup is a deliberate act,
+  not an obligation. Storage is not made persistent: `navigator.storage.persist()` would ask for a
+  permission the app does not need on first load.
 - **IndexedDB, through Dexie.** The data is structured and can exceed the few megabytes of
   `localStorage`; Dexie gives a versioned schema and transactions without a custom layer.
 
