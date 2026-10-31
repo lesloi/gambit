@@ -29,6 +29,13 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   (five by default, adjustable), so the habit has something to do from the first day.
 - **A theme's statistics wait for ten reviews.** At one user, a cell below that is noise, and a
   discouraging one. The journal keeps everything; the screen only shows what means something.
+- **Difficulty is two measures, not one label.** The length in plies says what an exercise costs
+  and what it trains: the full-line drill counts depth, and a five-move puzzle is a different
+  exercise from a one-move one. The rating says how often other players solved it, a measurement
+  rather than a label, and it is the cold-start prior a single user cannot have on the first day.
+  The journal takes over as soon as a cell holds the reviews the statistics already wait for: the
+  session then follows the user's own record by motif and by depth. Folding both into "easy,
+  medium, hard" would lose what each one says.
 - **A game has no takeback; a hint marks it as assisted.** Takeback erases the blunder the
   analysis exists to show. A hint is allowed, but the game is marked as assisted and stays out of
   the blunder list.
@@ -48,6 +55,16 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   header. **The generated subset is committed with the code**, so a clone, a build and a release
   never reach Lichess; only a regeneration does, from a CC0 export whose date the manifest
   records. Lichess is a source of content, not a service the app depends on.
+- **A puzzle has one answer, and the build proves it.** The Lichess export is generated on that
+  rule but ships no proof: 58 % of the retained lines have a defensive ply where the opponent had
+  another legal move, so the app would play a scripted opponent rather than the best defence. A
+  pass over the subset replays every line with a native Stockfish, off the runtime: the expected
+  move must be the engine's first choice, the next one must fall behind by a mate or by a margin,
+  and every defensive reply must be the engine's first choice. A line that fails is dropped, since
+  answering "wrong" to a move that also wins teaches the opposite of what a puzzle is for. The
+  engine, its version and the analysis settings go into the manifest, so a regeneration is
+  reproducible like the export itself; the exact margins live in the header of the script that
+  verifies.
 - **The opening repertoire is curated, not imported.** A hand-written set of lines for both
   colours (London and Queen's Gambit with White, French and Slav with Black) is small, coherent
   and reviewable. An opening explorer would grow an unbounded tree the user has to prune by hand.
