@@ -5,6 +5,7 @@ node_modules/
 test-results/
 playwright-report/
 .openchamber/
+.cache/
 
 # local build and editor files
 .DS_Store

@@ -13,9 +13,10 @@ the shape the app reads:
 {
   "id": "005gP",
   "fen": "8/8/3p4/2kP2P1/1p6/2pK4/P7/8 b - - 0 42",
-  "solution": ["c5d5", "g5g6"],
+  "solution": ["c5d5", "g5g6", "d5e6", "g6g7", "e6f7", "a2a4", "b4a3", "g7g8r", "f7g8"],
   "rating": 1723,
-  "themes": ["enPassant", "pawnEndgame"]
+  "themes": ["enPassant", "pawnEndgame"],
+  "fullLine": false
 }
 ```
 
@@ -24,14 +25,36 @@ the shape the app reads:
 - `solution` is the rest of the line in UCI, starting with the user's move; the sides alternate.
 - `themes` are the motifs only. Tags that describe the export (`short`, `crushing`, `middlegame`,
   `master`…) are left out: a motif is what the puzzle teaches once it is solved.
+- `fullLine` says whether every reply of the opponent is the engine's first choice, with no
+  alternative within the verification margin. Only these puzzles are served by the full-line drill;
+  the others still train normally, with a scripted defence.
 
 The app fetches this archive from its own origin and decompresses it in the browser, so nothing
 leaves the origin and the content stays out of the JS bundle.
 
 `manifest.json` records where the file came from and what it holds: the export's Last-Modified
 date, the SHA-256 of the CSV that was read, the filters, the counts per motif and per rating band,
-and the SHA-256 of both the archive and the JSONL. The export is a single rolling file, so there is
-no dated archive: the checksum is what identifies the snapshot.
+the engine and its analysis settings, how many lines the verification rejected, how many puzzles
+are `fullLine`, and the SHA-256 of both the archive and the JSONL. The export is a single rolling
+file, so there is no dated archive: the checksum is what identifies the snapshot.
+
+### Verification
+
+A puzzle has one answer, and the build proves it with a native engine, off the runtime. At each
+user ply the expected move must be the engine's first choice and the second line must fall behind
+by a mate or by 100 cp; a one-move mate is accepted as the app accepts any mate. A line that fails
+is dropped, and the selection runs again without it, so the subset keeps its 12,000 puzzles and
+its motif and rating spread.
+
+The defensive plies are checked too. A stored reply that is not the engine's first choice, or
+whose alternative is within 100 cp, does not drop the line: the normal mode plays the stored
+defence, and only the full-line drill needs a forced one. It clears `fullLine` instead, which is
+the index the drill reads. Dropping every such line would remove two puzzles in five for no
+normal-mode benefit.
+
+The analysis is a build tool, not the app's engine. It runs the native binary at depth 18, with
+MultiPV 2, one thread and a 16 MB hash cleared before every position, so a verdict never depends
+on what was searched before it.
 
 ### Regenerating it
 
@@ -43,12 +66,33 @@ curl -sSLO https://database.lichess.org/lichess_db_puzzle.csv.zst
 curl -sSI https://database.lichess.org/lichess_db_puzzle.csv.zst | grep -i last-modified
 zstd -d lichess_db_puzzle.csv.zst
 sha256sum lichess_db_puzzle.csv    # the csvSha256 of the current manifest
-pnpm content:puzzles -- lichess_db_puzzle.csv --last-modified "2026-10-02T08:51:45Z"
 ```
 
-The run takes about half a minute, reads the export twice and prints what it rejected. Two runs from
-the same export produce the same bytes, including the gzip header: the output only changes when the
-export, the filters or the rules change.
+The verification needs the native [Stockfish 19](https://github.com/official-stockfish/Stockfish/releases/tag/sf_19)
+build. It is GPLv3, is a build tool only, and never enters the image or the repository: the content
+is facts about positions, not a copy of the engine. Download the official Linux x86-64 release and
+check both hashes:
+
+```sh
+curl -sSLO https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-linux-x86-64-universal.tar.gz
+tar -xzf stockfish-linux-x86-64-universal.tar.gz
+sha256sum stockfish-linux-x86-64-universal.tar.gz          # 9defc0d4e55d49c65a6d042f3e571a39fcea499ade6dbe741b53b8c65e03611f
+sha256sum stockfish/stockfish-linux-x86-64-universal      # 0f83d24cc46d2c66c60f16001af5444873bc112b7d028594513426894c12da19
+```
+
+The second hash is the SHA-256 of the binary the manifest records. Then run the whole pipeline:
+
+```sh
+pnpm content:puzzles -- lichess_db_puzzle.csv --last-modified "2026-10-02T08:51:45Z" \
+  --engine ./stockfish/stockfish-linux-x86-64-universal
+```
+
+The selection alone takes about half a minute. The verification searches every user and defensive
+ply at depth 18, about an hour on a laptop; `--workers` caps the number of single-threaded engines
+(the default is one per logical CPU). The run is resumable through `.cache/verify-lines.jsonl`,
+which holds the raw first two lines of every position and is gitignored; delete it to analyse
+again. Two runs from the same export and the same binary produce the same bytes, including the
+gzip header: the cache changes the time, never the result.
 
 Then check that the app still builds and commit `content/` with the script change, so the two never
 drift apart:

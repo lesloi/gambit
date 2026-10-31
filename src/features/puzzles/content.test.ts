@@ -16,6 +16,7 @@ const puzzles: Puzzle[] = [
     solution: ['a1a8'],
     themes: ['backRankMate', 'mateIn1'],
     rating: 900,
+    fullLine: true,
   },
   {
     id: 'fork-in-two',
@@ -23,6 +24,7 @@ const puzzles: Puzzle[] = [
     solution: ['d5d8', 'a8d8', 'd1d8'],
     themes: ['fork', 'sacrifice'],
     rating: 1250,
+    fullLine: true,
   },
   {
     id: 'fork-in-three',
@@ -30,6 +32,7 @@ const puzzles: Puzzle[] = [
     solution: ['d5d8', 'a8d8', 'd1d8', 'g8f8', 'd8f8'],
     themes: ['fork'],
     rating: 1500,
+    fullLine: true,
   },
   {
     id: 'pin-long',
@@ -37,6 +40,7 @@ const puzzles: Puzzle[] = [
     solution: ['d5d8', 'a8d8', 'd1d8', 'g8f8', 'd8f8', 'f7f6', 'f8f6'],
     themes: ['pin'],
     rating: 1650,
+    fullLine: true,
   },
   {
     id: 'pin-longest',
@@ -44,6 +48,7 @@ const puzzles: Puzzle[] = [
     solution: ['d5d8', 'a8d8', 'd1d8', 'g8f8', 'd8f8', 'f7f6', 'f8f6', 'h7h6', 'f6h6'],
     themes: ['pin'],
     rating: 2199,
+    fullLine: true,
   },
 ];
 
@@ -77,6 +82,7 @@ describe('puzzle content', () => {
       JSON.stringify(puzzles[0]),
       '{not json',
       JSON.stringify({ id: 'no-fen', solution: ['a1a8'], themes: [], rating: 900 }),
+      JSON.stringify({ ...puzzles[0], fullLine: undefined }),
       JSON.stringify({ ...puzzles[1], solution: [] }),
       JSON.stringify(puzzles[1]),
       '',

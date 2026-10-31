@@ -1,0 +1,6 @@
+# Stockfish 19, depth 18, MultiPV 2, Threads 1, Hash 16; recorded 2026-10-31 from the Lichess export of 2026-10-02
+# puzzle NNm2M
+fen 3RR3/6k1/3p1pp1/5rP1/2p2PK1/1r6/8/8 w - - 0 46
+info depth 18 seldepth 2 multipv 1 score mate 1 nodes 630 nps 630000 hashfull 0 tbhits 0 time 1 pv d8d7
+info depth 18 seldepth 2 multipv 2 score mate 1 nodes 630 nps 630000 hashfull 0 tbhits 0 time 1 pv e8e7
+bestmove d8d7

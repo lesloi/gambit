@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "source": {
     "name": "Lichess puzzle database",
     "url": "https://database.lichess.org/lichess_db_puzzle.csv.zst",
@@ -18,6 +18,36 @@
     "target": 12000,
     "bandSize": 100,
     "grid": "one bucket per motif and rating band, equal shares, best first"
+  },
+  "verification": {
+    "engine": {
+      "name": "Stockfish",
+      "version": "19",
+      "source": "https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-linux-x86-64-universal.tar.gz",
+      "sha256": "0f83d24cc46d2c66c60f16001af5444873bc112b7d028594513426894c12da19",
+      "bytes": 103153472
+    },
+    "search": {
+      "depth": 18,
+      "multiPv": 2,
+      "threads": 1,
+      "hashMb": 16,
+      "clearHash": true
+    },
+    "margins": {
+      "userCp": 100,
+      "defenceCp": 100
+    },
+    "counts": {
+      "positions": 46773,
+      "rounds": 5,
+      "rejected": {
+        "not-best": 102,
+        "not-clear": 284
+      },
+      "fullLine": 6996,
+      "notFullLine": 5004
+    }
   },
   "counts": {
     "rows": 6157341,
@@ -38,13 +68,13 @@
       "backRankMate": 207,
       "balestraMate": 197,
       "bishopEndgame": 210,
-      "blindSwineMate": 202,
+      "blindSwineMate": 205,
       "bodenMate": 188,
       "capturingDefender": 209,
       "castling": 125,
       "clearance": 210,
       "collinearMove": 196,
-      "cornerMate": 203,
+      "cornerMate": 205,
       "defensiveMove": 210,
       "deflection": 210,
       "discoveredAttack": 210,
@@ -52,7 +82,7 @@
       "doubleBishopMate": 174,
       "doubleCheck": 210,
       "dovetailMate": 204,
-      "enPassant": 162,
+      "enPassant": 154,
       "epauletteMate": 205,
       "exposedKing": 210,
       "fork": 210,
@@ -67,8 +97,8 @@
       "mateIn2": 210,
       "mateIn3": 210,
       "mateIn4": 209,
-      "mateIn5": 177,
-      "morphysMate": 201,
+      "mateIn5": 176,
+      "morphysMate": 203,
       "operaMate": 206,
       "pawnEndgame": 210,
       "pillsburysMate": 206,
@@ -82,9 +112,9 @@
       "sacrifice": 210,
       "skewer": 210,
       "smotheredMate": 197,
-      "swallowstailMate": 203,
+      "swallowstailMate": 204,
       "trappedPiece": 209,
-      "triangleMate": 204,
+      "triangleMate": 205,
       "underPromotion": 192,
       "vukovicMate": 198,
       "xRayAttack": 208,
@@ -92,27 +122,27 @@
     },
     "bands": {
       "800": 821,
-      "900": 843,
-      "1000": 853,
-      "1100": 862,
-      "1200": 862,
-      "1300": 875,
-      "1400": 872,
-      "1500": 870,
-      "1600": 870,
+      "900": 841,
+      "1000": 852,
+      "1100": 856,
+      "1200": 860,
+      "1300": 877,
+      "1400": 875,
+      "1500": 874,
+      "1600": 873,
       "1700": 867,
       "1800": 860,
       "1900": 862,
-      "2000": 843,
+      "2000": 842,
       "2100": 840
     }
   },
   "files": {
     "puzzles.jsonl.gz": {
-      "sha256": "db2fd73ce2d11eee958c3a2424d10f4b14d2bec069bb114e4647eba63803a5a5",
-      "bytes": 568873,
-      "jsonlSha256": "e6e3804dc17d3cf945e01c8473252334aee2bccfcb8de89f9ee871bb291390f1",
-      "jsonlBytes": 2061195
+      "sha256": "c37811d62cc9e9ce7548c5460908f173a63c38ecb62aef77555f9f0f8d11b28a",
+      "bytes": 580625,
+      "jsonlSha256": "fab9b4197860446ffb7c0e4b1ff139c2a17ae96c0da4c6dfe6729e59c7e58517",
+      "jsonlBytes": 2256740
     }
   },
   "tools": {

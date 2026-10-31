@@ -60,14 +60,15 @@ export function selectPuzzles(puzzles: readonly Puzzle[], filters: PuzzleFilters
 
 function toPuzzle(entry: unknown): Puzzle | null {
   if (typeof entry !== 'object' || entry === null) return null;
-  const { id, fen, solution, themes, rating } = entry as Record<string, unknown>;
+  const { id, fen, solution, themes, rating, fullLine } = entry as Record<string, unknown>;
   if (typeof id !== 'string' || id === '') return null;
   if (typeof fen !== 'string' || fen === '') return null;
   if (!Array.isArray(solution) || solution.length === 0) return null;
   if (!solution.every((move) => typeof move === 'string')) return null;
   if (!Array.isArray(themes) || !themes.every((theme) => typeof theme === 'string')) return null;
   if (typeof rating !== 'number' || !Number.isFinite(rating)) return null;
-  return { id, fen, solution, themes, rating };
+  if (typeof fullLine !== 'boolean') return null;
+  return { id, fen, solution, themes, rating, fullLine };
 }
 
 /**

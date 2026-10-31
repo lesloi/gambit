@@ -176,8 +176,8 @@ function countBy(entries: readonly Entry[], key: (entry: Entry) => string): Reco
 /** One JSON object per line, in the shape of the app's `Puzzle`. */
 export function serializePuzzles(puzzles: readonly Puzzle[]): string {
   return puzzles
-    .map(({ id, fen, solution, rating, themes }) =>
-      JSON.stringify({ id, fen, solution, rating, themes }),
+    .map(({ id, fen, solution, rating, themes, fullLine }) =>
+      JSON.stringify({ id, fen, solution, rating, themes, fullLine }),
     )
     .join('\n')
     .concat(puzzles.length > 0 ? '\n' : '');
