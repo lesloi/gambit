@@ -21,8 +21,20 @@ export const fr = {
     playHint: 'Une partie contre Stockfish, puis la relecture des gaffes.',
     comingSoon: 'Bientôt',
     privacy: 'Sans compte, sans pisteur. Tout reste dans ton navigateur.',
-    license: 'AGPL-3.0',
+    license: 'AGPL-3.0-or-later',
+    credits: 'Crédits',
     source: 'Code source',
+  },
+  credits: {
+    title: 'Crédits',
+    back: 'Retour',
+    intro: 'Gambit s’appuie sur le travail d’autres personnes :',
+    licence: 'Licence',
+    codeLicence: 'Le code de Gambit est sous AGPL-3.0-or-later.',
+    items: {
+      pieces: 'Les pièces de l’échiquier, dessinées par Alexis Luengas.',
+      puzzles: 'Les positions des puzzles, filtrées depuis la base publique de Lichess.',
+    },
   },
   modes: {
     puzzles: {
