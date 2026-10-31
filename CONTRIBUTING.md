@@ -19,6 +19,8 @@ Issues and pull requests are welcome on [GitHub](https://github.com/lesloi/gambi
 | `npm run coverage` | Unit tests with coverage                      |
 | `npm run format`   | Rewrite every file with Prettier              |
 
+`npm run content:puzzles` regenerates the puzzle subset; see [content/README.md](./content/README.md).
+
 ## Privacy-first rules
 
 A pull request that breaks these rules is not merged. If a feature seems to need an exception,
