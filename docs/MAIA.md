@@ -55,10 +55,10 @@ limited, so vendoring it means trusting a checksum and a link that upstream does
 ### Maia-3
 
 The current generation, a Chessformer: an encoder over 64 square tokens, a 4352-move policy head
-over the move space, and a win/draw/loss head. The rating is a continuous input from 600 to 2600,
-trained over 20 bins of 100 plus one below and one above; it also reads the eight previous
-positions, so it distinguishes a move played in a fresh position from the same move after a long
-manoeuvre.
+over the move space, and a win/draw/loss head. The rating is a continuous input, interpolated
+between two learned embeddings from 0 to 5000; the model was trained on 20 bins of 100 from 600 to
+2600 plus one below and one above. It also reads the eight previous positions, so it distinguishes a
+move played in a fresh position from the same move after a long manoeuvre.
 
 The 79M model reaches 57.1% move-matching accuracy, against 55.9% for the previous state of the
 art, a 355M model with search. Upstream recommends the 5M for a first try on a CPU, and the 3M is
