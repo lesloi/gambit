@@ -1,16 +1,18 @@
 import { fr } from '../../i18n/fr';
 import { BoardPreview } from '../../ui/BoardPreview';
+import { SkipLink } from '../../ui/SkipLink';
 import { MODES } from './modes';
 
-export function HomePage({ onStartPuzzle }: { onStartPuzzle: () => void }) {
+export function HomePage({
+  onStartPuzzle,
+  onShowCredits,
+}: {
+  onStartPuzzle: () => void;
+  onShowCredits: () => void;
+}) {
   return (
     <div className="min-h-dvh bg-paper">
-      <a
-        href="#main"
-        className="focus:bg-paper-raised focus:absolute focus:top-4 focus:left-4 focus:z-10 focus:rounded-md focus:px-3 focus:py-2 focus:shadow sr-only"
-      >
-        {fr.home.skipToContent}
-      </a>
+      <SkipLink />
 
       <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-5 pt-8 pb-8 sm:px-8">
         <header>
@@ -125,6 +127,14 @@ export function HomePage({ onStartPuzzle }: { onStartPuzzle: () => void }) {
           <span>{fr.home.privacy}</span>
           <span aria-hidden="true">·</span>
           <span>{fr.home.license}</span>
+          <span aria-hidden="true">·</span>
+          <button
+            type="button"
+            onClick={onShowCredits}
+            className="decoration-line hover:text-ink underline underline-offset-2"
+          >
+            {fr.home.credits}
+          </button>
           <a
             className="decoration-line hover:text-ink ml-auto underline underline-offset-2"
             href="https://github.com/lesloi/gambit"
