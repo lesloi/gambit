@@ -3,19 +3,19 @@
 A personal chess training app: puzzles, tactical motifs, endgames, openings and games against
 the engine. Free of accounts and tracking, installable, and usable offline.
 
-**Status: foundation.** The deployment pipeline is in place and the home screen is served from
-the cluster. The training modes are being built, in the order of the issues.
+**Status: foundation.** The deployment pipeline is in place and the puzzle trainer runs on the
+committed Lichess subset. The other training modes are being built, in the order of the issues.
 
 ## Features
 
 | Mode     | What it does                                                          | State   |
 | -------- | --------------------------------------------------------------------- | ------- |
-| Puzzles  | Real positions from the Lichess puzzle set, by theme and difficulty   | Planned |
+| Puzzles  | Real positions from the Lichess puzzle set, by length and difficulty  | Ready   |
 | Endgames | Classic positions, playable against the engine                        | Planned |
 | Openings | A curated repertoire for both colours, revised with spaced repetition | Planned |
 | Games    | Play Stockfish at a chosen level, then review the blunders            | Planned |
 
-The home screen, the installable app and the offline shell are available now.
+The home screen, the installable app, the offline shell and the puzzle trainer are available now.
 
 ## How it works
 
@@ -24,8 +24,8 @@ The home screen, the installable app and the offline shell are available now.
 - **Content ships with the app**: a filtered subset of the public Lichess puzzle database, the
   opening lines and the endgame positions.
 - **Stockfish runs in the browser**, as a WebAssembly worker, so no move leaves the device.
-- **No network request at runtime**: the content is baked into the build and the
-  Content-Security-Policy allows no external host.
+- **No request to a third party at runtime**: the content is baked into the build, read from the
+  app's own origin, and the Content-Security-Policy allows no external host.
 
 ## Getting started
 

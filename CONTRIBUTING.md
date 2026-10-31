@@ -28,9 +28,9 @@ open an issue before implementing it.
 
 - The progression, the games and the settings stay on the device. There is no account, no server
   and no analytics.
-- The app makes **no network request at runtime**: no analytics, no CDN, no engine call, no
-  tablebase. A feature that would send anything needs the maintainer's approval, and the CSP must
-  name the host.
+- The app makes **no request to a third party at runtime**: no analytics, no CDN, no engine call,
+  no tablebase. A feature that would send anything needs the maintainer's approval, and the CSP
+  must name the host.
 - Self-host every script, stylesheet and font. No CDN.
 - Serve every page with `Referrer-Policy: no-referrer`; the header is in `nginx.conf`.
 - Ask nothing of the user that the feature does not need: no geolocation, no notification, no

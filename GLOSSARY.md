@@ -15,7 +15,7 @@ It is computed from the journal, never stored as a list.
 _Avoid_: Workout, daily challenge, queue
 
 **Mode** _(mode)_:
-One of the five activities: puzzles, motifs, endgames, openings, games. A card belongs to one mode.
+One of the four activities: puzzles, endgames, openings, games. A card belongs to one mode.
 _Avoid_: Category, section, tab
 
 **Review** _(révision)_:
@@ -52,8 +52,8 @@ rating, themes and the moves of the solution.
 _Avoid_: Problem, exercise, position
 
 **Motif** _(motif)_:
-A tactical pattern shared by many puzzles, such as a pin, a fork or a discovered attack. Puzzles
-can be filtered by motif, and the motif of a puzzle is shown after the solve.
+A tactical pattern shared by many puzzles, such as a pin, a fork or a discovered attack. The motif
+of a puzzle is shown after the solve, when it teaches something.
 _Avoid_: Pattern, theme, tactic type
 
 **Endgame** _(finale)_:

@@ -39,6 +39,12 @@ function moveFromUci(chess: Chess, uci: string): Move {
   });
 }
 
+function givesMate(fen: string, uci: string): boolean {
+  const chess = new Chess(fen);
+  moveFromUci(chess, uci);
+  return chess.isCheckmate();
+}
+
 export function startPuzzle(puzzle: Puzzle): PuzzleState {
   return {
     puzzle,
@@ -70,6 +76,26 @@ export function playMove(
 
   const played = `${from}${to}${move.promotion ?? ''}`;
   if (played !== state.expected) {
+    // The export allows several mates where the answer is mate in one, so any mate solves. The
+    // scope stays there on purpose: the stored line proves nothing about a longer answer.
+    if (
+      state.index === 0 &&
+      state.puzzle.solution.length === 1 &&
+      chess.isCheckmate() &&
+      givesMate(state.fen, state.expected)
+    ) {
+      return {
+        ...state,
+        outcome: 'solved',
+        fen: chess.fen(),
+        index: state.puzzle.solution.length,
+        lastMove: [move.from, move.to],
+        expected: null,
+        wrongMove: null,
+        bestSan: null,
+      };
+    }
+
     const best = new Chess(state.fen);
     const bestMove = moveFromUci(best, state.expected);
     return {

@@ -20,5 +20,9 @@ The puzzles in [`content/puzzles.jsonl.gz`](./content/puzzles.jsonl.gz) come fro
 filtered, re-shaped and compressed by [`scripts/build-puzzles.ts`](./scripts/build-puzzles.ts);
 `content/manifest.json` records the export it was taken from and its checksum.
 
+The French labels of the puzzle motifs follow
+[lila's French translation](https://github.com/lichess-org/lila/tree/master/translation) of the
+puzzle themes.
+
 The app is licensed under the [AGPL-3.0-or-later](./LICENSE), which covers the code but neither the
 piece set nor the puzzle data.

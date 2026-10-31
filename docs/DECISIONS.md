@@ -15,9 +15,10 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
 - **Mobile first.** Training happens on a phone, often in a short break: the layout, the board and
   the touch targets are designed at 360 px, then widened. The desktop layout adds room, never
   features that the phone lacks.
-- **Four modes, not five: a motif is a filter.** The puzzles already carry their themes; a separate
-  mode would add a route, a card and a content pipeline for the same data. Puzzles can be filtered
-  by motif, and the motif of a puzzle is shown after the solve, when it teaches something.
+- **Four modes, not five: a motif is not a mode.** The puzzles already carry their themes; a
+  separate mode would add a route, a card and a content pipeline for the same data. The motif is
+  shown after the solve, when it teaches something; the screen narrows by length and by rating
+  instead, the two measures that say what an exercise costs and how hard other players found it.
 - **Calculation is trained by committing the whole line.** A normal puzzle reveals the opponent's
   reply after each move, so it trains recognition, not depth. An option of the puzzle mode lets the
   user enter both sides' moves with no feedback, then checks the sequence and stops at the first
@@ -39,8 +40,10 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
 - **A game has no takeback; a hint marks it as assisted.** Takeback erases the blunder the
   analysis exists to show. A hint is allowed, but the game is marked as assisted and stays out of
   the blunder list.
-- **The app calls nothing at runtime.** No tablebase, no opening explorer, no CDN, no font
-  service: every byte it shows comes from the image, and the CSP allows `'self'` only. A proxy for
+- **The app calls no third party at runtime.** No tablebase, no opening explorer, no CDN, no font
+  service: every byte it shows comes from the image, and the CSP allows `'self'` only. Reading
+  that image is not a call out: the puzzle archive is fetched from the app's own origin and
+  decompressed in the browser, so the 2 MB of JSONL stay out of the JS bundle. A proxy for
   a third party would hide the user's IP but adds a request path and a cache to operate; a direct
   call would put a third party in the privacy policy. Neither buys a feature the content cannot
   ship. Revisit only for a mode that cannot exist offline.
