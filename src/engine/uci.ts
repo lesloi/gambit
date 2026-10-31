@@ -3,6 +3,8 @@ export interface Engine {
   bestMove(fen: string): Promise<string | null>;
   /** Loads the engine and waits until it accepts a position. */
   prepare(): Promise<void>;
+  /** Stops a search in flight, so it cannot hold up the next command. */
+  cancel(): void;
   stop(): void;
 }
 
@@ -72,6 +74,12 @@ export class UciEngine implements Engine {
       const [move] = line.slice('bestmove '.length).trim().split(/\s+/);
       return !move || move === '(none)' ? null : move;
     });
+  }
+
+  cancel(): void {
+    if (this.stopped) return;
+    // `stop` at idle is ignored; during a search it makes the engine answer `bestmove` at once.
+    this.transport.post('stop');
   }
 
   stop(): void {

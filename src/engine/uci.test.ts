@@ -73,6 +73,15 @@ describe('UCI engine', () => {
     );
   });
 
+  it('reads a best move that arrives with other lines in the same message', async () => {
+    const transport = new FakeTransport((command) =>
+      command.startsWith('go ') ? ['info depth 12\nbestmove e2e4'] : stockfish(command),
+    );
+    const engine = new UciEngine(transport);
+
+    await expect(engine.bestMove(START)).resolves.toBe('e2e4');
+  });
+
   it('keeps only the move when the engine also names a ponder move', async () => {
     const transport = new FakeTransport((command) =>
       command.startsWith('go ') ? ['bestmove e2e4 ponder e7e5'] : stockfish(command),
@@ -113,6 +122,16 @@ describe('UCI engine', () => {
 
     await expect(engine.bestMove(START)).rejects.toThrow('worker died');
     engine.stop();
+  });
+
+  it('stops a search without closing the worker', () => {
+    const transport = new FakeTransport();
+    const engine = new UciEngine(transport);
+
+    engine.cancel();
+
+    expect(transport.commands).toEqual(['stop']);
+    expect(transport.closed).toHaveLength(0);
   });
 
   it('closes the worker and refuses new moves once stopped', async () => {

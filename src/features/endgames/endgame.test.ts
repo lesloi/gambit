@@ -82,6 +82,22 @@ describe('endgame play', () => {
     expect(state.end).toEqual({ kind: 'threefold' });
   });
 
+  it('keeps playing while a position has only appeared twice', () => {
+    let state = startEndgame({ ...kqk, id: 'twice', fen: 'r3k3/8/8/8/8/8/8/R3K3 w - - 0 1' });
+
+    for (const [from, to] of [
+      ['a1', 'a2'],
+      ['e8', 'd8'],
+      ['a2', 'a1'],
+      ['d8', 'e8'],
+    ] as const) {
+      state = playEndgameMove(state, from, to);
+    }
+
+    expect(state.outcome).toBe('playing');
+    expect(state.end).toBeNull();
+  });
+
   it('detects when the material can no longer mate', () => {
     const fen = '8/8/8/4k3/8/8/4K3/8 w - - 0 1';
 

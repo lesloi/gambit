@@ -39,7 +39,7 @@ export function RatingButtons({
           aria-pressed={rating === value}
           disabled={rating !== null}
           onClick={() => onRate(value)}
-          className={`rounded-lg border px-1 py-2 text-[11px] transition-colors ${
+          className={`min-h-11 rounded-lg border px-1 py-2 text-[11px] transition-colors ${
             rating === value ? 'border-ok text-ink font-semibold' : 'border-line text-ink-muted'
           }`}
         >

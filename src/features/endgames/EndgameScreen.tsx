@@ -170,6 +170,7 @@ function EndgamePlayer({ endgame, onOther }: { endgame: Endgame; onOther: () => 
 
   const restart = () => {
     generation.current += 1;
+    engine.current?.cancel();
     setState(restartEndgame(state));
     setThinking(false);
     setRating(null);
@@ -306,7 +307,7 @@ function EndgamePlayer({ endgame, onOther }: { endgame: Endgame; onOther: () => 
           <button
             type="button"
             onClick={restart}
-            className="text-ink-muted hover:text-ink shrink-0 rounded-full px-3 py-2 text-xs"
+            className="text-ink-muted hover:text-ink min-h-11 shrink-0 rounded-full px-3 text-xs"
           >
             {fr.endgame.restart}
           </button>
@@ -322,7 +323,7 @@ function EndgamePlayer({ endgame, onOther }: { endgame: Endgame; onOther: () => 
           <button
             type="button"
             onClick={retryEngine}
-            className="border-bad/30 shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold"
+            className="border-bad/30 min-h-11 shrink-0 rounded-full border px-3 text-xs font-semibold"
           >
             {fr.endgame.engineRetry}
           </button>
