@@ -43,6 +43,23 @@ temporary files on a writable `/tmp`; the rest of the filesystem can stay read-o
 of the commit and `latest` on `main`, after `Check` and `Web` have passed. Nothing is published
 from a pull request.
 
+## PWA
+
+The build is installable and works offline once it has run once online: the service worker
+precaches the shell and the puzzle archive.
+
+- **Android (Chrome):** the install prompt appears after a first visit; otherwise the browser menu
+  has "Installer l'application".
+- **iOS (Safari):** Share, then "Sur l'écran d'accueil". The app opens standalone with the cream
+  theme.
+- **Offline:** after a visit, turn on airplane mode and reopen the app; a puzzle loads from the
+  cache.
+- **Update:** a new deploy shows a banner when the app comes back to the foreground. "Recharger"
+  applies it immediately; "Plus tard" applies it at the next launch.
+
+The first launch needs the network. A browser may evict the cache under storage pressure, and the
+app then falls back to the network.
+
 ## Content
 
 The puzzle subset, the opening lines and the endgame positions are shipped in the image, and the
