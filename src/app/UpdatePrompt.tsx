@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { fr } from '../i18n/fr';
 
@@ -8,28 +8,40 @@ import { fr } from '../i18n/fr';
  * and the resulting controller change is what reloads it.
  */
 export function UpdatePrompt() {
+  const registration = useRef<ServiceWorkerRegistration | null>(null);
   const { needRefresh, updateServiceWorker } = useRegisterSW({
     immediate: true,
-    onRegisteredSW(_url, registration) {
-      if (!registration) return;
-      // No timer: an idle app makes no request. Returning to the app is when a deploy matters.
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-          void registration.update().catch(() => undefined);
-        }
-      });
+    onRegisteredSW(_url, value) {
+      registration.current = value ?? null;
     },
   });
   const [open, setOpen] = needRefresh;
   const [updating, setUpdating] = useState(false);
 
+  // No timer: an idle app makes no request. Returning to the app is when a deploy matters.
+  useEffect(() => {
+    const check = () => {
+      if (document.visibilityState === 'visible') {
+        void registration.current?.update().catch(() => undefined);
+      }
+    };
+    document.addEventListener('visibilitychange', check);
+    return () => document.removeEventListener('visibilitychange', check);
+  }, []);
+
   const reload = () => {
     setUpdating(true);
     // The wrapper only reloads when it recognised an update, which misses a deploy during the
     // first session. The controller change fires either way.
-    navigator.serviceWorker?.addEventListener('controllerchange', () => window.location.reload(), {
-      once: true,
-    });
+    const fallback = window.setTimeout(() => window.location.reload(), 5000);
+    navigator.serviceWorker?.addEventListener(
+      'controllerchange',
+      () => {
+        window.clearTimeout(fallback);
+        window.location.reload();
+      },
+      { once: true },
+    );
     void updateServiceWorker(true);
   };
 
