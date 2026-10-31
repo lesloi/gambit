@@ -1,13 +1,14 @@
 import { Chess } from 'chess.js';
 import { ChevronLeft } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Rating as FsrsRating, type Grade } from 'ts-fsrs';
 import { fr } from '../../i18n/fr';
+import { sideToMove } from '../../lib/chess';
 import { ChessBoard } from '../../ui/ChessBoard';
+import { PromotionDialog, promotionAnchor } from '../../ui/PromotionDialog';
+import { GRADE, RatingButtons, type Rating } from '../../ui/RatingButtons';
 import { loadPuzzles, puzzleLength, selectPuzzles, type PuzzleFilters } from './content';
 import { readPuzzleFilters, savePuzzleFilters } from './filterStorage';
 import { lengthLabel, themeLabel } from './labels';
-import { PromotionDialog, type PromotionAnchor } from './PromotionDialog';
 import {
   legalDests,
   playMove,
@@ -21,21 +22,6 @@ import {
 import { PuzzleSetup } from './PuzzleSetup';
 import { missedAttemptRating, recordPuzzleReview } from './record';
 
-const RATINGS = ['again', 'hard', 'good', 'easy'] as const;
-type Rating = (typeof RATINGS)[number];
-const GRADE: Record<Rating, Grade> = {
-  again: FsrsRating.Again,
-  hard: FsrsRating.Hard,
-  good: FsrsRating.Good,
-  easy: FsrsRating.Easy,
-};
-const RATING_OPACITY: Record<Rating, string> = {
-  again: 'bg-accent/40',
-  hard: 'bg-accent/60',
-  good: 'bg-accent/80',
-  easy: 'bg-accent',
-};
-
 type LoadState =
   { status: 'loading' } | { status: 'ready'; puzzles: readonly Puzzle[] } | { status: 'failed' };
 
@@ -45,31 +31,6 @@ interface PendingPromotion {
   from: string;
   to: string;
   options: PromotionPiece[];
-}
-
-/** The viewport centre of a square, for the board as it is oriented on screen. */
-function promotionAnchor(
-  host: HTMLElement | null,
-  square: string,
-  orientation: 'white' | 'black',
-): PromotionAnchor | null {
-  if (!host) return null;
-
-  const bounds = host.getBoundingClientRect();
-  const size = bounds.width / 8;
-  const file = square.charCodeAt(0) - 97;
-  const rank = Number(square[1]);
-  const column = orientation === 'white' ? file : 7 - file;
-  const row = orientation === 'white' ? 8 - rank : rank - 1;
-  return {
-    x: bounds.left + (column + 0.5) * size,
-    y: bounds.top + (row + 0.5) * size,
-    size,
-  };
-}
-
-function sideToMove(fen: string): 'white' | 'black' {
-  return new Chess(fen).turn() === 'w' ? 'white' : 'black';
 }
 
 /** A fresh order per start, so a second run of the same choices is not the same sequence. */
@@ -333,24 +294,8 @@ function PuzzlePlayer({ puzzle, onNext }: { puzzle: Puzzle; onNext: () => void }
               <p className="mt-1 text-xs opacity-80">{puzzle.themes.map(themeLabel).join(' · ')}</p>
             </div>
 
-            <div className="mt-4 grid grid-cols-4 gap-1.5">
-              {RATINGS.map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={rating === value}
-                  disabled={rating !== null}
-                  onClick={() => void rate(value)}
-                  className={`rounded-lg border px-1 py-2 text-[11px] transition-colors ${
-                    rating === value
-                      ? 'border-ok text-ink font-semibold'
-                      : 'border-line text-ink-muted'
-                  }`}
-                >
-                  <span className={`mb-1.5 block h-0.5 rounded-full ${RATING_OPACITY[value]}`} />
-                  {fr.puzzle.rating[value]}
-                </button>
-              ))}
+            <div className="mt-4">
+              <RatingButtons rating={rating} onRate={(value) => void rate(value)} />
             </div>
 
             <button

@@ -47,12 +47,13 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   analysis exists to show. A hint is allowed, but the game is marked as assisted and stays out of
   the blunder list.
 - **The app calls no third party at runtime.** No tablebase, no opening explorer, no CDN, no font
-  service: every byte it shows comes from the image, and the CSP allows `'self'` only. Reading
-  that image is not a call out: the puzzle archive is fetched from the app's own origin and
-  decompressed in the browser, so the 2 MB of JSONL stay out of the JS bundle. A proxy for
-  a third party would hide the user's IP but adds a request path and a cache to operate; a direct
-  call would put a third party in the privacy policy. Neither buys a feature the content cannot
-  ship. Revisit only for a mode that cannot exist offline.
+  service: every byte it shows comes from the image, and the CSP allows `'self'` only, plus
+  `'wasm-unsafe-eval'` so the bundled Stockfish can compile. Reading that image is not a call out:
+  the puzzle archive is fetched from the app's own origin and decompressed in the browser, so the
+  2 MB of JSONL stay out of the JS bundle. A proxy for a third party would hide the user's IP but
+  adds a request path and a cache to operate; a direct call would put a third party in the privacy
+  policy. Neither buys a feature the content cannot ship. Revisit only for a mode that cannot exist
+  offline.
 
 ## Content
 

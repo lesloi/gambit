@@ -11,11 +11,12 @@ committed Lichess subset. The other training modes are being built, in the order
 | Mode     | What it does                                                          | State   |
 | -------- | --------------------------------------------------------------------- | ------- |
 | Puzzles  | Real positions from the Lichess puzzle set, by length and difficulty  | Ready   |
-| Endgames | Classic positions, playable against the engine                        | Planned |
+| Endgames | Classic positions, playable against the engine                        | Ready   |
 | Openings | A curated repertoire for both colours, revised with spaced repetition | Planned |
 | Games    | Play Stockfish at a chosen level, then review the blunders            | Planned |
 
-The home screen, the installable app, the offline shell and the puzzle trainer are available now.
+The home screen, the installable app, the offline shell, the puzzle trainer and the endgame
+trainer are available now.
 
 ## How it works
 

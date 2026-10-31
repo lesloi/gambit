@@ -5,9 +5,11 @@ import { MODES } from './modes';
 
 export function HomePage({
   onStartPuzzle,
+  onStartEndgame,
   onShowCredits,
 }: {
   onStartPuzzle: () => void;
+  onStartEndgame: () => void;
   onShowCredits: () => void;
 }) {
   return (
@@ -53,7 +55,13 @@ export function HomePage({
                   <li key={id} data-testid={`mode-${id}`}>
                     <button
                       type="button"
-                      onClick={id === 'puzzles' ? onStartPuzzle : undefined}
+                      onClick={
+                        id === 'puzzles'
+                          ? onStartPuzzle
+                          : id === 'endgames'
+                            ? onStartEndgame
+                            : undefined
+                      }
                       disabled={!available}
                       className="border-line bg-paper-raised hover:border-accent/40 flex h-full w-full flex-col gap-3 rounded-xl border p-4 text-left transition-colors disabled:cursor-default disabled:opacity-100"
                     >
