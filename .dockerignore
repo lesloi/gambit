@@ -11,3 +11,6 @@ docs
 e2e
 scripts
 **/*.md
+# The Dockerfile copies the whole context, so what must not enter the build stage is named here.
+.env*
+*.local
