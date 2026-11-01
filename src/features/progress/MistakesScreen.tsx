@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { database, type Review } from '../../db/db';
 import { fr } from '../../i18n/fr';
 import { PuzzlePlayer } from '../puzzles/PuzzlePlayer';
-import { loadPuzzles } from '../puzzles/content';
+import { loadPuzzleArchive } from '../puzzles/content';
 import { themeLabel } from '../puzzles/labels';
 import type { Puzzle } from '../puzzles/puzzle';
 import { puzzleMistakes } from './mistakes';
@@ -37,7 +37,7 @@ export function MistakesScreen({ onExit }: { onExit: () => void }) {
 
   useEffect(() => {
     let active = true;
-    loadPuzzles().then(
+    loadPuzzleArchive().then(
       (loaded) => {
         if (!active) return;
         setPuzzles(loaded);

@@ -30,7 +30,15 @@ interface PendingPromotion {
  * play through this component, so a replay behaves exactly like a fresh attempt. The caller keys
  * it by puzzle, since nothing here resets itself when the puzzle changes.
  */
-export function PuzzlePlayer({ puzzle, onNext }: { puzzle: Puzzle; onNext: () => void }) {
+export function PuzzlePlayer({
+  puzzle,
+  onNext,
+  nextLabel = fr.puzzle.next,
+}: {
+  puzzle: Puzzle;
+  onNext: () => void;
+  nextLabel?: string;
+}) {
   const [state, setState] = useState(() => startPuzzle(puzzle));
   const [hint, setHint] = useState(false);
   const [rating, setRating] = useState<Rating | null>(null);
@@ -173,14 +181,14 @@ export function PuzzlePlayer({ puzzle, onNext }: { puzzle: Puzzle; onNext: () =>
             <button
               type="button"
               onClick={() => setHint(true)}
-              className="text-ink-muted hover:text-ink rounded-full px-3 py-2 text-xs"
+              className="text-ink-muted hover:text-ink min-h-11 rounded-full px-3 text-xs"
             >
               {fr.puzzle.hint}
             </button>
             <button
               type="button"
               onClick={reveal}
-              className="text-ink-muted hover:text-ink rounded-full px-3 py-2 text-xs"
+              className="text-ink-muted hover:text-ink min-h-11 rounded-full px-3 text-xs"
             >
               {fr.puzzle.showSolution}
             </button>
@@ -212,7 +220,7 @@ export function PuzzlePlayer({ puzzle, onNext }: { puzzle: Puzzle; onNext: () =>
               onClick={proceed}
               className="bg-accent mt-3 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
             >
-              {fr.puzzle.next}
+              {nextLabel}
             </button>
           </>
         ) : null}
@@ -267,7 +275,7 @@ export function PuzzlePlayer({ puzzle, onNext }: { puzzle: Puzzle; onNext: () =>
                 onClick={proceed}
                 className="border-line text-ink-muted flex-1 rounded-xl border px-4 py-3 text-sm"
               >
-                {fr.puzzle.next}
+                {nextLabel}
               </button>
             </div>
           </>

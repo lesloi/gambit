@@ -4,6 +4,7 @@ import {
   loadPuzzles,
   parsePuzzles,
   puzzleLength,
+  ratingBand,
   selectPuzzles,
   type PuzzleFilters,
 } from './content';
@@ -161,6 +162,35 @@ describe('puzzle content', () => {
     );
 
     await expect(loadPuzzles('/assets/puzzles.jsonl.gz')).resolves.toEqual([puzzles[1]]);
+  });
+});
+
+describe('rating bands', () => {
+  it('maps a rating to the band the picker and the session share', () => {
+    expect(ratingBand(800)).toBe('low');
+    expect(ratingBand(1199)).toBe('low');
+    expect(ratingBand(1200)).toBe('middle');
+    expect(ratingBand(1599)).toBe('middle');
+    expect(ratingBand(1600)).toBe('high');
+    expect(ratingBand(2200)).toBe('high');
+  });
+});
+
+describe('the shared puzzle archive', () => {
+  it('loads once, and retries after a failed load', async () => {
+    vi.resetModules();
+    const { loadPuzzleArchive } = await import('./content');
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue(new Response(`${JSON.stringify(puzzles[0])}\n`));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(loadPuzzleArchive()).rejects.toThrow('offline');
+    await expect(loadPuzzleArchive()).resolves.toEqual([puzzles[0]]);
+    await loadPuzzleArchive();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
 

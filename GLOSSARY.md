@@ -10,8 +10,8 @@ the French word the interface shows.
 ### Training
 
 **Session** _(session du jour)_:
-The set of cards due today, taken in one sitting: puzzles, endgames and opening lines together.
-It is computed from the journal, never stored as a list.
+The cards due today and a few new ones, taken in one sitting: puzzles, endgames and opening lines
+together. It is computed from the journal, never stored as a list.
 _Avoid_: Workout, daily challenge, queue
 
 **Mode** _(mode)_:
@@ -25,8 +25,9 @@ truth of the progression.
 _Avoid_: Attempt, answer, result
 
 **Card** _(fiche)_:
-A schedulable item: a puzzle, an endgame position or an opening line, with its FSRS state. Its
-state is derived from the reviews of that item.
+A schedulable item. For a puzzle, it is a motif at a rating band: a due card serves an unseen
+position of that motif and band, never the same board twice. An endgame position or an opening
+line is a card of its own. Its FSRS state is derived from the reviews of what it served.
 _Avoid_: Item, exercise, question
 
 **Due** _(échéance)_:

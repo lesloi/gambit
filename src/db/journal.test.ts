@@ -3,7 +3,7 @@ import { Rating, type Grade } from 'ts-fsrs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { GambitDatabase } from './db';
 import { SCHEDULER, replayCard } from './fsrs';
-import { appendReview, cardState, cardStates, dueCards } from './journal';
+import { appendReview, cardState, cardStates, dueCards, journalMark } from './journal';
 
 const MINUTE = 60_000;
 const DAY = 86_400_000;
@@ -166,6 +166,25 @@ describe('dueCards', () => {
       ['puzzle:a', 2],
       ['puzzle:b', 2],
     ]);
+  });
+});
+
+describe('journalMark', () => {
+  it('marks the last review written', async () => {
+    expect(journalMark(await database.reviews.toArray())).toBe(0);
+
+    await appendReview(database, {
+      cardId: 'puzzle:demo',
+      rating: Rating.Good,
+      reviewedAt: START,
+    });
+    const last = await appendReview(database, {
+      cardId: 'puzzle:demo',
+      rating: Rating.Good,
+      reviewedAt: START + MINUTE,
+    });
+
+    expect(journalMark(await database.reviews.toArray())).toBe(last);
   });
 });
 

@@ -1,19 +1,105 @@
+import { useEffect, useState } from 'react';
+import { database } from '../../db/db';
+import { journalMark } from '../../db/journal';
 import { fr } from '../../i18n/fr';
 import { BoardPreview } from '../../ui/BoardPreview';
 import { SkipLink } from '../../ui/SkipLink';
+import { loadSessionCatalog } from '../session/catalog';
+import { clearSession, readSession } from '../session/cursor';
+import { dueCountLabel, newCountLabel } from '../session/labels';
+import { planSession } from '../session/plan';
+import {
+  NEW_CARD_CHOICES,
+  readSessionSettings,
+  saveSessionSettings,
+  type SessionSettings,
+} from '../session/settings';
+import { RATING_BANDS, type PuzzleBand } from '../puzzles/content';
 import { MODES } from './modes';
 
+interface Preview {
+  due: number;
+  fresh: number;
+  total: number;
+}
+
 export function HomePage({
+  onStartSession,
   onStartPuzzle,
   onStartEndgame,
   onStartOpening,
   onShowCredits,
 }: {
+  onStartSession: () => void;
   onStartPuzzle: () => void;
   onStartEndgame: () => void;
   onStartOpening: () => void;
   onShowCredits: () => void;
 }) {
+  const [session] = useState(readSession);
+  const [settings, setSettings] = useState(readSessionSettings);
+  const [preview, setPreview] = useState<Preview | null>(null);
+
+  const running = session !== null && session.completedAt === null ? session : null;
+  const completed = session !== null && running === null ? session : null;
+  const fresh = session === null;
+  const nothingToDo = fresh && preview !== null && preview.total === 0;
+
+  useEffect(() => {
+    if (!fresh) return;
+    let active = true;
+
+    Promise.all([loadSessionCatalog(), database.reviews.toArray()]).then(
+      ([catalog, reviews]) => {
+        if (!active) return;
+        const plan = planSession({
+          reviews,
+          catalog,
+          startedAt: Date.now(),
+          lastEntryId: journalMark(reviews),
+          newCount: settings.newCards,
+          band: settings.band,
+        });
+        setPreview({ due: plan.dueCount, fresh: plan.newCount, total: plan.cards.length });
+      },
+      () => {
+        if (active) setPreview(null);
+      },
+    );
+
+    return () => {
+      active = false;
+    };
+  }, [fresh, settings.newCards, settings.band]);
+
+  const changeSettings = (patch: Partial<SessionSettings>) => {
+    const next = { ...settings, ...patch };
+    setSettings(next);
+    saveSessionSettings(next);
+    setPreview(null);
+  };
+
+  const newCards = preview?.fresh ?? settings.newCards;
+  const title = running
+    ? fr.session.resumeTitle
+    : completed
+      ? fr.session.doneTitle
+      : nothingToDo
+        ? fr.session.emptyTitle
+        : fr.session.readyTitle;
+  const body = running
+    ? fr.session.runningBody
+        .replace('{done}', String(running.position))
+        .replace('{total}', String(running.total))
+    : completed
+      ? fr.session.doneBody
+      : nothingToDo
+        ? fr.session.emptyBody
+        : newCards === 0
+          ? fr.session.readyBodyDueOnly
+          : fr.session.readyBody.replace('{new}', newCountLabel(newCards));
+  const action = running ? fr.session.resume : completed ? fr.session.restart : fr.session.start;
+
   return (
     <div className="min-h-dvh bg-paper">
       <SkipLink />
@@ -36,13 +122,80 @@ export function HomePage({
                   {fr.home.sessionTitle}
                 </p>
                 <h2 id="session-title" className="mt-1 font-serif text-xl">
-                  {fr.home.sessionEmptyTitle}
+                  {title}
                 </h2>
-                <p className="text-ink-muted mt-2 text-sm leading-relaxed">
-                  {fr.home.sessionEmptyBody}
-                </p>
+                <p className="text-ink-muted mt-2 text-sm leading-relaxed">{body}</p>
+
+                {fresh && preview !== null ? (
+                  <p className="text-ink-muted mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                    <span>{dueCountLabel(preview.due)}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{newCountLabel(preview.fresh)}</span>
+                  </p>
+                ) : null}
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={onStartSession}
+              disabled={nothingToDo}
+              className="bg-accent mt-4 min-h-11 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition-opacity disabled:cursor-default disabled:opacity-50"
+            >
+              {action}
+            </button>
+
+            {running !== null ? (
+              <button
+                type="button"
+                onClick={() => {
+                  clearSession();
+                  onStartSession();
+                }}
+                className="text-ink-muted mt-2 min-h-11 w-full text-xs underline underline-offset-2"
+              >
+                {fr.session.restart}
+              </button>
+            ) : null}
+
+            {running === null ? (
+              <div className="border-line mt-4 grid gap-3 border-t pt-3 sm:grid-cols-2">
+                <label
+                  htmlFor="session-new-cards"
+                  className="flex items-center justify-between gap-2"
+                >
+                  <span className="text-ink-muted text-xs">{fr.session.newCardsLabel}</span>
+                  <select
+                    id="session-new-cards"
+                    value={settings.newCards}
+                    onChange={(event) => changeSettings({ newCards: Number(event.target.value) })}
+                    className="border-line bg-paper-raised text-ink min-h-11 rounded-lg border px-2 text-sm"
+                  >
+                    {NEW_CARD_CHOICES.map((count) => (
+                      <option key={count} value={count}>
+                        {count}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label htmlFor="session-band" className="flex items-center justify-between gap-2">
+                  <span className="text-ink-muted text-xs">{fr.session.bandLabel}</span>
+                  <select
+                    id="session-band"
+                    value={settings.band}
+                    onChange={(event) => changeSettings({ band: event.target.value as PuzzleBand })}
+                    className="border-line bg-paper-raised text-ink min-h-11 rounded-lg border px-2 text-sm"
+                  >
+                    {RATING_BANDS.map((band) => (
+                      <option key={band} value={band}>
+                        {fr.puzzle.setup.ratings[band]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            ) : null}
           </section>
 
           <section aria-labelledby="train-title" className="mt-10">
