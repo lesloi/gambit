@@ -122,6 +122,10 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   and lose the history. The scheduler is therefore pinned with its parameters, fuzzing is off, and
   the short steps (1 min, 10 min) are kept: replaying the same journal must give the same due
   date, and the scheduler that produced it is written in the database's `meta` table.
+- **A finished game is stored as its move list, not a PGN.** The analysis will replay it from the
+  initial position, and the backup will copy it as JSON; a PGN string would need parsing and would
+  freeze the notation. An abandoned game is not stored: only a game that reached a result is worth
+  analysing.
 - **A backup is a file, not a sync.** Two devices would need an account, a server, conflict
   resolution and a second image; the owner uses one device. Import replaces the local data after
   showing what the file holds, so no merge or tombstone is needed. There is no automatic export,

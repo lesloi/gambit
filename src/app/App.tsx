@@ -3,12 +3,13 @@ import { CreditsPage } from '../features/credits/CreditsPage';
 import { EndgameScreen } from '../features/endgames/EndgameScreen';
 import { HomePage } from '../features/home/HomePage';
 import { OpeningScreen } from '../features/openings/OpeningScreen';
+import { PlayScreen } from '../features/play/PlayScreen';
 import { MistakesScreen } from '../features/progress/MistakesScreen';
 import { PuzzleScreen } from '../features/puzzles/PuzzleScreen';
 import { SessionScreen } from '../features/session/SessionScreen';
 import { UpdatePrompt } from './UpdatePrompt';
 
-type View = 'home' | 'session' | 'puzzle' | 'mistakes' | 'endgame' | 'opening' | 'credits';
+type View = 'home' | 'session' | 'puzzle' | 'mistakes' | 'endgame' | 'opening' | 'play' | 'credits';
 
 export function App() {
   const [view, setView] = useState<View>('home');
@@ -29,6 +30,8 @@ export function App() {
         <EndgameScreen onExit={() => setView('home')} />
       ) : view === 'opening' ? (
         <OpeningScreen onExit={() => setView('home')} />
+      ) : view === 'play' ? (
+        <PlayScreen onExit={() => setView('home')} />
       ) : view === 'credits' ? (
         <CreditsPage onExit={() => setView('home')} />
       ) : (
@@ -37,6 +40,7 @@ export function App() {
           onStartPuzzle={() => setView('puzzle')}
           onStartEndgame={() => setView('endgame')}
           onStartOpening={() => setView('opening')}
+          onStartPlay={() => setView('play')}
           onShowCredits={() => setView('credits')}
         />
       )}

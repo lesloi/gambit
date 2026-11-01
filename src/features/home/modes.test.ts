@@ -19,6 +19,7 @@ describe('training modes', () => {
       'puzzles',
       'openings',
       'endgames',
+      'play',
     ]);
   });
 

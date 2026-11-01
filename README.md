@@ -3,20 +3,20 @@
 A personal chess training app: puzzles, tactical motifs, endgames, openings and games against
 the engine. Free of accounts and tracking, installable, and usable offline.
 
-**Status: foundation.** The deployment pipeline is in place, and the puzzle, endgame and opening
-trainers run on the committed content. Games are being built, in the order of the issues.
+**Status: foundation.** The deployment pipeline is in place, the three trainers run on the
+committed content and the game mode runs on the bundled engine.
 
 ## Features
 
-| Mode     | What it does                                                          | State   |
-| -------- | --------------------------------------------------------------------- | ------- |
-| Puzzles  | Real positions from the Lichess puzzle set, by length and difficulty  | Ready   |
-| Endgames | Classic positions, playable against the engine                        | Ready   |
-| Openings | A curated repertoire for both colours, revised with spaced repetition | Ready   |
-| Games    | Play Stockfish at a chosen level, then review the blunders            | Planned |
+| Mode     | What it does                                                          | State |
+| -------- | --------------------------------------------------------------------- | ----- |
+| Puzzles  | Real positions from the Lichess puzzle set, by length and difficulty  | Ready |
+| Endgames | Classic positions, playable against the engine                        | Ready |
+| Openings | A curated repertoire for both colours, revised with spaced repetition | Ready |
+| Games    | Play Stockfish at a chosen level, on the clock                        | Ready |
 
-The home screen, the installable app, the offline shell, the puzzle trainer, the endgame trainer
-and the opening trainer are available now.
+The home screen, the installable app, the offline shell and the four modes are available now. A
+finished game is stored; the review of its blunders is the next step.
 
 ## How it works
 

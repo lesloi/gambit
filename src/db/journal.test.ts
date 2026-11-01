@@ -200,8 +200,9 @@ describe('the database', () => {
 
     const reopened = new GambitDatabase(name);
     try {
-      expect(reopened.verno).toBe(1);
+      expect(reopened.verno).toBe(2);
       expect(await reopened.reviews.count()).toBe(1);
+      expect(await reopened.games.count()).toBe(0);
       expect(await reopened.meta.get('scheduler')).toEqual({ key: 'scheduler', ...SCHEDULER });
     } finally {
       reopened.close();
