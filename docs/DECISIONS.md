@@ -66,15 +66,20 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   never reach Lichess; only a regeneration does, from a CC0 export whose date the manifest
   records. Lichess is a source of content, not a service the app depends on.
 - **A puzzle has one answer, and the build proves it.** The Lichess export is generated on that
-  rule but ships no proof: 58 % of the retained lines have a defensive ply where the opponent had
-  another legal move, so the app would play a scripted opponent rather than the best defence. A
-  pass over the subset replays every line with a native Stockfish, off the runtime: the expected
-  move must be the engine's first choice, the next one must fall behind by a mate or by a margin,
-  and every defensive reply must be the engine's first choice. A line that fails is dropped, since
-  answering "wrong" to a move that also wins teaches the opposite of what a puzzle is for. The
-  engine, its version and the analysis settings go into the manifest, so a regeneration is
-  reproducible like the export itself; the exact margins live in the header of the script that
-  verifies.
+  rule but ships no proof, and about a fifth of the retained lines have a defensive ply where the
+  engine would choose another move, so the app would play a scripted opponent rather than the best
+  defence. A pass over the subset replays every line with a native Stockfish, off the runtime: at
+  each user ply the expected move must be the engine's first choice and the second must fall behind
+  by a mate or by 100 cp; a one-move mate is accepted as the app accepts any mate. A line that fails
+  is dropped and the selection refills it, so answering "wrong" to a move that also wins never
+  happens. At each defensive ply the stored reply is checked the same way, but it does not drop the
+  line: a defence the engine would not choose only clears the puzzle's `fullLine` index, because
+  the normal mode plays the stored move and only the full-line drill needs a forced one. Dropping
+  every such line would cost a fifth of the content for no normal-mode benefit, and leave the
+  drill's index with nothing to filter. The engine, its version and the analysis settings go into
+  the manifest, so a regeneration is reproducible like the export itself; the exact margins live in
+  the header of the script that verifies. The binary is a build tool, never a runtime dependency or
+  a file in the image.
 - **The opening repertoire is curated, not imported.** A hand-written set of lines for both
   colours (London and Queen's Gambit with White, French and Slav with Black) is small, coherent
   and reviewable. An opening explorer would grow an unbounded tree the user has to prune by hand.

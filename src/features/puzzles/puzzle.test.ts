@@ -15,6 +15,7 @@ const puzzle: Puzzle = {
   solution: ['d5d8', 'a8d8', 'd1d8'],
   themes: ['backRankMate', 'mateIn2', 'sacrifice'],
   rating: 1500,
+  fullLine: true,
 };
 
 const solvedFen = '3R2k1/5ppp/8/8/8/8/PPP2PPP/6K1 b - - 0 2';
@@ -24,6 +25,7 @@ const promotionPuzzle: Puzzle = {
   solution: ['g7g8n'],
   themes: ['underPromotion'],
   rating: 1200,
+  fullLine: true,
 };
 
 /** Two rooks on the back rank: Ra8# and Rb8# are both mates, the stored answer is one of them. */
@@ -33,6 +35,7 @@ const doubleMate: Puzzle = {
   solution: ['a1a8'],
   themes: ['backRankMate', 'mateIn1'],
   rating: 900,
+  fullLine: true,
 };
 
 /** Ra8# is available, but the stored answer is a quiet move: the puzzle is not a mate in one. */
@@ -42,6 +45,7 @@ const quietAnswer: Puzzle = {
   solution: ['b2b3'],
   themes: ['fork'],
   rating: 1000,
+  fullLine: true,
 };
 
 describe('puzzle session', () => {

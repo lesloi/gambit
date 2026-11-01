@@ -1,0 +1,20 @@
+# Stockfish 19, depth 18, MultiPV 2, Threads 1, Hash 16; recorded 2026-10-31 from the Lichess export of 2026-10-02
+# puzzle 0Hk7S
+fen 1r1r3k/q3Npp1/3Qb2p/8/8/P2B2P1/1PP5/1K5R w - - 0 36
+info depth 18 seldepth 6 multipv 1 score mate 3 nodes 13053 nps 1305300 hashfull 1 tbhits 0 time 10 pv h1h6 g7h6 d6e5 f7f6 e5f6
+info depth 18 seldepth 20 multipv 2 score cp 34 nodes 13053 nps 1305300 hashfull 1 tbhits 0 time 10 pv d6e5 b8b2 e5b2 a7e7 h1h6 h8g8 h6h5 e7a7 d3h7 g8f8 b2b4 f8e8 h5b5 a7g1 b1b2
+bestmove h1h6 ponder g7h6
+fen 1r1r3k/q3Npp1/3Qb2R/8/8/P2B2P1/1PP5/1K6 b - - 0 36
+info depth 18 seldepth 5 multipv 1 score mate -2 nodes 745 nps 745000 hashfull 0 tbhits 0 time 1 pv g7h6 d6e5 f7f6 e5f6
+bestmove g7h6 ponder d6e5
+fen 1r1r3k/q3Np2/3Qb2p/8/8/P2B2P1/1PP5/1K6 w - - 0 37
+info depth 18 seldepth 4 multipv 1 score mate 2 nodes 46844 nps 1419515 hashfull 13 tbhits 0 time 33 pv d6e5 f7f6 e5f6
+info depth 18 seldepth 21 multipv 2 score cp -828 nodes 46844 nps 1419515 hashfull 13 tbhits 0 time 33 pv e7g6 f7g6 d6e6 a7g7 b2b4 d8e8 e6d6 g6g5 d6g6 e8e1 b1a2 e1a1 a2b3
+bestmove d6e5 ponder f7f6
+fen 1r1r3k/q3Np2/4b2p/4Q3/8/P2B2P1/1PP5/1K6 b - - 1 37
+info depth 18 seldepth 3 multipv 1 score mate -1 nodes 37 nps 37000 hashfull 0 tbhits 0 time 1 pv f7f6 e5f6
+bestmove f7f6 ponder e5f6
+fen 1r1r3k/q3N3/4bp1p/4Q3/8/P2B2P1/1PP5/1K6 w - - 0 38
+info depth 18 seldepth 2 multipv 1 score mate 1 nodes 37560 nps 1211612 hashfull 14 tbhits 0 time 31 pv e5f6
+info depth 18 seldepth 23 multipv 2 score cp 165 nodes 37560 nps 1211612 hashfull 14 tbhits 0 time 31 pv e5e6 d8f8 e6e4 f8f7 e7c6 a7g1 b1a2 b8g8 c6e7 g8g3 e4a8 g3g8 e7g8 g1g8 a8h1 h8g7 d3c4
+bestmove e5f6

@@ -182,10 +182,11 @@ describe('serialisation', () => {
       solution: ['d4e2', 'g1f1', 'e2c3'],
       rating: 1530,
       themes: ['fork'],
+      fullLine: true,
     };
 
     expect(serializePuzzles([puzzle])).toBe(
-      '{"id":"000Pw","fen":"6k1/5p1p/4p3/4q3/3n4/2Q3P1/PP1N1P1P/6K1 b - - 3 37","solution":["d4e2","g1f1","e2c3"],"rating":1530,"themes":["fork"]}\n',
+      '{"id":"000Pw","fen":"6k1/5p1p/4p3/4q3/3n4/2Q3P1/PP1N1P1P/6K1 b - - 3 37","solution":["d4e2","g1f1","e2c3"],"rating":1530,"themes":["fork"],"fullLine":true}\n',
     );
   });
 });

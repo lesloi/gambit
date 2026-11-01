@@ -12,6 +12,11 @@ export interface Puzzle {
   /** Lichess themes of the puzzle, shown only once the puzzle is over. */
   themes: readonly string[];
   rating: number;
+  /**
+   * Whether every reply of the opponent is the engine's first choice and no alternative is within
+   * the build's margin. Only these puzzles are served by the full-line drill.
+   */
+  fullLine: boolean;
 }
 
 export type PuzzleOutcome = 'playing' | 'solved' | 'failed' | 'revealed';

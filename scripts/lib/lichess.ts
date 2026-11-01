@@ -1,8 +1,6 @@
 import { Chess } from 'chess.js';
-import type { Puzzle } from '../../src/features/puzzles/puzzle.ts';
 
-/**
- * The public Lichess puzzle database. It is a single rolling file: no dated archive exists, so the
+/** The public Lichess puzzle database. It is a single rolling file: no dated archive exists, so the
  * manifest identifies the snapshot by its Last-Modified header and the checksum of the CSV it read.
  */
 export const EXPORT_URL = 'https://database.lichess.org/lichess_db_puzzle.csv.zst';
@@ -16,6 +14,18 @@ export interface ExportRow {
   ratingDeviation: number;
   popularity: number;
   plays: number;
+  themes: readonly string[];
+}
+
+/**
+ * A line replayed from the export, before the engine pass gives it its full-line index: the
+ * position where the user plays, the rest of the line, and the export's metadata.
+ */
+export interface PlacedPuzzle {
+  id: string;
+  fen: string;
+  solution: readonly string[];
+  rating: number;
   themes: readonly string[];
 }
 
@@ -53,7 +63,7 @@ export interface Entry {
   plays: number;
 }
 
-export type ReplayResult = { ok: true; puzzle: Puzzle } | { ok: false; reason: 'illegal' };
+export type ReplayResult = { ok: true; puzzle: PlacedPuzzle } | { ok: false; reason: 'illegal' };
 
 /** Columns: PuzzleId,FEN,Moves,Rating,RatingDeviation,Popularity,NbPlays,Themes,GameUrl,... */
 const COLUMNS = 10;

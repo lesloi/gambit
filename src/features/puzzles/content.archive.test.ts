@@ -27,4 +27,10 @@ describe('committed puzzle subset', () => {
       expect(puzzle.solution.length, puzzle.id).toBeGreaterThan(0);
     }
   });
+
+  it('marks the puzzles the full-line drill can serve', () => {
+    expect(puzzles.every((puzzle) => typeof puzzle.fullLine === 'boolean')).toBe(true);
+    expect(puzzles.some((puzzle) => puzzle.fullLine)).toBe(true);
+    expect(puzzles.some((puzzle) => !puzzle.fullLine)).toBe(true);
+  });
 });
