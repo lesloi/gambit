@@ -25,6 +25,15 @@ export const fr = {
     credits: 'Crédits',
     source: 'Code source',
   },
+  progress: {
+    title: 'Erreurs',
+    back: 'Retour',
+    review: 'Revoir mes erreurs',
+    intro: 'Tes derniers puzzles à revoir, rejouables depuis la position de départ.',
+    empty: 'Un puzzle noté « à revoir » apparaîtra ici, avec sa date, son motif et sa difficulté.',
+    reportedOn: 'Noté « à revoir » le {date}',
+    counter: '{index} / {count}',
+  },
   credits: {
     title: 'Crédits',
     back: 'Retour',

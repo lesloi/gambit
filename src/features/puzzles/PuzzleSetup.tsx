@@ -14,6 +14,7 @@ export interface PuzzleSetupProps {
   onChange: (filters: PuzzleFilters) => void;
   onStart: () => void;
   onRetry: () => void;
+  onReviewMistakes: () => void;
 }
 
 /** The step between the mode and the board: what the picks cost, before the first puzzle. */
@@ -24,6 +25,7 @@ export function PuzzleSetup({
   onChange,
   onStart,
   onRetry,
+  onReviewMistakes,
 }: PuzzleSetupProps) {
   const ready = status === 'ready';
   const empty = ready && matches === 0;
@@ -111,6 +113,15 @@ export function PuzzleSetup({
           </button>
         </div>
       )}
+
+      {/* Replaying a miss is a deliberate act, not another way to start a session: a quiet link. */}
+      <button
+        type="button"
+        onClick={onReviewMistakes}
+        className="decoration-line text-ink-muted hover:text-ink mt-4 min-h-11 w-full text-sm underline underline-offset-2"
+      >
+        {fr.progress.review}
+      </button>
     </div>
   );
 }
