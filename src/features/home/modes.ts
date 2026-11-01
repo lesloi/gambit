@@ -15,7 +15,7 @@ export interface Mode {
 
 export const MODES: readonly Mode[] = [
   { id: 'puzzles', icon: Puzzle, group: 'train', available: true },
-  { id: 'endgames', icon: Crown, group: 'train', available: true },
   { id: 'openings', icon: BookOpen, group: 'train', available: true },
+  { id: 'endgames', icon: Crown, group: 'train', available: true },
   { id: 'play', icon: Swords, group: 'play', available: false },
 ];
