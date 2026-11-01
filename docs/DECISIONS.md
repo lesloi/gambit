@@ -33,7 +33,19 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   flag, and rejecting a winning alternative would teach the wrong lesson.
 - **A session starts with what is due, then a few new cards.** Without that rule the first weeks
   are random: FSRS has nothing to schedule yet. The session takes the due cards, then N new ones
-  (five by default, adjustable), so the habit has something to do from the first day.
+  (five by default, adjustable), so the habit has something to do from the first day. It
+  interleaves the modes, so a sitting is not a pile of puzzles.
+- **A puzzle card is a motif at a rating band, not a position.** A due cell serves an unseen
+  position of that motif and band, never the same board twice: re-solving a seen puzzle trains
+  memory, not calculation. The cell's state is the replay of the attempts of the positions it
+  served, and each puzzle belongs to its primary motif (the rarest, as the content pipeline counts
+  it). New cells come from the band the user picks on the session card (low by default); the due
+  cells follow the journal whatever band they hold. The free puzzle screen and the mistakes list
+  stay the places to replay a position on purpose.
+- **A session is computed, never stored as a list.** The queue is derived again from the journal
+  pinned at the session's start (its last review id); only a cursor of scalars in localStorage
+  (start, pin, position, N, band, totals) survives a reload. A review written during the session
+  does not reshape the queue, and reloading lands on the same card.
 - **A theme's statistics wait for ten reviews.** At one user, a cell below that is noise, and a
   discouraging one. The journal keeps everything; the screen only shows what means something.
 - **Difficulty is two measures, not one label.** The length in plies says what an exercise costs

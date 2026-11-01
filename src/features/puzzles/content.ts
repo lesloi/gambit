@@ -5,9 +5,17 @@ import type { Puzzle } from './puzzle';
 export const LENGTH_FILTERS = ['any', '1', '3', '5', 'long'] as const;
 export type PuzzleLength = (typeof LENGTH_FILTERS)[number];
 
-/** The rating bands the picker offers, keyed by the Lichess puzzle rating. */
+/** The rating bands the picker and the session share, keyed by the Lichess puzzle rating. */
 export const RATING_BANDS = ['low', 'middle', 'high'] as const;
-export type PuzzleRating = 'any' | (typeof RATING_BANDS)[number];
+export type PuzzleBand = (typeof RATING_BANDS)[number];
+export type PuzzleRating = 'any' | PuzzleBand;
+
+/** The band a puzzle belongs to; the session groups motifs by it. */
+export function ratingBand(rating: number): PuzzleBand {
+  if (rating < 1200) return 'low';
+  if (rating < 1600) return 'middle';
+  return 'high';
+}
 
 export interface PuzzleFilters {
   length: PuzzleLength;
@@ -33,16 +41,7 @@ export function puzzleLength(puzzle: Puzzle): number {
 }
 
 function matchesRating(rating: number, band: PuzzleRating): boolean {
-  switch (band) {
-    case 'any':
-      return true;
-    case 'low':
-      return rating < 1200;
-    case 'middle':
-      return rating >= 1200 && rating < 1600;
-    case 'high':
-      return rating >= 1600;
-  }
+  return band === 'any' || ratingBand(rating) === band;
 }
 
 function matchesFilters(puzzle: Puzzle, filters: PuzzleFilters): boolean {
@@ -94,6 +93,20 @@ export function parsePuzzles(text: string): Puzzle[] {
 /** The two bytes every gzip member starts with, whatever the headers claim. */
 function isGzip(bytes: Uint8Array): boolean {
   return bytes[0] === 0x1f && bytes[1] === 0x8b;
+}
+
+/**
+ * The archive is fetched once per visit and shared by the screens; a failed load is forgotten so a
+ * retry starts a new fetch.
+ */
+let archive: Promise<readonly Puzzle[]> | null = null;
+
+export function loadPuzzleArchive(): Promise<readonly Puzzle[]> {
+  archive ??= loadPuzzles().catch((error: unknown) => {
+    archive = null;
+    throw error;
+  });
+  return archive;
 }
 
 /**

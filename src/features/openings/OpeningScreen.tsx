@@ -186,14 +186,16 @@ function OpeningList({
   );
 }
 
-function OpeningPlayer({
+export function OpeningPlayer({
   line,
   onReviewed,
   onOther,
+  nextLabel = fr.opening.other,
 }: {
   line: OpeningLine;
   onReviewed: () => void;
   onOther: () => void;
+  nextLabel?: string;
 }) {
   const [state, setState] = useState(() => startOpening(line));
   const [rating, setRating] = useState<Rating | null>(null);
@@ -317,7 +319,7 @@ function OpeningPlayer({
               onClick={onOther}
               className="bg-accent mt-3 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
             >
-              {fr.opening.other}
+              {nextLabel}
             </button>
           </>
         ) : null}
@@ -344,7 +346,7 @@ function OpeningPlayer({
                 onClick={onOther}
                 className="border-line text-ink-muted flex-1 rounded-xl border px-4 py-3 text-sm"
               >
-                {fr.opening.other}
+                {nextLabel}
               </button>
             </div>
           </>

@@ -119,7 +119,15 @@ function endgameReason(end: EndgameEnd): string {
   }
 }
 
-function EndgamePlayer({ endgame, onOther }: { endgame: Endgame; onOther: () => void }) {
+export function EndgamePlayer({
+  endgame,
+  onOther,
+  nextLabel = fr.endgame.other,
+}: {
+  endgame: Endgame;
+  onOther: () => void;
+  nextLabel?: string;
+}) {
   const [state, setState] = useState(() => startEndgame(endgame));
   const [engineState, setEngineState] = useState<EngineState>('loading');
   const [engineAttempt, setEngineAttempt] = useState(0);
@@ -349,7 +357,7 @@ function EndgamePlayer({ endgame, onOther }: { endgame: Endgame; onOther: () => 
               onClick={onOther}
               className="bg-accent mt-3 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
             >
-              {fr.endgame.other}
+              {nextLabel}
             </button>
           </>
         ) : null}
@@ -376,7 +384,7 @@ function EndgamePlayer({ endgame, onOther }: { endgame: Endgame; onOther: () => 
                 onClick={onOther}
                 className="border-line text-ink-muted flex-1 rounded-xl border px-4 py-3 text-sm"
               >
-                {fr.endgame.other}
+                {nextLabel}
               </button>
             </div>
           </>

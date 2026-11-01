@@ -1,7 +1,7 @@
 import { ChevronLeft } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { fr } from '../../i18n/fr';
-import { loadPuzzles, selectPuzzles, type PuzzleFilters } from './content';
+import { loadPuzzleArchive, selectPuzzles, type PuzzleFilters } from './content';
 import { readPuzzleFilters, savePuzzleFilters } from './filterStorage';
 import { PuzzlePlayer } from './PuzzlePlayer';
 import { PuzzleSetup } from './PuzzleSetup';
@@ -41,7 +41,7 @@ export function PuzzleScreen({
 
   useEffect(() => {
     let active = true;
-    loadPuzzles().then(
+    loadPuzzleArchive().then(
       (puzzles) => {
         if (!active) return;
         setLoad({ status: 'ready', puzzles });

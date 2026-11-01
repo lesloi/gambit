@@ -25,11 +25,15 @@ downloaded, so the first paint needs no network.
 - One column, `max-w-2xl`, page margin `px-5` on phones and `px-8` from `sm`.
 - The home screen reads top to bottom: wordmark, the session card, the modes, the footer. The
   footer is pushed to the bottom when the page is shorter than the screen.
-- The session card holds a small board on the phone (stacked) and beside the text from `sm`.
-- The modes are one column on the phone and two from `sm`. A card is not a button until its mode
+- The session card holds a small board on the phone (stacked) and beside the text from `sm`. It
+  states the due and new counts, then carries the screen's primary action: start the session,
+  resume it, or start a new one. Its two settings, the number of new cards and their rating band,
+  sit under the button.
+- The session screen holds the progress (`done / total`, a bar and the remaining counts), then the
+  current card in the player of its mode. The next button says "Terminer" on the last one.
+- The modes are one column on the phone and three from `sm`. A card is not a button until its mode
   works; the "Bientôt" badge says so.
-- One primary action per screen. Today the home screen has none, because none of the modes can run
-  yet.
+- One primary action per screen: the session card's button on the home screen.
 
 ## Board
 

@@ -54,6 +54,15 @@ export async function cardStates(database: GambitDatabase): Promise<Map<string, 
   return states;
 }
 
+/** The highest review id written so far; a session pins its journal snapshot there. */
+export function journalMark(reviews: readonly { id?: number }[]): number {
+  let mark = 0;
+  for (const review of reviews) {
+    if (typeof review.id === 'number' && review.id > mark) mark = review.id;
+  }
+  return mark;
+}
+
 /** Every card whose journal puts it at or before `now`, the most urgent first. */
 export async function dueCards(database: GambitDatabase, now = Date.now()): Promise<CardState[]> {
   const states = await cardStates(database);
