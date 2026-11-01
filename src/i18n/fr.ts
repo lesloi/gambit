@@ -14,7 +14,7 @@ export const fr = {
     sessionTitle: 'Session du jour',
     sessionEmptyTitle: 'Le plateau est prêt',
     sessionEmptyBody:
-      "La session se remplira d'elle-même dès que les fiches auront une échéance : puzzles, finales et ouvertures.",
+      "La session se remplira d'elle-même dès que les fiches auront une échéance : puzzles, ouvertures et finales.",
     trainTitle: "S'entraîner",
     trainHint: 'Trois façons de travailler une position, révisées au bon moment.',
     playTitle: 'Jouer',
