@@ -87,10 +87,13 @@ The licence files are unambiguous: `LICENSE` of `maia-chess` is the GNU GPL vers
 `LICENSE` of `maia2` is the MIT licence, `LICENSE` of `maia3` is the GNU AGPL version 3 and its
 `pyproject.toml` points at it.
 
-One ambiguity remains, on the Maia-3 weights rather than the code. The model card of the 79M says
-"License: AGPLv3"; the cards of the 3M, 5M and 23M say "License: CC BY 4.0 (paper); see repo for
-code/weights license" and point at the AGPL repository. Reading the weights as AGPL-3.0 is the
-prudent reading, and it is the one to confirm with upstream before shipping the 5M.
+One point remains open, on the Maia-3 weights rather than the code. The 79M card states its licence
+outright — "AGPLv3" — while the 3M, 5M and 23M say "CC BY 4.0 (paper); see repo for code/weights
+license": by that line, CC BY 4.0 covers the paper, and the weights follow the repository, which is
+AGPL-3.0. None of the four cards declares a licence in its metadata, and the weights live on
+HuggingFace rather than in the repository, so the pointer is a statement of intent, not a licence
+file attached to what we would ship. Treat the weights as AGPL-3.0, as the authors' pointer reads,
+and get that in writing before shipping the 5M.
 
 Shipping weights under AGPL-3.0 obliges us to pass their licence on with them, and to name where they
 come from. In practice, in line with the piece set of [CREDITS.md](../CREDITS.md):
