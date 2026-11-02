@@ -151,7 +151,7 @@ export const fr = {
     level: 'Niveau',
     levelValue: '≈ {elo} Elo',
     clock: 'Pendule',
-    clockValue: '10 minutes',
+    clockValue: '{minutes} minutes',
     start: 'Commencer la partie',
     newGame: 'Nouvelle partie',
     changeLevel: 'Changer de niveau',

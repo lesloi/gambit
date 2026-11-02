@@ -15,6 +15,8 @@ import { gameRecord, saveGame } from './record';
 import { readPlayLevel, savePlayLevel } from './settings';
 
 const GAME_CLOCK_MS = 10 * 60 * 1000;
+/** The label of the fixed control, derived from the constant so the two cannot drift apart. */
+const GAME_CLOCK_LABEL = fr.play.clockValue.replace('{minutes}', String(GAME_CLOCK_MS / 60_000));
 
 type EngineState = 'loading' | 'ready' | 'failed';
 type Saved = 'idle' | 'saved' | 'failed';
@@ -114,7 +116,7 @@ function PlaySetup({
         </p>
 
         <p className="text-ink-muted mt-5 text-sm">
-          {fr.play.clock} · {fr.play.clockValue}
+          {fr.play.clock} · {GAME_CLOCK_LABEL}
         </p>
 
         <button
@@ -223,6 +225,8 @@ function PlayGame({
     (after: PlayState) => {
       setState(after);
       setClock((current) => stopClock(current, Date.now()));
+      // The game can end while the promotion chooser waits, for instance at the flag.
+      setPending(null);
       if (after.outcome !== 'over' || after.result === null || recorded.current) return;
 
       recorded.current = true;
@@ -391,7 +395,7 @@ function PlayGame({
     <>
       <div className="flex items-center justify-between gap-3">
         <p className="text-ink-muted text-sm">
-          {fr.play.clock} · {fr.play.clockValue}
+          {fr.play.clock} · {GAME_CLOCK_LABEL}
         </p>
         {state.assisted ? (
           <span className="border-line text-ink-muted rounded-full border px-2 py-0.5 text-[10px] tracking-wider uppercase">
