@@ -61,11 +61,15 @@ downloaded, so the first paint needs no network.
 
 ## Play
 
-- The setup screen holds the level slider and the fixed 10+0 clock, then the primary action starts
-  the game from the initial position; White is the user.
+- The setup screen holds the level slider and the time control, then the primary action starts the
+  game from the initial position; White is the user.
 - The game screen stacks the opponent's clock, the board and the user's clock. Only the running
   clock is highlighted, and a flag ends the game without waiting for a move.
 - The clock starts with the first move, so the user's first move costs no time.
+- The engine's think time comes from its own clock: a third of an even forty-move share of the
+  control, plus the increment, varied by up to a fifth around that share, and never more than a
+  fifth of the time left. The level only sets Stockfish's Skill Level, so a weaker opponent does
+  not play faster.
 - A hint draws the engine's move as an arrow in the board's hint brush, at full strength whatever
   level the game uses, and marks the game as assisted; there is no takeback.
 - The result panel names the winner and the reason, then offers a new game or a change of level.

@@ -8,9 +8,18 @@ import { legalDests, promotionPieces, sideToMove, type PromotionPiece } from '..
 import type { GameReason, GameResult, Side } from '../../lib/position';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { PromotionDialog, promotionAnchor } from '../../ui/PromotionDialog';
-import { afterMove, createClock, flagged, formatClock, remainingMs, stopClock } from './clock';
+import {
+  afterMove,
+  createClock,
+  flagged,
+  formatClock,
+  remainingMs,
+  stopClock,
+  type ClockState,
+} from './clock';
 import { flagSide, playMove, playUci, showHint, startGame, type PlayState } from './game';
 import { HINT_MOVETIME_MS, HINT_SKILL, LEVELS, type Level } from './level';
+import { thinkTimeMs } from './pacing';
 import { gameRecord, saveGame } from './record';
 import { readPlayLevel, readPlayTimeControl, savePlayLevel, savePlayTimeControl } from './settings';
 import { formatTimeControl, TIME_CONTROLS, type TimeControl } from './timeControl';
@@ -275,26 +284,37 @@ function PlayGame({
   );
 
   const applyMove = useCallback(
-    (after: PlayState, mover: Side, at: number) => {
+    (after: PlayState, mover: Side, at: number): ClockState | null => {
       if (after.outcome === 'over') {
         complete(after);
-        return;
+        return null;
       }
+      const clock = afterMove(clockRef.current, mover, at);
       setState(after);
       setNow(at);
-      setClock((current) => afterMove(current, mover, at));
+      setClock(clock);
+      return clock;
     },
     [complete],
   );
 
   const askEngine = useCallback(
-    (game: PlayState) => {
+    (game: PlayState, clock: ClockState) => {
       const instance = engine.current;
       if (!instance) return;
 
+      const engineSide = sideToMove(game.fen);
+      const budget = thinkTimeMs(control, remainingMs(clock, Date.now())[engineSide]);
+      // A clock already at zero has lost before the engine can look: `go movetime 0` would search
+      // until the adapter's timeout instead of ending the game.
+      if (budget === 0) {
+        complete(flagSide(game, engineSide));
+        return;
+      }
+
       const request = generation.current;
       setThinking(true);
-      instance.bestMove(game.fen, { skill: level.skill, movetimeMs: level.movetimeMs }).then(
+      instance.bestMove(game.fen, { skill: level.skill, movetimeMs: budget }).then(
         (uci) => {
           if (request !== generation.current) return;
           setThinking(false);
@@ -326,7 +346,7 @@ function PlayGame({
         },
       );
     },
-    [applyMove, complete, level.movetimeMs, level.skill],
+    [applyMove, complete, control, level.skill],
   );
 
   const playUserMove = (from: string, to: string, promotion?: PromotionPiece) => {
@@ -342,8 +362,8 @@ function PlayGame({
 
     const after = playMove(state, from, to, promotion);
     if (after === state) return;
-    applyMove(after, sideToMove(state.fen), at);
-    if (after.outcome === 'playing') askEngine(after);
+    const next = applyMove(after, sideToMove(state.fen), at);
+    if (next && after.outcome === 'playing') askEngine(after, next);
   };
 
   const move = (from: string, to: string) => {
