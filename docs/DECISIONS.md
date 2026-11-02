@@ -113,6 +113,12 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
 - **The engine sits behind one interface, so Maia can replace it later.** Maia plays like a human
   and is a better opponent for training, but its weights are large and its licence has to be
   checked. It is tracked as an issue of documentation first.
+- **The engine's pace follows the clock; the level is only its strength.** A fixed movetime per
+  level made every opponent answer in 0.3 to 1.3 s, so even a 10+0 or 15+10 game felt like a bot
+  blitzing and the engine's clock never moved. Handing Stockfish its raw clock is the other
+  extreme: at 10+0 it thinks about 15 s a move. The budget is therefore a third of an even
+  forty-move share of the control plus the increment, capped at 4 s and at a fifth of the time
+  left, and the level sets nothing but Skill Level.
 
 ## Persistence
 

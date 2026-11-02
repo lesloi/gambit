@@ -3,8 +3,6 @@ export interface Level {
   elo: number;
   /** Stockfish's Skill Level option, 0 to 20. */
   skill: number;
-  /** How long the engine may think at this level. */
-  movetimeMs: number;
 }
 
 /**
@@ -14,7 +12,6 @@ export interface Level {
 export const LEVELS: readonly Level[] = Array.from({ length: 11 }, (_, index) => ({
   elo: 1350 + index * 150,
   skill: index * 2,
-  movetimeMs: 300 + index * 100,
 }));
 
 export const DEFAULT_LEVEL_INDEX = 1;

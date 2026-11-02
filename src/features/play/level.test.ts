@@ -8,10 +8,9 @@ describe('play levels', () => {
     expect(LEVELS[10]).toMatchObject({ elo: 2850, skill: 20 });
   });
 
-  it('raises the skill and the think time with the level', () => {
+  it('raises the skill with the level', () => {
     for (let index = 1; index < LEVELS.length; index += 1) {
       expect(LEVELS[index].skill).toBeGreaterThan(LEVELS[index - 1].skill);
-      expect(LEVELS[index].movetimeMs).toBeGreaterThan(LEVELS[index - 1].movetimeMs);
     }
   });
 
