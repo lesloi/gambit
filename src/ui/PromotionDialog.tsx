@@ -138,7 +138,7 @@ export function PromotionDialog({
         if (event.target === event.currentTarget) cancel();
       }}
       aria-labelledby="promotion-title"
-      className="border-line bg-paper-raised text-ink fixed inset-auto m-0 w-33 rounded-2xl border p-2 shadow-xl backdrop:bg-ink/20"
+      className="border-line bg-paper-raised text-ink fixed inset-auto m-0 w-33 rounded-sm border p-2 backdrop:bg-ink/20"
     >
       <h2 id="promotion-title" className="sr-only">
         {fr.promotion.title}
@@ -151,7 +151,7 @@ export function PromotionDialog({
             type="button"
             aria-label={LABEL[piece]}
             onClick={() => choose(piece)}
-            className="border-line hover:border-accent grid size-14 place-items-center rounded-lg border"
+            className="border-line hover:border-accent grid size-14 place-items-center rounded-sm border"
           >
             <img
               src={`/pieces/chessnut/${color === 'white' ? 'w' : 'b'}${ROLE[piece]}.svg`}
@@ -166,7 +166,7 @@ export function PromotionDialog({
       <button
         type="button"
         onClick={cancel}
-        className="text-ink-muted hover:text-ink mt-1.5 min-h-11 w-full rounded-lg text-sm"
+        className="text-ink-muted hover:text-ink mt-1.5 min-h-11 w-full rounded-sm text-sm"
       >
         {fr.promotion.cancel}
       </button>

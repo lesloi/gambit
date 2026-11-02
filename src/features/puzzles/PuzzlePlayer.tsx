@@ -157,8 +157,8 @@ export function PuzzlePlayer({
 
   return (
     <>
-      <div className="border-line bg-paper-raised mt-3 rounded-2xl border p-2.5 sm:p-3">
-        <div ref={boardHost} tabIndex={-1} aria-label={fr.puzzle.board} className="rounded-xl">
+      <div className="border-line bg-paper-raised mt-3 rounded-sm border p-2.5 sm:p-3">
+        <div ref={boardHost} tabIndex={-1} aria-label={fr.puzzle.board} className="rounded-sm">
           <ChessBoard
             fen={state.fen}
             orientation={orientation}
@@ -181,14 +181,14 @@ export function PuzzlePlayer({
             <button
               type="button"
               onClick={() => setHint(true)}
-              className="text-ink-muted hover:text-ink min-h-11 rounded-full px-3 text-xs"
+              className="text-ink-muted hover:text-ink min-h-11 rounded-sm px-3 text-xs"
             >
               {fr.puzzle.hint}
             </button>
             <button
               type="button"
               onClick={reveal}
-              className="text-ink-muted hover:text-ink min-h-11 rounded-full px-3 text-xs"
+              className="text-ink-muted hover:text-ink min-h-11 rounded-sm px-3 text-xs"
             >
               {fr.puzzle.showSolution}
             </button>
@@ -206,7 +206,7 @@ export function PuzzlePlayer({
       <div className="mt-4">
         {state.outcome === 'solved' ? (
           <>
-            <div className="bg-ok-soft text-ok rounded-xl p-4">
+            <div className="bg-ok-soft text-ok rounded-sm p-4">
               <p className="text-sm font-semibold">{fr.puzzle.solved}</p>
               <p className="mt-1 text-xs opacity-80">{puzzle.themes.map(themeLabel).join(' · ')}</p>
             </div>
@@ -218,7 +218,7 @@ export function PuzzlePlayer({
             <button
               type="button"
               onClick={proceed}
-              className="bg-accent mt-3 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+              className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
             >
               {nextLabel}
             </button>
@@ -227,7 +227,7 @@ export function PuzzlePlayer({
 
         {state.outcome === 'failed' ? (
           <>
-            <div className="bg-bad-soft text-bad rounded-xl p-4">
+            <div className="bg-bad-soft text-bad rounded-sm p-4">
               <p className="text-sm font-semibold">{fr.puzzle.failed}</p>
               <p className="mt-1 text-xs opacity-80">
                 {fr.puzzle.bestMove.replace('{move}', state.bestSan ?? '')}
@@ -238,14 +238,14 @@ export function PuzzlePlayer({
               <button
                 type="button"
                 onClick={reset}
-                className="bg-accent flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                className="bg-accent flex-1 rounded-sm px-4 py-3 text-sm font-semibold text-white"
               >
                 {fr.puzzle.retry}
               </button>
               <button
                 type="button"
                 onClick={reveal}
-                className="border-line text-ink-muted flex-1 rounded-xl border px-4 py-3 text-sm"
+                className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm"
               >
                 {fr.puzzle.showSolution}
               </button>
@@ -255,25 +255,25 @@ export function PuzzlePlayer({
 
         {state.outcome === 'revealed' ? (
           <>
-            <div className="border-line bg-paper-raised rounded-xl border p-4">
-              <p className="text-accent text-[11px] tracking-widest uppercase">
+            <div className="border-line bg-paper-raised rounded-sm border p-4">
+              <p className="text-accent-ink text-[0.6875rem] tracking-widest uppercase">
                 {fr.puzzle.solutionTitle}
               </p>
-              <p className="mt-1 font-serif text-lg">{line}</p>
+              <p className="mt-1 text-lg">{line}</p>
             </div>
 
             <div className="mt-3 flex gap-2">
               <button
                 type="button"
                 onClick={reset}
-                className="bg-accent flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                className="bg-accent flex-1 rounded-sm px-4 py-3 text-sm font-semibold text-white"
               >
                 {fr.puzzle.retry}
               </button>
               <button
                 type="button"
                 onClick={proceed}
-                className="border-line text-ink-muted flex-1 rounded-xl border px-4 py-3 text-sm"
+                className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm"
               >
                 {nextLabel}
               </button>

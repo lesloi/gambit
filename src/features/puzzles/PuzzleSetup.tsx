@@ -2,9 +2,9 @@ import { fr } from '../../i18n/fr';
 import { LENGTH_FILTERS, RATING_BANDS, type PuzzleFilters } from './content';
 
 const CHIP =
-  'border-line text-ink-muted inline-flex min-h-11 cursor-pointer items-center rounded-full border px-3.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:checked]:text-ink has-[:focus-visible]:outline-accent has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2';
+  'border-line text-ink-muted inline-flex min-h-11 cursor-pointer items-center rounded-sm border px-3.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:checked]:text-ink has-[:focus-visible]:outline-accent has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2';
 
-const LEGEND = 'text-accent text-[11px] tracking-[0.18em] uppercase';
+const LEGEND = 'text-accent-ink text-[0.6875rem] tracking-[0.18em] uppercase';
 
 export interface PuzzleSetupProps {
   filters: PuzzleFilters;
@@ -86,13 +86,13 @@ export function PuzzleSetup({
       {status === 'failed' ? (
         <div
           role="alert"
-          className="border-line bg-paper-raised mt-6 rounded-2xl border p-4 text-center"
+          className="border-line bg-paper-raised mt-6 rounded-sm border p-4 text-center"
         >
           <p className="text-sm">{fr.puzzle.loadFailed}</p>
           <button
             type="button"
             onClick={onRetry}
-            className="bg-accent mt-3 rounded-xl px-4 py-3 text-sm font-semibold text-white"
+            className="bg-accent mt-3 rounded-sm px-4 py-3 text-sm font-semibold text-white"
           >
             {fr.puzzle.reload}
           </button>
@@ -107,7 +107,7 @@ export function PuzzleSetup({
             type="button"
             onClick={onStart}
             disabled={!ready || empty}
-            className="bg-accent mt-3 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+            className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
             {fr.puzzle.setup.start}
           </button>

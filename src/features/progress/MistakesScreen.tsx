@@ -129,9 +129,9 @@ export function MistakesScreen({ onExit }: { onExit: () => void }) {
           >
             <ChevronLeft size={22} />
           </button>
-          <h1 className="font-serif text-lg">{fr.progress.title}</h1>
+          <h1 className="text-lg">{fr.progress.title}</h1>
           {current >= 0 ? (
-            <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
+            <span className="border-line text-ink-muted ml-auto rounded-xs border px-2.5 py-1 text-xs">
               {fr.progress.counter
                 .replace('{index}', String(current + 1))
                 .replace('{count}', String(rows.length))}
@@ -143,13 +143,13 @@ export function MistakesScreen({ onExit }: { onExit: () => void }) {
           {failed ? (
             <div
               role="alert"
-              className="border-line bg-paper-raised mt-6 rounded-2xl border p-4 text-center"
+              className="border-line bg-paper-raised mt-6 rounded-sm border p-4 text-center"
             >
               <p className="text-sm">{fr.puzzle.loadFailed}</p>
               <button
                 type="button"
                 onClick={retry}
-                className="bg-accent mt-3 rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                className="bg-accent mt-3 rounded-sm px-4 py-3 text-sm font-semibold text-white"
               >
                 {fr.puzzle.reload}
               </button>
@@ -175,7 +175,7 @@ export function MistakesScreen({ onExit }: { onExit: () => void }) {
                       ref={(element) => {
                         rowButtons.current.set(row.puzzle.id, element);
                       }}
-                      className="border-line bg-paper-raised hover:border-accent/40 flex min-h-11 w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors"
+                      className="border-line bg-paper-raised hover:border-accent/40 flex min-h-11 w-full items-center gap-3 rounded-sm border p-4 text-left transition-colors"
                     >
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-semibold">
@@ -185,7 +185,7 @@ export function MistakesScreen({ onExit }: { onExit: () => void }) {
                           {row.puzzle.themes.slice(0, 3).map(themeLabel).join(' · ')}
                         </span>
                       </span>
-                      <span className="border-line text-ink-muted shrink-0 rounded-full border px-2.5 py-1 text-xs">
+                      <span className="border-line text-ink-muted shrink-0 rounded-xs border px-2.5 py-1 text-xs">
                         {row.puzzle.rating}
                       </span>
                       <ChevronRight

@@ -45,25 +45,25 @@
 
 /* The brown theme's green highlights belong to Lichess; the app uses its accent. */
 .cg-wrap cg-board square.last-move {
-  background-color: rgb(180 85 45 / 0.3);
+  background-color: rgb(86 150 220 / 0.4);
 }
 .cg-wrap cg-board square.selected {
-  background-color: rgb(180 85 45 / 0.45);
+  background-color: rgb(86 150 220 / 0.5);
 }
 .cg-wrap cg-board square.move-dest {
   background: radial-gradient(
-    rgb(180 85 45 / 0.55) 22%,
-    #b4552d 0,
+    rgb(86 150 220 / 0.6) 22%,
+    #3692e7 0,
     rgb(0 0 0 / 0.25) 0,
     rgb(0 0 0 / 0) 0
   );
 }
 .cg-wrap cg-board square.oc.move-dest {
-  background: radial-gradient(transparent 0%, transparent 80%, rgb(180 85 45 / 0.35) 80%);
+  background: radial-gradient(transparent 0%, transparent 80%, rgb(86 150 220 / 0.45) 80%);
 }
 .cg-wrap cg-board square.move-dest:hover,
 .cg-wrap cg-board square.move-dest.hover {
-  background: rgb(180 85 45 / 0.35);
+  background: rgb(86 150 220 / 0.4);
 }
 
 /* Coordinates are drawn over the squares; keep them readable but discreet. */

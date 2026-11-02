@@ -8,6 +8,7 @@ import { MistakesScreen } from '../features/progress/MistakesScreen';
 import { PuzzleScreen } from '../features/puzzles/PuzzleScreen';
 import { SessionScreen } from '../features/session/SessionScreen';
 import { UpdatePrompt } from './UpdatePrompt';
+import { watchSystemTheme } from './theme';
 
 type View = 'home' | 'session' | 'puzzle' | 'mistakes' | 'endgame' | 'opening' | 'play' | 'credits';
 
@@ -17,6 +18,8 @@ export function App() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [view]);
+
+  useEffect(() => watchSystemTheme(), []);
 
   return (
     <>

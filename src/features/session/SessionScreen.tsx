@@ -150,9 +150,9 @@ export function SessionScreen({ onExit }: { onExit: () => void }) {
           >
             <ChevronLeft size={22} />
           </button>
-          <h1 className="font-serif text-lg">{fr.session.title}</h1>
+          <h1 className="text-lg">{fr.session.title}</h1>
           {state.status === 'ready' ? (
-            <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
+            <span className="border-line text-ink-muted ml-auto rounded-xs border px-2.5 py-1 text-xs">
               {state.cursor.position} / {state.cursor.total}
             </span>
           ) : null}
@@ -195,7 +195,7 @@ export function SessionScreen({ onExit }: { onExit: () => void }) {
               <button
                 type="button"
                 onClick={retry}
-                className="bg-accent mt-4 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                className="bg-accent mt-4 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
               >
                 {fr.session.retry}
               </button>
@@ -204,12 +204,12 @@ export function SessionScreen({ onExit }: { onExit: () => void }) {
 
           {state.status === 'empty' || (state.status === 'ready' && !completed && !card) ? (
             <div className="mt-6">
-              <h2 className="font-serif text-xl">{fr.session.emptyTitle}</h2>
+              <h2 className="text-xl">{fr.session.emptyTitle}</h2>
               <p className="text-ink-muted mt-2 text-sm">{fr.session.emptyBody}</p>
               <button
                 type="button"
                 onClick={onExit}
-                className="border-line text-ink-muted mt-4 w-full rounded-xl border px-4 py-3 text-sm"
+                className="border-line text-ink-muted mt-4 w-full rounded-sm border px-4 py-3 text-sm"
               >
                 {fr.session.backHome}
               </button>
@@ -218,14 +218,14 @@ export function SessionScreen({ onExit }: { onExit: () => void }) {
 
           {state.status === 'ready' && completed ? (
             <div className="mt-6">
-              <h2 className="font-serif text-2xl">{fr.session.doneTitle}</h2>
+              <h2 className="text-2xl">{fr.session.doneTitle}</h2>
               <p className="text-ink-muted mt-2 text-sm">
                 {fr.session.doneCards.replace('{count}', String(state.cursor.total))}
               </p>
               <button
                 type="button"
                 onClick={onExit}
-                className="bg-accent mt-4 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                className="bg-accent mt-4 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
               >
                 {fr.session.backHome}
               </button>

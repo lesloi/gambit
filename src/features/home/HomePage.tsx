@@ -1,9 +1,11 @@
+import { ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { database } from '../../db/db';
 import { journalMark } from '../../db/journal';
 import { fr } from '../../i18n/fr';
 import { BoardPreview } from '../../ui/BoardPreview';
 import { SkipLink } from '../../ui/SkipLink';
+import { ThemePicker } from '../../ui/ThemePicker';
 import { loadSessionCatalog } from '../session/catalog';
 import { clearSession, readSession } from '../session/cursor';
 import { dueCountLabel, newCountLabel } from '../session/labels';
@@ -22,6 +24,10 @@ interface Preview {
   fresh: number;
   total: number;
 }
+
+const EYEBROW = 'text-ink-muted text-[0.6875rem] font-semibold tracking-[0.12em] uppercase';
+const MODE_ROW =
+  'border-line-soft flex w-full items-center gap-3 border-b py-2.5 pr-1 text-left disabled:cursor-default';
 
 export function HomePage({
   onStartSession,
@@ -102,37 +108,46 @@ export function HomePage({
           : fr.session.readyBody.replace('{new}', newCountLabel(newCards));
   const action = running ? fr.session.resume : completed ? fr.session.restart : fr.session.start;
 
+  const startMode = (id: string) => {
+    if (id === 'puzzles') onStartPuzzle();
+    else if (id === 'endgames') onStartEndgame();
+    else if (id === 'openings') onStartOpening();
+    else if (id === 'play') onStartPlay();
+  };
+
   return (
     <div className="min-h-dvh bg-paper">
       <SkipLink />
 
-      <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-5 pt-8 pb-8 sm:px-8">
-        <header>
-          <h1 className="font-serif text-3xl leading-none tracking-tight">{fr.app.name}</h1>
-          <p className="text-ink-muted mt-1 text-sm">{fr.app.tagline}</p>
-        </header>
+      <header className="border-line border-b">
+        <div className="mx-auto flex w-full max-w-2xl items-baseline justify-between gap-3 px-5 py-3">
+          <h1 className="text-[0.9375rem] font-semibold tracking-tight">
+            {fr.app.name.toLowerCase()}
+            <span className="text-accent-ink">.</span>
+          </h1>
+          <p className="text-ink-muted text-xs">{fr.app.tagline}</p>
+        </div>
+      </header>
 
-        <main id="main" className="flex-1">
+      <div className="mx-auto w-full max-w-2xl px-5 pt-6 pb-8">
+        <p className={EYEBROW}>{fr.home.sessionTitle}</p>
+
+        <main id="main" className="mt-2">
           <section
             aria-labelledby="session-title"
-            className="border-line bg-paper-raised mt-8 rounded-2xl border p-5 shadow-[0_1px_0_rgb(43_37_31_/_0.04)]"
+            className="border-line bg-paper-raised rounded-sm border p-3.5"
           >
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-              <BoardPreview className="mx-auto w-56 shrink-0 sm:mx-0 sm:w-44" />
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <BoardPreview className="mx-auto w-[118px] shrink-0 sm:mx-0 sm:w-[136px]" />
               <div className="min-w-0">
-                <p className="text-accent text-[11px] tracking-[0.18em] uppercase">
-                  {fr.home.sessionTitle}
-                </p>
-                <h2 id="session-title" className="mt-1 font-serif text-xl">
+                <h2 id="session-title" className="text-lg leading-tight font-semibold">
                   {title}
                 </h2>
-                <p className="text-ink-muted mt-2 text-sm leading-relaxed">{body}</p>
+                <p className="text-ink-muted mt-1 text-[0.8125rem] leading-relaxed">{body}</p>
 
                 {fresh && preview !== null ? (
-                  <p className="text-ink-muted mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                    <span>{dueCountLabel(preview.due)}</span>
-                    <span aria-hidden="true">·</span>
-                    <span>{newCountLabel(preview.fresh)}</span>
+                  <p className="text-ink-muted mt-2 text-xs">
+                    {dueCountLabel(preview.due)} · {newCountLabel(preview.fresh)}
                   </p>
                 ) : null}
               </div>
@@ -142,7 +157,7 @@ export function HomePage({
               type="button"
               onClick={onStartSession}
               disabled={nothingToDo}
-              className="bg-accent mt-4 min-h-11 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition-opacity disabled:cursor-default disabled:opacity-50"
+              className="bg-accent mt-4 min-h-11 w-full rounded-sm px-4 text-[0.84375rem] font-semibold text-white disabled:cursor-default disabled:opacity-50"
             >
               {action}
             </button>
@@ -154,24 +169,21 @@ export function HomePage({
                   clearSession();
                   onStartSession();
                 }}
-                className="text-ink-muted mt-2 min-h-11 w-full text-xs underline underline-offset-2"
+                className="text-ink-muted hover:text-ink mt-1 min-h-11 w-full text-xs underline underline-offset-2"
               >
                 {fr.session.restart}
               </button>
             ) : null}
 
             {running === null ? (
-              <div className="border-line mt-4 grid gap-3 border-t pt-3 sm:grid-cols-2">
-                <label
-                  htmlFor="session-new-cards"
-                  className="flex items-center justify-between gap-2"
-                >
-                  <span className="text-ink-muted text-xs">{fr.session.newCardsLabel}</span>
+              <div className="border-line mt-3 grid gap-3 border-t pt-3 sm:grid-cols-2">
+                <label htmlFor="session-new-cards" className="block">
+                  <span className="text-ink-muted block text-xs">{fr.session.newCardsLabel}</span>
                   <select
                     id="session-new-cards"
                     value={settings.newCards}
                     onChange={(event) => changeSettings({ newCards: Number(event.target.value) })}
-                    className="border-line bg-paper-raised text-ink min-h-11 rounded-lg border px-2 text-sm"
+                    className="border-line bg-paper text-ink mt-1 min-h-11 w-full rounded-sm border px-2 text-sm"
                   >
                     {NEW_CARD_CHOICES.map((count) => (
                       <option key={count} value={count}>
@@ -181,13 +193,13 @@ export function HomePage({
                   </select>
                 </label>
 
-                <label htmlFor="session-band" className="flex items-center justify-between gap-2">
-                  <span className="text-ink-muted text-xs">{fr.session.bandLabel}</span>
+                <label htmlFor="session-band" className="block">
+                  <span className="text-ink-muted block text-xs">{fr.session.bandLabel}</span>
                   <select
                     id="session-band"
                     value={settings.band}
                     onChange={(event) => changeSettings({ band: event.target.value as PuzzleBand })}
-                    className="border-line bg-paper-raised text-ink min-h-11 rounded-lg border px-2 text-sm"
+                    className="border-line bg-paper text-ink mt-1 min-h-11 w-full rounded-sm border px-2 text-sm"
                   >
                     {RATING_BANDS.map((band) => (
                       <option key={band} value={band}>
@@ -200,49 +212,44 @@ export function HomePage({
             ) : null}
           </section>
 
-          <section aria-labelledby="train-title" className="mt-10">
-            <h2 id="train-title" className="font-serif text-xl">
+          <section aria-labelledby="train-title" className="mt-6">
+            <h2 id="train-title" className={EYEBROW}>
               {fr.home.trainTitle}
             </h2>
-            <p className="text-ink-muted mt-1 text-sm">{fr.home.trainHint}</p>
 
-            <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+            <ul className="mt-1">
               {MODES.filter((mode) => mode.group === 'train').map(
                 ({ id, icon: Icon, available }) => (
                   <li key={id} data-testid={`mode-${id}`}>
                     <button
                       type="button"
-                      onClick={
-                        id === 'puzzles'
-                          ? onStartPuzzle
-                          : id === 'endgames'
-                            ? onStartEndgame
-                            : id === 'openings'
-                              ? onStartOpening
-                              : undefined
-                      }
+                      onClick={() => startMode(id)}
                       disabled={!available}
-                      className="border-line bg-paper-raised hover:border-accent/40 flex h-full w-full flex-col gap-3 rounded-xl border p-4 text-left transition-colors disabled:cursor-default disabled:opacity-100"
+                      className={MODE_ROW}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <span
-                          aria-hidden="true"
-                          className="bg-accent-soft text-accent grid size-9 place-items-center rounded-lg"
-                        >
-                          <Icon size={18} strokeWidth={1.75} />
-                        </span>
-                        {available ? null : (
-                          <span className="border-line text-ink-muted rounded-full border px-2 py-0.5 text-[10px] tracking-wider uppercase">
-                            {fr.home.comingSoon}
-                          </span>
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-semibold">{fr.modes[id].name}</h3>
-                        <p className="text-ink-muted mt-1 text-sm leading-snug">
+                      <span
+                        aria-hidden="true"
+                        className="text-ink-muted grid w-[22px] shrink-0 place-items-center"
+                      >
+                        <Icon size={18} strokeWidth={1.6} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold">{fr.modes[id].name}</span>
+                        <span className="text-ink-muted mt-0.5 block text-xs leading-snug">
                           {fr.modes[id].goal}
-                        </p>
-                      </div>
+                        </span>
+                      </span>
+                      {available ? (
+                        <ChevronRight
+                          size={16}
+                          className="text-ink-muted shrink-0 opacity-60"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <span className="border-line text-ink-muted shrink-0 rounded-xs border px-1.5 py-0.5 text-[0.625rem] tracking-wide uppercase">
+                          {fr.home.comingSoon}
+                        </span>
+                      )}
                     </button>
                   </li>
                 ),
@@ -250,69 +257,76 @@ export function HomePage({
             </ul>
           </section>
 
-          <section aria-labelledby="play-title" className="mt-10">
-            <h2 id="play-title" className="font-serif text-xl">
+          <section aria-labelledby="play-title" className="mt-6">
+            <h2 id="play-title" className={EYEBROW}>
               {fr.home.playTitle}
             </h2>
-            <p className="text-ink-muted mt-1 text-sm">{fr.home.playHint}</p>
 
-            <ul className="mt-4">
+            <ul className="mt-1">
               {MODES.filter((mode) => mode.group === 'play').map(
                 ({ id, icon: Icon, available }) => (
                   <li key={id} data-testid={`mode-${id}`}>
                     <button
                       type="button"
-                      onClick={onStartPlay}
+                      onClick={() => startMode(id)}
                       disabled={!available}
-                      className="border-line bg-paper-raised hover:border-accent/40 flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-colors disabled:cursor-default disabled:opacity-100"
+                      className={MODE_ROW}
                     >
                       <span
                         aria-hidden="true"
-                        className="bg-accent-soft text-accent grid size-9 shrink-0 place-items-center rounded-lg"
+                        className="text-ink-muted grid w-[22px] shrink-0 place-items-center"
                       >
-                        <Icon size={18} strokeWidth={1.75} />
+                        <Icon size={18} strokeWidth={1.6} />
                       </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="text-sm font-semibold">{fr.modes[id].name}</h3>
-                          {available ? null : (
-                            <span className="border-line text-ink-muted shrink-0 rounded-full border px-2 py-0.5 text-[10px] tracking-wider uppercase">
-                              {fr.home.comingSoon}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-ink-muted mt-1 text-sm leading-snug">
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold">{fr.modes[id].name}</span>
+                        <span className="text-ink-muted mt-0.5 block text-xs leading-snug">
                           {fr.modes[id].goal}
-                        </p>
-                      </div>
+                        </span>
+                      </span>
+                      {available ? (
+                        <ChevronRight
+                          size={16}
+                          className="text-ink-muted shrink-0 opacity-60"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <span className="border-line text-ink-muted shrink-0 rounded-xs border px-1.5 py-0.5 text-[0.625rem] tracking-wide uppercase">
+                          {fr.home.comingSoon}
+                        </span>
+                      )}
                     </button>
                   </li>
                 ),
               )}
             </ul>
           </section>
-        </main>
 
-        <footer className="border-line text-ink-muted mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-5 text-xs">
-          <span>{fr.home.privacy}</span>
-          <span aria-hidden="true">·</span>
-          <span>{fr.home.license}</span>
-          <span aria-hidden="true">·</span>
-          <button
-            type="button"
-            onClick={onShowCredits}
-            className="decoration-line hover:text-ink underline underline-offset-2"
-          >
-            {fr.home.credits}
-          </button>
-          <a
-            className="decoration-line hover:text-ink ml-auto underline underline-offset-2"
-            href="https://github.com/lesloi/gambit"
-            rel="noreferrer"
-          >
-            {fr.home.source}
-          </a>
-        </footer>
+          <div className="mt-6">
+            <ThemePicker />
+          </div>
+
+          <footer className="text-ink-muted mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.71875rem]">
+            <span>{fr.home.privacy}</span>
+            <span aria-hidden="true">·</span>
+            <span>{fr.home.license}</span>
+            <span aria-hidden="true">·</span>
+            <button
+              type="button"
+              onClick={onShowCredits}
+              className="hover:text-ink underline underline-offset-2"
+            >
+              {fr.home.credits}
+            </button>
+            <a
+              className="hover:text-ink ml-auto underline underline-offset-2"
+              href="https://github.com/lesloi/gambit"
+              rel="noreferrer"
+            >
+              {fr.home.source}
+            </a>
+          </footer>
+        </main>
       </div>
     </div>
   );

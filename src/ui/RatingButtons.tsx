@@ -13,10 +13,10 @@ export const GRADE: Record<Rating, Grade> = {
 };
 
 const RATING_OPACITY: Record<Rating, string> = {
-  again: 'bg-accent/40',
-  hard: 'bg-accent/60',
-  good: 'bg-accent/80',
-  easy: 'bg-accent',
+  again: 'bg-accent-ink/40',
+  hard: 'bg-accent-ink/60',
+  good: 'bg-accent-ink/80',
+  easy: 'bg-accent-ink',
 };
 
 /**
@@ -39,7 +39,7 @@ export function RatingButtons({
           aria-pressed={rating === value}
           disabled={rating !== null}
           onClick={() => onRate(value)}
-          className={`min-h-11 rounded-lg border px-1 py-2 text-[11px] transition-colors ${
+          className={`min-h-11 rounded-sm border px-1 py-2 text-[0.6875rem] transition-colors ${
             rating === value ? 'border-ok text-ink font-semibold' : 'border-line text-ink-muted'
           }`}
         >
