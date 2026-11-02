@@ -12,11 +12,8 @@ import { afterMove, createClock, flagged, formatClock, remainingMs, stopClock } 
 import { flagSide, playMove, playUci, showHint, startGame, type PlayState } from './game';
 import { HINT_MOVETIME_MS, HINT_SKILL, LEVELS, type Level } from './level';
 import { gameRecord, saveGame } from './record';
-import { readPlayLevel, savePlayLevel } from './settings';
-
-const GAME_CLOCK_MS = 10 * 60 * 1000;
-/** The label of the fixed control, derived from the constant so the two cannot drift apart. */
-const GAME_CLOCK_LABEL = fr.play.clockValue.replace('{minutes}', String(GAME_CLOCK_MS / 60_000));
+import { readPlayLevel, readPlayTimeControl, savePlayLevel, savePlayTimeControl } from './settings';
+import { formatTimeControl, TIME_CONTROLS, type TimeControl } from './timeControl';
 
 type EngineState = 'loading' | 'ready' | 'failed';
 type Saved = 'idle' | 'saved' | 'failed';
@@ -29,11 +26,13 @@ interface PendingPromotion {
 
 export function PlayScreen({ onExit }: { onExit: () => void }) {
   const [levelIndex, setLevelIndex] = useState(readPlayLevel);
+  const [controlIndex, setControlIndex] = useState(readPlayTimeControl);
   const [gameKey, setGameKey] = useState(0);
   const [playing, setPlaying] = useState(false);
 
   const start = () => {
     savePlayLevel(levelIndex);
+    savePlayTimeControl(controlIndex);
     setGameKey((key) => key + 1);
     setPlaying(true);
   };
@@ -63,12 +62,18 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
             <PlayGame
               key={gameKey}
               level={LEVELS[levelIndex]}
-              controlMs={GAME_CLOCK_MS}
+              control={TIME_CONTROLS[controlIndex]}
               onNewGame={() => setGameKey((key) => key + 1)}
               onChangeLevel={() => setPlaying(false)}
             />
           ) : (
-            <PlaySetup levelIndex={levelIndex} onLevelChange={setLevelIndex} onStart={start} />
+            <PlaySetup
+              levelIndex={levelIndex}
+              onLevelChange={setLevelIndex}
+              controlIndex={controlIndex}
+              onControlChange={setControlIndex}
+              onStart={start}
+            />
           )}
         </div>
       </div>
@@ -79,10 +84,14 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
 function PlaySetup({
   levelIndex,
   onLevelChange,
+  controlIndex,
+  onControlChange,
   onStart,
 }: {
   levelIndex: number;
   onLevelChange: (index: number) => void;
+  controlIndex: number;
+  onControlChange: (index: number) => void;
   onStart: () => void;
 }) {
   const level = LEVELS[levelIndex];
@@ -115,9 +124,23 @@ function PlaySetup({
           {levelText}
         </p>
 
-        <p className="text-ink-muted mt-5 text-sm">
-          {fr.play.clock} · {GAME_CLOCK_LABEL}
-        </p>
+        <div className="mt-5">
+          <label htmlFor="play-time-control" className="text-sm font-semibold">
+            {fr.play.clock}
+          </label>
+          <select
+            id="play-time-control"
+            value={controlIndex}
+            onChange={(event) => onControlChange(Number(event.target.value))}
+            className="border-line bg-paper-raised text-ink mt-3 min-h-11 w-full rounded-lg border px-3 text-sm"
+          >
+            {TIME_CONTROLS.map((control, index) => (
+              <option key={index} value={index}>
+                {formatTimeControl(control)}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <button
           type="button"
@@ -148,17 +171,18 @@ const REASON_LABEL: Record<GameReason, string> = {
 
 function PlayGame({
   level,
-  controlMs,
+  control,
   onNewGame,
   onChangeLevel,
 }: {
   level: Level;
-  controlMs: number;
+  control: TimeControl;
   onNewGame: () => void;
   onChangeLevel: () => void;
 }) {
+  const { controlMs, incrementMs } = control;
   const [state, setState] = useState(startGame);
-  const [clock, setClock] = useState(() => createClock(controlMs));
+  const [clock, setClock] = useState(() => createClock(controlMs, incrementMs));
   const [now, setNow] = useState(() => Date.now());
   const [engineState, setEngineState] = useState<EngineState>('loading');
   const [engineAttempt, setEngineAttempt] = useState(0);
@@ -172,10 +196,15 @@ function PlayGame({
   const recorded = useRef(false);
   const startedAt = useRef<number | null>(null);
   const generation = useRef(0);
+  const clockRef = useRef(clock);
 
   useEffect(() => {
     startedAt.current ??= Date.now();
   }, []);
+
+  useEffect(() => {
+    clockRef.current = clock;
+  }, [clock]);
 
   useEffect(() => {
     let active = true;
@@ -233,6 +262,7 @@ function PlayGame({
       const record = gameRecord(after, {
         level: level.elo,
         controlMs,
+        incrementMs,
         startedAt: startedAt.current ?? Date.now(),
         endedAt: Date.now(),
       });
@@ -241,7 +271,7 @@ function PlayGame({
         () => setSaved('failed'),
       );
     },
-    [controlMs, level.elo],
+    [controlMs, incrementMs, level.elo],
   );
 
   const applyMove = useCallback(
@@ -273,13 +303,21 @@ function PlayGame({
             return;
           }
 
+          const at = Date.now();
+          const late = flagged(clockRef.current, at);
+          if (late !== null) {
+            generation.current += 1;
+            complete(flagSide(game, late));
+            return;
+          }
+
           const after = playUci(game, uci);
           if (after === game) {
             // The engine named a move the board refuses; it can no longer be trusted for this game.
             setEngineState('failed');
             return;
           }
-          applyMove(after, sideToMove(game.fen), Date.now());
+          applyMove(after, sideToMove(game.fen), at);
         },
         () => {
           if (request !== generation.current) return;
@@ -288,7 +326,7 @@ function PlayGame({
         },
       );
     },
-    [applyMove, level.movetimeMs, level.skill],
+    [applyMove, complete, level.movetimeMs, level.skill],
   );
 
   const playUserMove = (from: string, to: string, promotion?: PromotionPiece) => {
@@ -395,7 +433,7 @@ function PlayGame({
     <>
       <div className="flex items-center justify-between gap-3">
         <p className="text-ink-muted text-sm">
-          {fr.play.clock} · {GAME_CLOCK_LABEL}
+          {fr.play.clock} · {formatTimeControl(control)}
         </p>
         {state.assisted ? (
           <span className="border-line text-ink-muted rounded-full border px-2 py-0.5 text-[10px] tracking-wider uppercase">
@@ -493,7 +531,7 @@ function PlayGame({
               onClick={onChangeLevel}
               className="border-line text-ink-muted flex-1 rounded-xl border px-4 py-3 text-sm"
             >
-              {fr.play.changeLevel}
+              {fr.play.changeSettings}
             </button>
           </div>
         </div>

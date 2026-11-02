@@ -8,7 +8,13 @@ afterAll(async () => {
   await database.delete();
 });
 
-const meta = { level: 1500, controlMs: 600_000, startedAt: 1_000, endedAt: 2_000 };
+const meta = {
+  level: 1500,
+  controlMs: 600_000,
+  incrementMs: 10_000,
+  startedAt: 1_000,
+  endedAt: 2_000,
+};
 
 describe('gameRecord', () => {
   it('stores the moves and the result of a finished game', () => {
@@ -17,6 +23,7 @@ describe('gameRecord', () => {
     expect(gameRecord(state, meta)).toEqual({
       level: 1500,
       controlMs: 600_000,
+      incrementMs: 10_000,
       userColor: 'white',
       moves: ['e2e4'],
       result: { winner: 'black', reason: 'flag' },
