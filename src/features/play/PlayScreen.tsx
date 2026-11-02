@@ -21,6 +21,7 @@ import {
 } from './clock';
 import { flagSide, playMove, playUci, showHint, startGame, type PlayState } from './game';
 import { HINT_MOVETIME_MS, HINT_SKILL, LEVELS, type Level } from './level';
+import { materialOf, type CapturedPiece, type Material, type MaterialColor } from './material';
 import { thinkTimeMs } from './pacing';
 import { gameRecord, saveGame } from './record';
 import { readPlayLevel, readPlayTimeControl, savePlayLevel, savePlayTimeControl } from './settings';
@@ -171,6 +172,16 @@ function resultLabel(result: GameResult): string {
   return fr.play.draw;
 }
 
+function materialLabel(advantage: number): string {
+  // An even material says nothing: the region stays mounted so a later advantage is announced.
+  if (advantage === 0) return '';
+
+  return (advantage > 0 ? fr.play.material.white : fr.play.material.black).replace(
+    '{points}',
+    String(Math.abs(advantage)),
+  );
+}
+
 const REASON_LABEL: Record<GameReason, string> = {
   mate: fr.play.reasons.mate,
   stalemate: fr.play.reasons.stalemate,
@@ -261,6 +272,7 @@ function PlayGame({
     [movable, state.fen],
   );
   const remaining = remainingMs(clock, now);
+  const material = useMemo(() => materialOf(state.fen, state.moves), [state.fen, state.moves]);
 
   const complete = useCallback(
     (after: PlayState) => {
@@ -494,6 +506,7 @@ function PlayGame({
               side="black"
               ms={remaining.black}
               active={clock.running === 'black' && state.outcome === 'playing'}
+              material={material}
             />
 
             <div
@@ -519,7 +532,12 @@ function PlayGame({
               side="white"
               ms={remaining.white}
               active={clock.running === 'white' && state.outcome === 'playing'}
+              material={material}
             />
+
+            <p className="sr-only" role="status">
+              {materialLabel(material.advantage)}
+            </p>
           </div>
 
           <p className="mt-3 text-[0.8125rem] font-medium" role="status">
@@ -665,8 +683,58 @@ function PlayGame({
   );
 }
 
-function ClockRow({ side, ms, active }: { side: Side; ms: number; active: boolean }) {
+const PIECE_FILE: Record<CapturedPiece, string> = {
+  p: 'P',
+  n: 'N',
+  b: 'B',
+  r: 'R',
+  q: 'Q',
+};
+
+/** The pieces a side took belong to the other side, so the image takes the opposite colour. */
+function capturedSource(side: MaterialColor, piece: CapturedPiece): string {
+  return `/pieces/chessnut/${side === 'white' ? 'b' : 'w'}${PIECE_FILE[piece]}.svg`;
+}
+
+function CapturedPieces({
+  side,
+  pieces,
+}: {
+  side: MaterialColor;
+  pieces: readonly CapturedPiece[];
+}) {
+  if (pieces.length === 0) return null;
+
+  return (
+    <span
+      aria-hidden="true"
+      className="bg-board-light flex shrink-0 items-center rounded-xs px-1 py-0.5"
+    >
+      {pieces.map((piece, index) => (
+        <img
+          key={`${piece}-${index}`}
+          src={capturedSource(side, piece)}
+          alt=""
+          className={`size-4 shrink-0 ${index === 0 ? '' : '-ml-2'}`}
+        />
+      ))}
+    </span>
+  );
+}
+
+function ClockRow({
+  side,
+  ms,
+  active,
+  material,
+}: {
+  side: Side;
+  ms: number;
+  active: boolean;
+  material: Material;
+}) {
   const label = side === 'white' ? fr.play.clocks.white : fr.play.clocks.black;
+  const advantage = side === 'white' ? material.advantage : -material.advantage;
 
   return (
     <div
@@ -674,7 +742,18 @@ function ClockRow({ side, ms, active }: { side: Side; ms: number; active: boolea
         active ? 'text-ink' : 'text-ink-muted'
       }`}
     >
-      <span>{side === 'white' ? fr.opening.white : fr.opening.black}</span>
+      <span className="flex min-w-0 items-center gap-1.5">
+        <span className="shrink-0">{side === 'white' ? fr.opening.white : fr.opening.black}</span>
+        <CapturedPieces side={side} pieces={material.captured[side]} />
+        {advantage > 0 ? (
+          <span
+            aria-hidden="true"
+            className="text-ink shrink-0 text-[0.6875rem] font-semibold tabular-nums"
+          >
+            +{advantage}
+          </span>
+        ) : null}
+      </span>
       <span
         className={`text-[0.9375rem] tabular-nums ${active ? 'text-ink font-semibold' : ''}`}
         role="timer"
