@@ -84,8 +84,9 @@ _Avoid_: Database, catalog, library
 ### Engine
 
 **Engine** _(moteur)_:
-Stockfish, compiled to WebAssembly and run in a Web Worker. It plays the endgames and the games,
-and analyses them afterwards.
+The program that plays a side. Stockfish, compiled to WebAssembly and run in a Web Worker, plays the
+endgames and the games and analyses them afterwards; Maia, the human-like opponent of the games, is
+documented in [MAIA.md](./docs/MAIA.md).
 _Avoid_: AI, bot, computer
 
 **Level** _(niveau)_:

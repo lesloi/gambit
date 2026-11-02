@@ -60,6 +60,7 @@ deploy it.
 
 - [INSTALL.md](./docs/INSTALL.md): development, image, deployment.
 - [DECISIONS.md](./docs/DECISIONS.md): the lasting choices and why.
+- [MAIA.md](./docs/MAIA.md): the human-like opponent, before it is built.
 - [DESIGN.md](./docs/DESIGN.md): the interface and its tokens.
 - [GLOSSARY.md](./GLOSSARY.md): the vocabulary of the project.
 - [CONTRIBUTING.md](./CONTRIBUTING.md): commands and conventions.
