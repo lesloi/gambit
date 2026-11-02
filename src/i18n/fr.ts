@@ -208,7 +208,6 @@ export const fr = {
     material: {
       white: 'Matériel : Blancs +{points}.',
       black: 'Matériel : Noirs +{points}.',
-      even: 'Matériel : égalité.',
     },
   },
   rating: {

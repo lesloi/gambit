@@ -173,7 +173,8 @@ function resultLabel(result: GameResult): string {
 }
 
 function materialLabel(advantage: number): string {
-  if (advantage === 0) return fr.play.material.even;
+  // An even material says nothing: the region stays mounted so a later advantage is announced.
+  if (advantage === 0) return '';
 
   return (advantage > 0 ? fr.play.material.white : fr.play.material.black).replace(
     '{points}',
