@@ -1,13 +1,14 @@
 import { ChevronLeft, Lightbulb, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { database } from '../../db/db';
-import type { Engine } from '../../engine/uci';
-import { createStockfishEngine } from '../../engine/stockfish';
+import { createStockfishEngine, type StockfishEngine } from '../../engine/stockfish';
+import type { PositionEval } from '../../engine/uci';
 import { fr } from '../../i18n/fr';
 import { legalDests, promotionPieces, sideToMove, type PromotionPiece } from '../../lib/chess';
 import type { GameReason, GameResult, Side } from '../../lib/position';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { PromotionDialog, promotionAnchor } from '../../ui/PromotionDialog';
+import { GameReview } from './GameReview';
 import {
   afterMove,
   createClock,
@@ -200,7 +201,8 @@ function PlayGame({
   const [saved, setSaved] = useState<Saved>('idle');
   const [pending, setPending] = useState<PendingPromotion | null>(null);
   const [resetKey, setResetKey] = useState(0);
-  const engine = useRef<Engine | null>(null);
+  const [reviewing, setReviewing] = useState(false);
+  const engine = useRef<StockfishEngine | null>(null);
   const boardHost = useRef<HTMLDivElement>(null);
   const recorded = useRef(false);
   const startedAt = useRef<number | null>(null);
@@ -217,7 +219,7 @@ function PlayGame({
 
   useEffect(() => {
     let active = true;
-    let instance: Engine;
+    let instance: StockfishEngine;
     try {
       instance = createStockfishEngine();
     } catch {
@@ -416,6 +418,15 @@ function PlayGame({
     setEngineAttempt((attempt) => attempt + 1);
   };
 
+  // The review asks for a position rather than the engine itself: the ref is read when the search
+  // starts, never during a render, and the game screen keeps owning the worker.
+  const analysePosition = useCallback((fen: string, movetimeMs: number): Promise<PositionEval> => {
+    const instance = engine.current;
+    return instance
+      ? instance.analyse(fen, { movetimeMs })
+      : Promise.reject(new Error('The engine is not ready'));
+  }, []);
+
   const clockRunning = state.outcome === 'playing' && clock.running !== null;
 
   useEffect(() => {
@@ -437,6 +448,17 @@ function PlayGame({
 
     return () => clearInterval(timer);
   }, [clockRunning, clock, state, complete]);
+
+  if (reviewing) {
+    return (
+      <GameReview
+        analyse={analysePosition}
+        game={state}
+        onNewGame={onNewGame}
+        onChangeSettings={onChangeLevel}
+      />
+    );
+  }
 
   const status =
     engineState === 'loading'
@@ -526,7 +548,7 @@ function PlayGame({
             <p className="text-sm font-semibold">{resultLabel(state.result)}</p>
             <p className="text-ink-muted mt-1 text-xs">{REASON_LABEL[state.result.reason]}</p>
             {state.assisted ? (
-              <p className="text-ink-muted mt-1 text-xs">{fr.play.assisted}</p>
+              <p className="text-ink-muted mt-1 text-xs">{fr.play.analysis.assisted}</p>
             ) : null}
             {saved === 'saved' ? (
               <p className="text-ink-muted mt-1 text-xs">{fr.play.saved}</p>
@@ -538,11 +560,30 @@ function PlayGame({
             ) : null}
           </div>
 
+          {!state.assisted ? (
+            engineState === 'failed' ? (
+              <p className="text-ink-muted mt-3 text-xs">{fr.play.analysis.unavailable}</p>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setReviewing(true)}
+                disabled={engineState !== 'ready'}
+                className="bg-accent mt-3 min-h-11 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {fr.play.analysis.start}
+              </button>
+            )
+          ) : null}
+
           <div className="mt-3 flex gap-2">
             <button
               type="button"
               onClick={onNewGame}
-              className="bg-accent flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-white"
+              className={
+                state.assisted
+                  ? 'bg-accent flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-white'
+                  : 'border-line text-ink flex-1 rounded-xl border px-4 py-3 text-sm'
+              }
             >
               {fr.play.newGame}
             </button>

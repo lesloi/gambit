@@ -1,4 +1,4 @@
-import { UciEngine, type Engine } from './uci';
+import { UciEngine, type Analyser, type Engine } from './uci';
 
 /** The lite single-threaded build, copied into public/ so it runs without COOP/COEP headers. */
 export const STOCKFISH_URL = '/stockfish/stockfish-19-lite-single.js';
@@ -28,6 +28,8 @@ class WorkerTransport {
   }
 }
 
-export function createStockfishEngine(): Engine {
+export type StockfishEngine = Engine & Analyser;
+
+export function createStockfishEngine(): StockfishEngine {
   return new UciEngine(new WorkerTransport(new Worker(STOCKFISH_URL)));
 }
