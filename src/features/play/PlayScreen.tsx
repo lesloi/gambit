@@ -256,6 +256,8 @@ function PlayGame({
     !hintPending &&
     pending === null &&
     engineState === 'ready';
+  // The engine's turn is when the user can queue a premove, which then plays on its reply.
+  const premovable = state.outcome === 'playing' && !userTurn && engineState === 'ready';
   const dests = useMemo(
     () => (movable ? legalDests(state.fen) : new Map<string, string[]>()),
     [movable, state.fen],
@@ -369,9 +371,15 @@ function PlayGame({
     if (next && after.outcome === 'playing') askEngine(after, next);
   };
 
-  const move = (from: string, to: string) => {
+  const move = (from: string, to: string, premove = false) => {
     const options = promotionPieces(state.fen, from, to);
     if (options.length > 0) {
+      // A premove is played before the user sees it, so its promotion is settled up front; asking
+      // would leave the clock running behind a dialog they may not expect.
+      if (premove) {
+        playUserMove(from, to, 'q');
+        return;
+      }
       setPending({ from, to, options });
       return;
     }
@@ -508,6 +516,7 @@ function PlayGame({
                 turn={sideToMove(state.fen)}
                 lastMove={state.lastMove}
                 movable={movable}
+                premovable={premovable}
                 dests={dests}
                 hint={state.hint}
                 onMove={move}

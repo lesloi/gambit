@@ -66,6 +66,29 @@
   background: rgb(86 150 220 / 0.4);
 }
 
+/*
+ * A premove is a guess: it is drawn dimmer than a legal destination, and the squares it spans stay
+ * tinted while the engine thinks.
+ */
+.cg-wrap cg-board square.premove-dest {
+  background: radial-gradient(
+    rgb(86 150 220 / 0.35) 22%,
+    rgb(54 146 231 / 0.55) 0,
+    rgb(0 0 0 / 0.15) 0,
+    rgb(0 0 0 / 0) 0
+  );
+}
+.cg-wrap cg-board square.oc.premove-dest {
+  background: radial-gradient(transparent 0%, transparent 80%, rgb(86 150 220 / 0.3) 80%);
+}
+.cg-wrap cg-board square.premove-dest:hover,
+.cg-wrap cg-board square.premove-dest.hover {
+  background: rgb(86 150 220 / 0.25);
+}
+.cg-wrap cg-board square.current-premove {
+  background-color: rgb(86 150 220 / 0.3);
+}
+
 /* Coordinates are drawn over the squares; keep them readable but discreet. */
 .cg-wrap coords {
   font-family: var(--font-sans);

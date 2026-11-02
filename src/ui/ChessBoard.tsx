@@ -9,8 +9,10 @@ export interface ChessBoardProps {
   turn: 'white' | 'black';
   lastMove: [string, string] | null;
   movable: boolean;
+  /** The side not to move may queue one premove, played when the position updates. */
+  premovable?: boolean;
   dests: Map<string, string[]>;
-  onMove: (from: string, to: string) => void;
+  onMove: (from: string, to: string, premove: boolean) => void;
   /** A suggested move drawn as an arrow, or null to clear it. */
   hint?: { from: string; to: string } | null;
   /** Bumped to apply `fen` again after the board moved a piece without a state change. */
@@ -31,12 +33,17 @@ function asShapes(
   return hint ? [{ orig: hint.from as Key, dest: hint.to as Key, brush: 'paleBlue' }] : [];
 }
 
+function other(color: 'white' | 'black'): 'white' | 'black' {
+  return color === 'white' ? 'black' : 'white';
+}
+
 export function ChessBoard({
   fen,
   orientation,
   turn,
   lastMove,
   movable,
+  premovable = false,
   dests,
   onMove,
   hint = null,
@@ -62,12 +69,16 @@ export function ChessBoard({
       drawable: { autoShapes: asShapes(hint) },
       movable: {
         free: false,
-        color: movable ? turn : undefined,
+        color: movable ? turn : premovable ? other(turn) : undefined,
         dests: asKeys(dests),
+        // `after` fires for a played premove too, and its metadata says so; `move` does not.
+        events: {
+          after: (from, to, metadata) => moveHandler.current(from, to, metadata.premove === true),
+        },
       },
+      premovable: { enabled: premovable, showDests: true },
       draggable: { showGhost: true },
       selectable: { enabled: true },
-      events: { move: (from, to) => moveHandler.current(from, to) },
     });
     api.current = board;
     return () => {
@@ -86,11 +97,16 @@ export function ChessBoard({
       lastMove: asMove(lastMove),
       drawable: { autoShapes: asShapes(hint) },
       movable: {
-        color: movable ? turn : undefined,
+        color: movable ? turn : premovable ? other(turn) : undefined,
         dests: asKeys(dests),
       },
+      premovable: { enabled: premovable },
     });
-  }, [fen, orientation, turn, lastMove, movable, dests, hint, resetKey]);
+    // The engine's reply is the moment the queued premove plays, against the new destinations.
+    // A new fen leaves chessground's premove in place, so a game that ends has to cancel it.
+    if (movable) api.current?.playPremove();
+    else if (!premovable) api.current?.cancelPremove();
+  }, [fen, orientation, turn, lastMove, movable, premovable, dests, hint, resetKey]);
 
   return <div ref={host} className="aspect-square w-full touch-none overflow-hidden rounded-sm" />;
 }
