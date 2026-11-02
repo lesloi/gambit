@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flagSide, playMove, playUci, showHint, startGame } from './game';
+import { flagSide, playMove, playUci, positionAt, showHint, startGame } from './game';
 
 const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -123,5 +123,33 @@ describe('play game', () => {
     const before = startGame();
 
     expect(showHint(before, 'e2e5')).toBe(before);
+  });
+});
+
+describe('position at a ply', () => {
+  it('returns the start before any move', () => {
+    expect(positionAt(startGame(), 0)).toEqual({ fen: START, lastMove: null });
+  });
+
+  it('returns the position after a past move, with that move highlighted', () => {
+    const state = playUci(playMove(startGame(), 'e2', 'e4'), 'e7e5');
+
+    expect(positionAt(state, 1)).toEqual({
+      fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+      lastMove: ['e2', 'e4'],
+    });
+  });
+
+  it('returns the live position at the end of the game', () => {
+    const state = playUci(playMove(startGame(), 'e2', 'e4'), 'e7e5');
+
+    expect(positionAt(state, 2)).toEqual({ fen: state.fen, lastMove: state.lastMove });
+  });
+
+  it('clamps a ply outside the game', () => {
+    const state = playUci(playMove(startGame(), 'e2', 'e4'), 'e7e5');
+
+    expect(positionAt(state, 9)).toEqual(positionAt(state, 2));
+    expect(positionAt(state, -3)).toEqual(positionAt(state, 0));
   });
 });

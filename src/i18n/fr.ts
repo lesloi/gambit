@@ -159,6 +159,11 @@ export const fr = {
     levelValue: '≈ {elo} Elo',
     clock: 'Pendule',
     sheet: 'Coups',
+    review: {
+      whilePlaying: 'Relecture après {move}. La pendule continue.',
+      afterGame: 'Relecture après {move}.',
+      back: 'Revenir à la partie',
+    },
     notAssisted: 'Partie non assistée. L’analyse est proposée à la fin, sans indice.',
     start: 'Commencer la partie',
     newGame: 'Nouvelle partie',
