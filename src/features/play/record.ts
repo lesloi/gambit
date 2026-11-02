@@ -4,6 +4,7 @@ import type { PlayState } from './game';
 export interface GameMeta {
   level: number;
   controlMs: number;
+  incrementMs: number;
   startedAt: number;
   endedAt: number;
 }
@@ -18,6 +19,7 @@ export function gameRecord(state: PlayState, meta: GameMeta): StoredGame {
     level: meta.level,
     userColor: state.userColor,
     controlMs: meta.controlMs,
+    incrementMs: meta.incrementMs,
     moves: [...state.moves],
     result: state.result,
     assisted: state.assisted,

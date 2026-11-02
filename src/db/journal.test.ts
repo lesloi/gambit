@@ -201,7 +201,7 @@ describe('the database', () => {
 
     const reopened = new GambitDatabase(name);
     try {
-      expect(reopened.verno).toBe(2);
+      expect(reopened.verno).toBe(3);
       expect(await reopened.reviews.count()).toBe(1);
       expect(await reopened.games.count()).toBe(0);
       expect(await reopened.meta.get('scheduler')).toEqual({ key: 'scheduler', ...SCHEDULER });
@@ -229,6 +229,43 @@ describe('the database', () => {
       expect(await reopened.meta.count()).toBe(1);
       expect(await reopened.meta.get('scheduler')).toEqual({ key: 'scheduler', ...SCHEDULER });
       expect(await reopened.games.count()).toBe(0);
+    } finally {
+      reopened.close();
+    }
+  });
+
+  it('gives every game stored before the increment a zero one', async () => {
+    // A v2 game predates the time control choice: it was played at a fixed control and no
+    // increment, so the upgrade writes the increment the game actually had.
+    const name = `gambit-test-${crypto.randomUUID()}`;
+    const legacy = new Dexie(name);
+    legacy.version(2).stores({
+      reviews: '++id, cardId, reviewedAt',
+      games: '++id, startedAt',
+      meta: 'key',
+    });
+    await legacy.open();
+    const game = {
+      endedAt: START + MINUTE,
+      level: 1500,
+      userColor: 'white',
+      controlMs: 600_000,
+      moves: [],
+      result: { winner: null, reason: 'stalemate' as const },
+      assisted: false,
+    };
+    await legacy.table('games').bulkAdd([
+      { ...game, startedAt: START },
+      { ...game, startedAt: START + MINUTE },
+    ]);
+    legacy.close();
+
+    const reopened = new GambitDatabase(name);
+    try {
+      await expect(reopened.games.toArray()).resolves.toMatchObject([
+        { controlMs: 600_000, incrementMs: 0 },
+        { controlMs: 600_000, incrementMs: 0 },
+      ]);
     } finally {
       reopened.close();
     }

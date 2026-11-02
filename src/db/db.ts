@@ -20,6 +20,8 @@ export interface StoredGame {
   level: number;
   userColor: 'white' | 'black';
   controlMs: number;
+  /** The increment added after each move, in milliseconds. */
+  incrementMs: number;
   /** Every move from the initial position, in UCI. */
   moves: string[];
   result: GameResult;
@@ -52,6 +54,21 @@ export class GambitDatabase extends Dexie {
       games: '++id, startedAt',
       meta: 'key',
     });
+    // A game recorded at the fixed 10+0 control had no increment, which is what the field holds.
+    this.version(3)
+      .stores({
+        reviews: '++id, cardId, reviewedAt',
+        games: '++id, startedAt',
+        meta: 'key',
+      })
+      .upgrade((transaction) =>
+        transaction
+          .table('games')
+          .toCollection()
+          .modify((game) => {
+            game.incrementMs ??= 0;
+          }),
+      );
     this.on('populate', () => this.meta.add({ key: 'scheduler', ...SCHEDULER }));
   }
 }

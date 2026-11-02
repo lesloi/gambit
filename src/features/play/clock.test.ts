@@ -25,6 +25,30 @@ describe('play clock', () => {
     expect(remainingMs(next, T0 + 8_000)).toEqual({ white: 597_000, black: 595_000 });
   });
 
+  it('adds the increment to the side that moved, from the first move on', () => {
+    const clock = afterMove(createClock(TEN_MINUTES, 10_000), 'white', T0);
+    const next = afterMove(clock, 'black', T0 + 5_000);
+
+    // The first move gains its increment, and the setup time stays free.
+    expect(remainingMs(next, T0 + 5_000)).toEqual({ white: 610_000, black: 605_000 });
+  });
+
+  it('still flags a side whose clock reaches zero, increment or not', () => {
+    const clock = afterMove(createClock(TEN_MINUTES, 10_000), 'white', T0);
+
+    expect(flagged(clock, T0 + 599_999)).toBeNull();
+    expect(flagged(clock, T0 + 600_000)).toBe('black');
+    expect(remainingMs(clock, T0 + 900_000)).toEqual({ white: TEN_MINUTES + 10_000, black: 0 });
+  });
+
+  it('does not let an increment revive a flagged clock', () => {
+    const clock = afterMove(createClock(TEN_MINUTES, 10_000), 'white', T0);
+
+    const late = afterMove(clock, 'black', T0 + 700_000);
+
+    expect(remainingMs(late, T0 + 700_000)).toEqual({ white: TEN_MINUTES + 10_000, black: 0 });
+  });
+
   it('flags the side whose clock reached zero', () => {
     const clock = afterMove(createClock(TEN_MINUTES), 'white', T0);
 

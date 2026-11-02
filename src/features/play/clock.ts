@@ -3,6 +3,8 @@ import type { Side } from '../../lib/position';
 export interface ClockState {
   /** How much time each side starts with, in milliseconds. */
   controlMs: number;
+  /** How much time a side gains after each move, in milliseconds. */
+  incrementMs: number;
   /** The time left when the running side's clock was last started. */
   whiteMs: number;
   blackMs: number;
@@ -12,8 +14,15 @@ export interface ClockState {
   since: number | null;
 }
 
-export function createClock(controlMs: number): ClockState {
-  return { controlMs, whiteMs: controlMs, blackMs: controlMs, running: null, since: null };
+export function createClock(controlMs: number, incrementMs = 0): ClockState {
+  return {
+    controlMs,
+    incrementMs,
+    whiteMs: controlMs,
+    blackMs: controlMs,
+    running: null,
+    since: null,
+  };
 }
 
 function other(side: Side): Side {
@@ -35,19 +44,17 @@ export function remainingMs(clock: ClockState, now: number): Record<Side, number
 }
 
 /**
- * Charges the move to the side that played it and starts the other clock. The first move starts
- * the opponent's clock without charging the mover, so setting up the board costs no time.
+ * Charges the move to the side that played it, adds its increment and starts the other clock.
+ * The first move only gains its increment: it charges no elapsed time, so setting up costs none.
  */
 export function afterMove(clock: ClockState, mover: Side, now: number): ClockState {
-  if (clock.running === null) {
-    return { ...clock, running: other(mover), since: now };
-  }
-
   const left = remainingMs(clock, now);
+  // A flag ends the game before the move, so its increment must not bring the clock back.
+  const gain = left[mover] === 0 ? 0 : clock.incrementMs;
   return {
     ...clock,
-    whiteMs: left.white,
-    blackMs: left.black,
+    whiteMs: left.white + (mover === 'white' ? gain : 0),
+    blackMs: left.black + (mover === 'black' ? gain : 0),
     running: other(mover),
     since: now,
   };
