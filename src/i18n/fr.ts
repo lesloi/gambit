@@ -3,6 +3,13 @@ export const fr = {
     name: 'Gambit',
     tagline: 'Entraînement aux échecs',
   },
+  appearance: {
+    label: 'Apparence',
+    hint: 'Système suit le réglage de l’appareil.',
+    light: 'Clair',
+    dark: 'Sombre',
+    system: 'Système',
+  },
   pwa: {
     updateAvailable: 'Une nouvelle version est prête.',
     reload: 'Recharger',
@@ -151,6 +158,8 @@ export const fr = {
     level: 'Niveau',
     levelValue: '≈ {elo} Elo',
     clock: 'Pendule',
+    sheet: 'Coups',
+    notAssisted: 'Partie non assistée. L’analyse est proposée à la fin, sans indice.',
     start: 'Commencer la partie',
     newGame: 'Nouvelle partie',
     changeSettings: 'Changer les réglages',

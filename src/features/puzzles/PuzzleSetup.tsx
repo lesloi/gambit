@@ -4,7 +4,7 @@ import { LENGTH_FILTERS, RATING_BANDS, type PuzzleFilters } from './content';
 const CHIP =
   'border-line text-ink-muted inline-flex min-h-11 cursor-pointer items-center rounded-full border px-3.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:checked]:text-ink has-[:focus-visible]:outline-accent has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2';
 
-const LEGEND = 'text-accent text-[11px] tracking-[0.18em] uppercase';
+const LEGEND = 'text-accent-ink text-[0.6875rem] tracking-[0.18em] uppercase';
 
 export interface PuzzleSetupProps {
   filters: PuzzleFilters;

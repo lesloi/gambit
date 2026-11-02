@@ -129,7 +129,7 @@ export function MistakesScreen({ onExit }: { onExit: () => void }) {
           >
             <ChevronLeft size={22} />
           </button>
-          <h1 className="font-serif text-lg">{fr.progress.title}</h1>
+          <h1 className="text-lg">{fr.progress.title}</h1>
           {current >= 0 ? (
             <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
               {fr.progress.counter

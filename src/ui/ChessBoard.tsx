@@ -92,5 +92,5 @@ export function ChessBoard({
     });
   }, [fen, orientation, turn, lastMove, movable, dests, hint, resetKey]);
 
-  return <div ref={host} className="aspect-square w-full overflow-hidden rounded-xl" />;
+  return <div ref={host} className="aspect-square w-full touch-none overflow-hidden rounded-sm" />;
 }

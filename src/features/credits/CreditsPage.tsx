@@ -18,7 +18,7 @@ export function CreditsPage({ onExit }: { onExit: () => void }) {
           >
             <ChevronLeft size={22} />
           </button>
-          <h1 className="font-serif text-lg">{fr.credits.title}</h1>
+          <h1 className="text-lg">{fr.credits.title}</h1>
         </header>
 
         <main id="main" className="mt-6 flex-1">
@@ -41,7 +41,7 @@ export function CreditsPage({ onExit }: { onExit: () => void }) {
                     href={credit.licenceUrl}
                     rel="noreferrer"
                     aria-label={`${fr.credits.licence} ${credit.licence}`}
-                    className="border-line text-ink-muted hover:text-ink rounded-full border px-2 py-0.5 text-[11px]"
+                    className="border-line text-ink-muted hover:text-ink rounded-full border px-2 py-0.5 text-[0.6875rem]"
                   >
                     {credit.licence}
                   </a>

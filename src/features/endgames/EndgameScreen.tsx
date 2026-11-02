@@ -42,7 +42,7 @@ export function EndgameScreen({ onExit }: { onExit: () => void }) {
           >
             <ChevronLeft size={22} />
           </button>
-          <h1 className="font-serif text-lg">{fr.endgame.title}</h1>
+          <h1 className="text-lg">{fr.endgame.title}</h1>
           {selected ? (
             <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
               {selected.result === 'win' ? fr.endgame.win : fr.endgame.draw}
@@ -85,7 +85,7 @@ function EndgameList({
                 <h2 className="text-sm font-semibold">{endgame.name}</h2>
                 <p className="text-ink-muted mt-1 text-sm leading-snug">{endgame.goal}</p>
               </div>
-              <span className="border-line text-ink-muted shrink-0 rounded-full border px-2 py-0.5 text-[10px] tracking-wider uppercase">
+              <span className="border-line text-ink-muted shrink-0 rounded-full border px-2 py-0.5 text-[0.625rem] tracking-wider uppercase">
                 {endgame.result === 'win' ? fr.endgame.win : fr.endgame.draw}
               </span>
             </div>
@@ -280,7 +280,7 @@ export function EndgamePlayer({
   return (
     <>
       <div className="mb-3">
-        <h2 className="font-serif text-lg">{endgame.name}</h2>
+        <h2 className="text-lg">{endgame.name}</h2>
         <p className="text-ink-muted mt-1 text-sm">{endgame.goal}</p>
       </div>
 

@@ -3,43 +3,71 @@
 Tailwind classes limited to the tokens of [`src/styles/index.css`](../src/styles/index.css), and
 [lucide-react](https://lucide.dev) icons. No component library.
 
+## Theme
+
+- The scheme is a choice: **clair**, **sombre** or **système**, and système is the default. The
+  preference lives in `localStorage` under `gambit:theme`, out of the backup like the puzzle
+  filters: losing it only costs the default.
+- `data-theme="light|dark"` on `<html>` carries the resolved scheme; the palette is written twice
+  under `:root` and `:root[data-theme='dark']`. `main.tsx` paints the stored choice before React
+  renders; a dark device can still show one light frame while the bundle loads, which the strict
+  CSP (no inline script) makes hard to avoid, and that frame is cheaper than loosening it.
+- `theme-color` follows the scheme, or the phone's status bar keeps the wrong colour.
+- The board keeps its wood in both schemes: it is the fixed reference the pieces are drawn
+  against, and the only surface that does not swap.
+
 ## Tokens
 
-| Token          | Value     | Used for                    |
-| -------------- | --------- | --------------------------- |
-| `paper`        | `#f7f3ea` | the page                    |
-| `paper-raised` | `#fffdf8` | cards, the header chip      |
-| `ink`          | `#2b251f` | text                        |
-| `ink-muted`    | `#6f6355` | secondary text, labels      |
-| `line`         | `#e2d8c6` | borders, dividers           |
-| `accent`       | `#b4552d` | eyebrows, icons, focus ring |
-| `accent-soft`  | `#f3e4d8` | the icon tile of a card     |
-| `board-light`  | `#f0d9b5` | light squares               |
-| `board-dark`   | `#b58863` | dark squares                |
+| Token          | Clair     | Sombre    | Used for                     |
+| -------------- | --------- | --------- | ---------------------------- |
+| `paper`        | `#fbfaf8` | `#191817` | the page                     |
+| `paper-raised` | `#ffffff` | `#211f1d` | panels, the board preview    |
+| `ink`          | `#1c1a18` | `#e5e2dc` | text                         |
+| `ink-muted`    | `#5f5a54` | `#a49e95` | secondary text, labels       |
+| `line`         | `#e6e1d9` | `#2f2c29` | borders, dividers            |
+| `line-soft`    | `#efeae2` | `#262421` | the rule between two rows    |
+| `accent`       | `#2a72bd` | `#2a72bd` | filled actions               |
+| `accent-ink`   | `#1c6cbc` | `#7bb9ee` | the accent as text, icons    |
+| `accent-soft`  | `#e8f0f9` | `#1c2a38` | the selected chip of a group |
+| `board-light`  | `#f0d9b5` | `#f0d9b5` | light squares                |
+| `board-dark`   | `#b58863` | `#b58863` | dark squares                 |
 
-Serif titles (`font-serif`) and sans body (`font-sans`). The serif is a system stack: no font is
-downloaded, so the first paint needs no network.
+`ok`, `ok-soft`, `bad`, `bad-soft` follow the same two-stop rule and stay readable on both papers.
+`accent` is the filled colour and `accent-ink` the readable one: on the dark paper the blue that
+holds white text is too dark for a label.
+
+Sans everywhere (`font-sans`), one system stack: no font is downloaded, so the first paint needs
+no network.
 
 ## Layout
 
-- One column, `max-w-2xl`, page margin `px-5` on phones and `px-8` from `sm`.
-- The home screen reads top to bottom: wordmark, the session card, the modes, the footer. The
-  footer is pushed to the bottom when the page is shorter than the screen.
-- The session card holds a small board on the phone (stacked) and beside the text from `sm`. It
+- One column, `max-w-2xl`: `px-5` on the home screen, `px-4` on the game screens, which add
+  `sm:px-6`.
+- The home screen reads top to bottom: the header rule, the session panel, the modes, the
+  appearance row, the footer.
+- The header is the wordmark and the tagline on one line, closed by a rule.
+- The session panel holds a small board on the phone (stacked) and beside the text from `sm`. It
   states the due and new counts, then carries the screen's primary action: start the session,
   resume it, or start a new one. Its two settings, the number of new cards and their rating band,
   sit under the button.
 - The session screen holds the progress (`done / total`, a bar and the remaining counts), then the
   current card in the player of its mode. The next button says "Terminer" on the last one.
-- The modes are one column on the phone and three from `sm`. A card is not a button until its mode
-  works; the "Bientôt" badge says so.
-- One primary action per screen: the session card's button on the home screen.
+- The modes are rows, not cards: an icon, the name, the goal, then a chevron. A row whose mode
+  does not work yet is disabled and shows the "Bientôt" badge in the chevron's place, so it never
+  leads to a dead end.
+- The appearance row is the last thing before the footer: a three-way choice, always visible, no
+  hidden state. A preference set once does not deserve a menu.
+- The session panel's button is the home screen's only filled action. A game in progress has
+  none: the board is the action, and a filled hint button would push people to use it. Once the
+  game is over, the analysis button takes that role.
+- Corners are `rounded-sm` (4 px) and separators are hairlines on the screens of this direction;
+  the mode screens still carry their older radii and shadows until they are redone.
 
 ## Board
 
 - `chessground` fills a square container; its size comes from the container, never from a fixed
   pixel value.
-- Coordinates are shown on the edges of the board at 12 px, muted.
+- Coordinates are shown on the edges of the board at 0.55 rem, muted.
 - A piece is dragged or moved by two taps, as chessground does by default. A promotion opens a
   chooser, never a native prompt.
 - The last move is highlighted with a soft accent; the legal destinations are a dot on an empty
@@ -63,8 +91,12 @@ downloaded, so the first paint needs no network.
 
 - The setup screen holds the level slider and the time control, then the primary action starts the
   game from the initial position; White is the user.
-- The game screen stacks the opponent's clock, the board and the user's clock. Only the running
-  clock is highlighted, and a flag ends the game without waiting for a move.
+- The game screen is two columns from `md`: the opponent's clock, the board and the user's clock on
+  the left, with the status and the result under them; the score sheet and the actions on the
+  right. Under `md` the sheet drops under the board, capped so the buttons stay reachable.
+- A clock is a name and a time on one line; only the running one is in `ink` and semibold.
+- The score sheet replays the game's moves into standard notation, two per row, the last row in
+  `ink`. It only appears once a move is played.
 - The clock starts with the first move, so the user's first move costs no time.
 - The engine's think time comes from its own clock: a third of an even forty-move share of the
   control, plus the increment, varied by up to a fifth around that share, and never more than a
@@ -95,7 +127,7 @@ The target is [WCAG 2.2](https://www.w3.org/TR/WCAG22/) level AA. In practice:
 
 ## Consistency
 
-- The content of a card shares the same left and right edges; nothing sticks out.
+- The content of a row shares the same left and right edges; nothing sticks out.
 - Titles are left-aligned; button labels are centred.
 - No ad hoc margin, size or colour: use a token or an existing component.
 - An empty state says what will fill it, in one sentence, without an exclamation mark.

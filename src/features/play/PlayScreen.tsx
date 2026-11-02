@@ -9,6 +9,7 @@ import type { GameReason, GameResult, Side } from '../../lib/position';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { PromotionDialog, promotionAnchor } from '../../ui/PromotionDialog';
 import { GameReview } from './GameReview';
+import { movePairs } from './notation';
 import {
   afterMove,
   createClock,
@@ -49,7 +50,7 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
 
   return (
     <div className="min-h-dvh bg-paper">
-      <div className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-4 pt-4 pb-6 sm:px-6">
+      <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-4 pt-4 pb-6 sm:px-6">
         <header className="flex items-center gap-1">
           <button
             type="button"
@@ -59,9 +60,9 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
           >
             <ChevronLeft size={22} />
           </button>
-          <h1 className="font-serif text-lg">{fr.play.title}</h1>
+          <h1 className="text-[0.9375rem] font-semibold">{fr.play.title}</h1>
           {playing ? (
-            <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
+            <span className="border-line text-ink-muted ml-auto rounded-sm border px-2 py-0.5 text-[0.6875rem]">
               {fr.play.levelValue.replace('{elo}', String(LEVELS[levelIndex].elo))}
             </span>
           ) : null}
@@ -111,7 +112,7 @@ function PlaySetup({
     <>
       <p className="text-ink-muted text-sm">{fr.play.intro}</p>
 
-      <section className="border-line bg-paper-raised mt-5 rounded-2xl border p-5">
+      <section className="border-line bg-paper-raised mt-5 rounded-sm border p-4">
         <label htmlFor="play-level" className="text-sm font-semibold">
           {fr.play.level}
         </label>
@@ -142,7 +143,7 @@ function PlaySetup({
             id="play-time-control"
             value={controlIndex}
             onChange={(event) => onControlChange(Number(event.target.value))}
-            className="border-line bg-paper-raised text-ink mt-3 min-h-11 w-full rounded-lg border px-3 text-sm"
+            className="border-line bg-paper text-ink mt-3 min-h-11 w-full rounded-sm border px-3 text-sm"
           >
             {TIME_CONTROLS.map((control, index) => (
               <option key={index} value={index}>
@@ -155,7 +156,7 @@ function PlaySetup({
         <button
           type="button"
           onClick={onStart}
-          className="bg-accent mt-4 min-h-11 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+          className="bg-accent mt-4 min-h-11 w-full rounded-sm px-4 text-sm font-semibold text-white"
         >
           {fr.play.start}
         </button>
@@ -471,152 +472,185 @@ function PlayGame({
             ? fr.play.yourMove
             : fr.play.thinking;
 
+  const pairs = movePairs(state.moves);
+
   return (
     <>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-ink-muted text-sm">
-          {fr.play.clock} · {formatTimeControl(control)}
-        </p>
-        {state.assisted ? (
-          <span className="border-line text-ink-muted rounded-full border px-2 py-0.5 text-[10px] tracking-wider uppercase">
-            {fr.play.assisted}
-          </span>
-        ) : null}
-      </div>
-
-      <div className="border-line bg-paper-raised mt-2 rounded-2xl border p-2.5 sm:p-3">
-        <ClockRow
-          side="black"
-          ms={remaining.black}
-          active={clock.running === 'black' && state.outcome === 'playing'}
-        />
-
-        <div ref={boardHost} tabIndex={-1} aria-label={fr.play.board} className="my-2 rounded-xl">
-          <ChessBoard
-            fen={state.fen}
-            orientation={state.userColor}
-            turn={sideToMove(state.fen)}
-            lastMove={state.lastMove}
-            movable={movable}
-            dests={dests}
-            hint={state.hint}
-            onMove={move}
-            resetKey={resetKey}
-          />
-        </div>
-
-        <ClockRow
-          side="white"
-          ms={remaining.white}
-          active={clock.running === 'white' && state.outcome === 'playing'}
-        />
-      </div>
-
-      <div className="mt-3 flex min-h-11 items-center justify-between gap-3">
-        <p className="text-sm font-medium" role="status">
-          {state.outcome === 'over' && state.result ? resultLabel(state.result) : status}
-        </p>
-      </div>
-
-      {engineState === 'failed' && state.outcome === 'playing' ? (
-        <div
-          role="alert"
-          className="bg-bad-soft text-bad mt-2 flex items-center justify-between gap-3 rounded-xl p-3"
-        >
-          <p className="text-xs">{fr.play.engineFailed}</p>
-          <button
-            type="button"
-            onClick={retryEngine}
-            className="border-bad/30 min-h-11 shrink-0 rounded-full border px-3 text-xs font-semibold"
-          >
-            {fr.play.engineRetry}
-          </button>
-        </div>
-      ) : null}
-
-      <p className="mt-2 min-h-5 text-xs" role="status">
-        {hintPending
-          ? fr.play.hintPending
-          : state.hint
-            ? fr.play.hintShown.replace('{move}', state.hint.san)
-            : ''}
-      </p>
-
-      {state.outcome === 'over' && state.result ? (
-        <div className="mt-2">
-          <div className="border-line bg-paper-raised rounded-xl border p-4">
-            <p className="text-sm font-semibold">{resultLabel(state.result)}</p>
-            <p className="text-ink-muted mt-1 text-xs">{REASON_LABEL[state.result.reason]}</p>
+      <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_190px] md:items-start">
+        <div className="min-w-0">
+          <div className="text-ink-muted flex items-center justify-between gap-3 text-xs">
+            <span>
+              {fr.play.clock} · {formatTimeControl(control)}
+            </span>
             {state.assisted ? (
-              <p className="text-ink-muted mt-1 text-xs">{fr.play.analysis.assisted}</p>
-            ) : null}
-            {saved === 'saved' ? (
-              <p className="text-ink-muted mt-1 text-xs">{fr.play.saved}</p>
-            ) : null}
-            {saved === 'failed' ? (
-              <p className="text-bad mt-1 text-xs" role="alert">
-                {fr.play.saveFailed}
-              </p>
+              <span className="border-line rounded-xs border px-1.5 py-0.5 text-[0.625rem] tracking-wide uppercase">
+                {fr.play.assisted}
+              </span>
             ) : null}
           </div>
 
-          {!state.assisted ? (
-            engineState === 'failed' ? (
-              <p className="text-ink-muted mt-3 text-xs">{fr.play.analysis.unavailable}</p>
-            ) : (
+          <div className="mt-1.5">
+            <ClockRow
+              side="black"
+              ms={remaining.black}
+              active={clock.running === 'black' && state.outcome === 'playing'}
+            />
+
+            <div
+              ref={boardHost}
+              tabIndex={-1}
+              aria-label={fr.play.board}
+              className="my-1 rounded-sm"
+            >
+              <ChessBoard
+                fen={state.fen}
+                orientation={state.userColor}
+                turn={sideToMove(state.fen)}
+                lastMove={state.lastMove}
+                movable={movable}
+                dests={dests}
+                hint={state.hint}
+                onMove={move}
+                resetKey={resetKey}
+              />
+            </div>
+
+            <ClockRow
+              side="white"
+              ms={remaining.white}
+              active={clock.running === 'white' && state.outcome === 'playing'}
+            />
+          </div>
+
+          <p className="mt-3 text-[0.8125rem] font-medium" role="status">
+            {state.outcome === 'over' && state.result ? resultLabel(state.result) : status}
+          </p>
+
+          <p className="text-ink-muted mt-1 min-h-4 text-xs" role="status">
+            {hintPending
+              ? fr.play.hintPending
+              : state.hint
+                ? fr.play.hintShown.replace('{move}', state.hint.san)
+                : ''}
+          </p>
+
+          {engineState === 'failed' && state.outcome === 'playing' ? (
+            <div
+              role="alert"
+              className="bg-bad-soft text-bad mt-2 flex items-center justify-between gap-3 rounded-sm p-2.5"
+            >
+              <p className="text-xs">{fr.play.engineFailed}</p>
               <button
                 type="button"
-                onClick={() => setReviewing(true)}
-                disabled={engineState !== 'ready'}
-                className="bg-accent mt-3 min-h-11 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                onClick={retryEngine}
+                className="border-bad/30 min-h-11 shrink-0 rounded-sm border px-3 text-xs font-semibold"
               >
-                {fr.play.analysis.start}
+                {fr.play.engineRetry}
               </button>
-            )
+            </div>
           ) : null}
 
-          <div className="mt-3 flex gap-2">
-            <button
-              type="button"
-              onClick={onNewGame}
-              className={
-                state.assisted
-                  ? 'bg-accent flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-white'
-                  : 'border-line text-ink flex-1 rounded-xl border px-4 py-3 text-sm'
-              }
-            >
-              {fr.play.newGame}
-            </button>
-            <button
-              type="button"
-              onClick={onChangeLevel}
-              className="border-line text-ink-muted flex-1 rounded-xl border px-4 py-3 text-sm"
-            >
-              {fr.play.changeSettings}
-            </button>
-          </div>
+          {state.outcome === 'over' && state.result ? (
+            <div className="border-line bg-paper-raised mt-3 rounded-sm border p-3">
+              <p className="text-sm font-semibold">{resultLabel(state.result)}</p>
+              <p className="text-ink-muted mt-1 text-xs">{REASON_LABEL[state.result.reason]}</p>
+              {state.assisted ? (
+                <p className="text-ink-muted mt-1 text-xs">{fr.play.analysis.assisted}</p>
+              ) : null}
+              {saved === 'saved' ? (
+                <p className="text-ink-muted mt-1 text-xs">{fr.play.saved}</p>
+              ) : null}
+              {saved === 'failed' ? (
+                <p className="text-bad mt-1 text-xs" role="alert">
+                  {fr.play.saveFailed}
+                </p>
+              ) : null}
+
+              {!state.assisted ? (
+                engineState === 'failed' ? (
+                  <p className="text-ink-muted mt-2 text-xs">{fr.play.analysis.unavailable}</p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setReviewing(true)}
+                    disabled={engineState !== 'ready'}
+                    className="bg-accent mt-2 min-h-11 w-full rounded-sm px-4 text-[0.8125rem] font-semibold text-white disabled:opacity-50"
+                  >
+                    {fr.play.analysis.start}
+                  </button>
+                )
+              ) : null}
+
+              <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={onNewGame}
+                  className="border-line text-ink min-h-11 rounded-sm border px-3 text-xs"
+                >
+                  {fr.play.newGame}
+                </button>
+                <button
+                  type="button"
+                  onClick={onChangeLevel}
+                  className="border-line text-ink-muted min-h-11 rounded-sm border px-3 text-xs"
+                >
+                  {fr.play.changeSettings}
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
-      ) : (
-        <div className="mt-2 flex gap-2">
-          <button
-            type="button"
-            onClick={askHint}
-            disabled={!userTurn || thinking || hintPending || engineState !== 'ready'}
-            className="border-line text-ink flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border px-3 text-sm disabled:opacity-50"
-          >
-            <Lightbulb size={16} aria-hidden="true" />
-            {hintPending ? fr.play.hintPending : fr.play.hint}
-          </button>
-          <button
-            type="button"
-            onClick={onNewGame}
-            className="border-line text-ink-muted flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border px-3 text-sm"
-          >
-            <RotateCcw size={16} aria-hidden="true" />
-            {fr.play.newGame}
-          </button>
-        </div>
-      )}
+
+        <aside className="min-w-0">
+          {pairs.length > 0 ? (
+            <div className="border-line bg-paper-raised rounded-sm border">
+              <h2 className="border-line text-ink-muted border-b px-2.5 py-1.5 text-[0.625rem] font-semibold tracking-[0.12em] uppercase">
+                {fr.play.sheet}
+              </h2>
+              <ol className="max-h-32 overflow-y-auto py-1 text-xs md:max-h-[40vh]">
+                {pairs.map((pair, index) => (
+                  <li
+                    key={pair.number}
+                    className={`grid grid-cols-[20px_1fr_1fr] gap-1 px-2.5 py-0.5 tabular-nums ${
+                      index === pairs.length - 1 ? 'text-ink font-semibold' : ''
+                    }`}
+                  >
+                    <span className="text-ink-muted opacity-70">{pair.number}.</span>
+                    <span>{pair.white}</span>
+                    <span>{pair.black ?? ''}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
+
+          {state.outcome === 'playing' ? (
+            <div className="mt-2 grid gap-1.5">
+              <button
+                type="button"
+                onClick={askHint}
+                disabled={!userTurn || thinking || hintPending || engineState !== 'ready'}
+                className="border-line text-ink flex min-h-11 items-center justify-center gap-2 rounded-sm border px-3 text-xs disabled:opacity-50"
+              >
+                <Lightbulb size={15} aria-hidden="true" />
+                {hintPending ? fr.play.hintPending : fr.play.hint}
+              </button>
+              <button
+                type="button"
+                onClick={onNewGame}
+                className="border-line text-ink-muted hover:text-ink flex min-h-11 items-center justify-center gap-2 rounded-sm border px-3 text-xs"
+              >
+                <RotateCcw size={15} aria-hidden="true" />
+                {fr.play.newGame}
+              </button>
+            </div>
+          ) : null}
+
+          <p className="text-ink-muted mt-2 text-[0.6875rem] leading-relaxed">
+            {state.assisted ? fr.play.analysis.assisted : fr.play.notAssisted}
+          </p>
+        </aside>
+      </div>
 
       {pending ? (
         <PromotionDialog
@@ -636,12 +670,16 @@ function ClockRow({ side, ms, active }: { side: Side; ms: number; active: boolea
 
   return (
     <div
-      className={`flex items-center justify-between rounded-lg px-3 py-1.5 text-sm ${
-        active ? 'bg-accent-soft text-ink font-semibold' : 'text-ink-muted'
+      className={`flex items-center justify-between gap-3 py-0.5 text-xs ${
+        active ? 'text-ink' : 'text-ink-muted'
       }`}
     >
       <span>{side === 'white' ? fr.opening.white : fr.opening.black}</span>
-      <span className="tabular-nums" role="timer" aria-label={label}>
+      <span
+        className={`text-[0.9375rem] tabular-nums ${active ? 'text-ink font-semibold' : ''}`}
+        role="timer"
+        aria-label={label}
+      >
         {formatClock(ms)}
       </span>
     </div>

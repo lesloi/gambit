@@ -97,9 +97,7 @@ export function PuzzleScreen({
           >
             <ChevronLeft size={22} />
           </button>
-          <h1 className="font-serif text-lg">
-            {phase === 'play' ? fr.puzzle.counter : fr.puzzle.title}
-          </h1>
+          <h1 className="text-lg">{phase === 'play' ? fr.puzzle.counter : fr.puzzle.title}</h1>
           {puzzle ? (
             <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
               {fr.puzzle.difficulty} {puzzle.rating}

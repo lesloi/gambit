@@ -256,10 +256,10 @@ export function PuzzlePlayer({
         {state.outcome === 'revealed' ? (
           <>
             <div className="border-line bg-paper-raised rounded-xl border p-4">
-              <p className="text-accent text-[11px] tracking-widest uppercase">
+              <p className="text-accent-ink text-[0.6875rem] tracking-widest uppercase">
                 {fr.puzzle.solutionTitle}
               </p>
-              <p className="mt-1 font-serif text-lg">{line}</p>
+              <p className="mt-1 text-lg">{line}</p>
             </div>
 
             <div className="mt-3 flex gap-2">

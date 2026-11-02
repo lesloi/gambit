@@ -98,7 +98,7 @@ export function GameReview({
 
   return (
     <>
-      <h2 className="font-serif text-lg">{fr.play.analysis.title}</h2>
+      <h2 className="text-lg">{fr.play.analysis.title}</h2>
 
       <p className="text-ink-muted mt-2 text-sm" role="status">
         {progress}

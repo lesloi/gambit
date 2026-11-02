@@ -150,7 +150,7 @@ export function SessionScreen({ onExit }: { onExit: () => void }) {
           >
             <ChevronLeft size={22} />
           </button>
-          <h1 className="font-serif text-lg">{fr.session.title}</h1>
+          <h1 className="text-lg">{fr.session.title}</h1>
           {state.status === 'ready' ? (
             <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
               {state.cursor.position} / {state.cursor.total}
@@ -204,7 +204,7 @@ export function SessionScreen({ onExit }: { onExit: () => void }) {
 
           {state.status === 'empty' || (state.status === 'ready' && !completed && !card) ? (
             <div className="mt-6">
-              <h2 className="font-serif text-xl">{fr.session.emptyTitle}</h2>
+              <h2 className="text-xl">{fr.session.emptyTitle}</h2>
               <p className="text-ink-muted mt-2 text-sm">{fr.session.emptyBody}</p>
               <button
                 type="button"
@@ -218,7 +218,7 @@ export function SessionScreen({ onExit }: { onExit: () => void }) {
 
           {state.status === 'ready' && completed ? (
             <div className="mt-6">
-              <h2 className="font-serif text-2xl">{fr.session.doneTitle}</h2>
+              <h2 className="text-2xl">{fr.session.doneTitle}</h2>
               <p className="text-ink-muted mt-2 text-sm">
                 {fr.session.doneCards.replace('{count}', String(state.cursor.total))}
               </p>

@@ -91,7 +91,7 @@ export function OpeningScreen({ onExit }: { onExit: () => void }) {
           >
             <ChevronLeft size={22} />
           </button>
-          <h1 className="font-serif text-lg">{fr.opening.title}</h1>
+          <h1 className="text-lg">{fr.opening.title}</h1>
           {selected ? (
             <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
               {selected.color === 'white' ? fr.opening.white : fr.opening.black}
@@ -146,7 +146,7 @@ function OpeningList({
 
         return (
           <section key={color} aria-labelledby={`opening-${color}`} className="mt-6">
-            <h2 id={`opening-${color}`} className="font-serif text-lg">
+            <h2 id={`opening-${color}`} className="text-lg">
               {label}
             </h2>
 
@@ -158,9 +158,9 @@ function OpeningList({
                     <div className="flex items-start justify-between gap-3">
                       <h3 className="text-sm font-semibold">{line.name}</h3>
                       <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] tracking-wider uppercase ${
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[0.625rem] tracking-wider uppercase ${
                           status.kind === 'due'
-                            ? 'bg-accent-soft text-accent'
+                            ? 'bg-accent-soft text-accent-ink'
                             : 'border-line text-ink-muted border'
                         }`}
                       >
@@ -270,7 +270,7 @@ export function OpeningPlayer({
   return (
     <>
       <div className="mb-3">
-        <h2 className="font-serif text-lg">{line.name}</h2>
+        <h2 className="text-lg">{line.name}</h2>
       </div>
 
       <div className="border-line bg-paper-raised rounded-2xl border p-2.5 sm:p-3">
