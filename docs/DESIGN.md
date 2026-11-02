@@ -72,7 +72,12 @@ downloaded, so the first paint needs no network.
   not play faster.
 - A hint draws the engine's move as an arrow in the board's hint brush, at full strength whatever
   level the game uses, and marks the game as assisted; there is no takeback.
-- The result panel names the winner and the reason, then offers a new game or a change of level.
+- An unassisted game can be analysed at full strength: every position is scored once, and a move
+  that gives away at least 20 points of winning chance is a blunder, or a missed win when the
+  position was already won. The list shows the played move and the engine's choice, and a click
+  puts the position before the move on the board with that choice drawn as an arrow.
+- The result panel names the winner and the reason, then offers a new game or a change of level;
+  it offers the analysis only when no hint was used.
 
 ## Accessibility
 

@@ -5,6 +5,24 @@ export interface MoveRequest {
   movetimeMs?: number;
 }
 
+/** A position's value from the side to move, in centipawns or in moves to mate. */
+export interface Score {
+  cp: number | null;
+  /** Positive when the side to move mates, negative when it is mated. */
+  mate: number | null;
+}
+
+export interface PositionEval {
+  bestMove: string | null;
+  /** The last exact score the engine reported, or null when it reported none. */
+  score: Score | null;
+}
+
+export interface AnalyseRequest {
+  /** How long the engine may think, in milliseconds. */
+  movetimeMs?: number;
+}
+
 export interface Engine {
   /** The engine's first choice in the position, in UCI, or null when it has no legal move. */
   bestMove(fen: string, request?: MoveRequest): Promise<string | null>;
@@ -13,6 +31,15 @@ export interface Engine {
   /** Stops a search in flight, so it cannot hold up the next command. */
   cancel(): void;
   stop(): void;
+}
+
+/**
+ * A second capability, not part of `Engine`: the analysis needs a score, and a future opponent
+ * (Maia) may play without one. The game and the analysis share the same worker.
+ */
+export interface Analyser {
+  /** The best move and its score, at full strength whatever level the game used. */
+  analyse(fen: string, request?: AnalyseRequest): Promise<PositionEval>;
 }
 
 export interface EngineTransport {
@@ -30,6 +57,22 @@ export interface UciEngineOptions {
 
 const DEFAULT_MOVETIME_MS = 400;
 const DEFAULT_TIMEOUT_MS = 10_000;
+/** Skill Level 20 is Stockfish's full strength, the only setting an analysis accepts. */
+const FULL_SKILL = 20;
+
+const SCORE_PATTERN = /\bscore (cp|mate) (-?\d+)(?: (lowerbound|upperbound))?\b/;
+
+/** The exact score of an `info` line; a bounded score says nothing definite about the position. */
+function parseScore(line: string): Score | null {
+  if (!line.startsWith('info ')) return null;
+
+  const match = SCORE_PATTERN.exec(line);
+  if (!match || match[3] !== undefined) return null;
+
+  const value = Number(match[2]);
+  if (!Number.isFinite(value)) return null;
+  return match[1] === 'cp' ? { cp: value, mate: null } : { cp: null, mate: value };
+}
 
 interface PendingAnswer {
   match: (line: string) => boolean;
@@ -41,7 +84,7 @@ interface PendingAnswer {
  * The UCI protocol over a worker, one command at a time. A silent engine would leave the board
  * waiting forever, so every answer has a deadline and a worker error fails the move in flight.
  */
-export class UciEngine implements Engine {
+export class UciEngine implements Engine, Analyser {
   private readonly movetimeMs: number;
   private readonly timeoutMs: number;
   private readonly transport: EngineTransport;
@@ -50,6 +93,8 @@ export class UciEngine implements Engine {
   private stopped = false;
   /** The Skill Level last sent, so a game does not reset it before every move. */
   private skill: number | null = null;
+  /** The last exact score seen since the search started, cleared before every `go`. */
+  private lastScore: Score | null = null;
   private queue: Promise<unknown> = Promise.resolve();
 
   constructor(transport: EngineTransport, options: UciEngineOptions = {}) {
@@ -73,21 +118,16 @@ export class UciEngine implements Engine {
   bestMove(fen: string, request: MoveRequest = {}): Promise<string | null> {
     return this.enqueue(async () => {
       await this.handshake();
+      this.applySkill(request.skill);
+      return (await this.search(fen, request.movetimeMs)).bestMove;
+    });
+  }
 
-      const skill = request.skill === undefined ? null : Math.min(Math.max(request.skill, 0), 20);
-      if (skill !== null && skill !== this.skill) {
-        this.transport.post(`setoption name Skill Level value ${skill}`);
-        this.skill = skill;
-      }
-
-      const answer = this.waitFor((line) => line.startsWith('bestmove '), this.timeoutMs);
-      this.transport.post(`position fen ${fen}`);
-      this.transport.post(`go movetime ${request.movetimeMs ?? this.movetimeMs}`);
-
-      // `bestmove` may carry a `ponder` move after the move itself; only the first token is ours.
-      const line = await answer;
-      const [move] = line.slice('bestmove '.length).trim().split(/\s+/);
-      return !move || move === '(none)' ? null : move;
+  analyse(fen: string, request: AnalyseRequest = {}): Promise<PositionEval> {
+    return this.enqueue(async () => {
+      await this.handshake();
+      this.applySkill(FULL_SKILL);
+      return this.search(fen, request.movetimeMs);
     });
   }
 
@@ -103,6 +143,31 @@ export class UciEngine implements Engine {
     this.pending?.fail(new Error('The engine was stopped'));
     this.pending = null;
     this.transport.close();
+  }
+
+  private applySkill(requested: number | undefined): void {
+    if (requested === undefined) return;
+
+    const skill = Math.min(Math.max(requested, 0), 20);
+    if (skill === this.skill) return;
+
+    this.transport.post(`setoption name Skill Level value ${skill}`);
+    this.skill = skill;
+  }
+
+  private async search(fen: string, movetimeMs?: number): Promise<PositionEval> {
+    this.lastScore = null;
+    const answer = this.waitFor((line) => line.startsWith('bestmove '), this.timeoutMs);
+    this.transport.post(`position fen ${fen}`);
+    this.transport.post(`go movetime ${movetimeMs ?? this.movetimeMs}`);
+
+    // `bestmove` may carry a `ponder` move after the move itself; only the first token is ours.
+    const line = await answer;
+    const [move] = line.slice('bestmove '.length).trim().split(/\s+/);
+    return {
+      bestMove: !move || move === '(none)' ? null : move,
+      score: this.lastScore,
+    };
   }
 
   private async handshake(): Promise<void> {
@@ -159,7 +224,11 @@ export class UciEngine implements Engine {
     // A worker message may carry several lines; the engine posts its output one line at a time.
     for (const line of chunk.split('\n')) {
       const trimmed = line.trim();
-      if (trimmed !== '' && this.pending?.match(trimmed)) this.pending.settle(trimmed);
+      if (trimmed === '') continue;
+
+      const score = parseScore(trimmed);
+      if (score !== null) this.lastScore = score;
+      if (this.pending?.match(trimmed)) this.pending.settle(trimmed);
     }
   }
 }

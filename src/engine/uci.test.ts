@@ -193,3 +193,89 @@ describe('UCI engine', () => {
     await expect(engine.bestMove(START)).rejects.toThrow(/stopped/i);
   });
 });
+
+describe('UCI analysis', () => {
+  it('reports the best move and the last score of the search', async () => {
+    const transport = new FakeTransport((command) =>
+      command.startsWith('go ')
+        ? [
+            'info depth 10 score cp 25 pv e2e4',
+            'info depth 12 score cp 41 pv d2d4',
+            'bestmove d2d4',
+          ]
+        : stockfish(command),
+    );
+    const engine = new UciEngine(transport);
+
+    await expect(engine.analyse(START)).resolves.toEqual({
+      bestMove: 'd2d4',
+      score: { cp: 41, mate: null },
+    });
+  });
+
+  it('reads a mate score from the side to move', async () => {
+    const transport = new FakeTransport((command) =>
+      command.startsWith('go ')
+        ? ['info depth 8 score mate -2 pv h7h8q', 'bestmove h7h8q']
+        : stockfish(command),
+    );
+    const engine = new UciEngine(transport);
+
+    await expect(engine.analyse(START)).resolves.toEqual({
+      bestMove: 'h7h8q',
+      score: { cp: null, mate: -2 },
+    });
+  });
+
+  it('ignores a score bounded on one side', async () => {
+    const transport = new FakeTransport((command) =>
+      command.startsWith('go ')
+        ? [
+            'info depth 6 score cp 34 pv e2e4',
+            'info depth 12 score cp 200 lowerbound pv d2d4',
+            'bestmove d2d4',
+          ]
+        : stockfish(command),
+    );
+    const engine = new UciEngine(transport);
+
+    await expect(engine.analyse(START)).resolves.toMatchObject({
+      score: { cp: 34, mate: null },
+    });
+  });
+
+  it('returns a null score when the engine reports none', async () => {
+    const transport = new FakeTransport((command) =>
+      command.startsWith('go ') ? ['bestmove e2e4'] : stockfish(command),
+    );
+    const engine = new UciEngine(transport);
+
+    await expect(engine.analyse(START)).resolves.toEqual({ bestMove: 'e2e4', score: null });
+  });
+
+  it('does not carry the score of a previous search', async () => {
+    let search = 0;
+    const transport = new FakeTransport((command) => {
+      if (!command.startsWith('go ')) return stockfish(command);
+      search += 1;
+      return search === 1 ? ['info depth 10 score cp 34', 'bestmove e2e4'] : ['bestmove e2e4'];
+    });
+    const engine = new UciEngine(transport);
+
+    await engine.analyse(START);
+    await expect(engine.analyse(START)).resolves.toEqual({ bestMove: 'e2e4', score: null });
+  });
+
+  it('asks the engine at full strength, whatever it held before', async () => {
+    const transport = new FakeTransport();
+    const engine = new UciEngine(transport);
+
+    await engine.bestMove(START, { skill: 4 });
+    await engine.analyse(START);
+
+    expect(transport.commands.filter((command) => command.startsWith('setoption'))).toEqual([
+      'setoption name Skill Level value 4',
+      'setoption name Skill Level value 20',
+    ]);
+  });
+});
