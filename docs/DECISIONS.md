@@ -112,9 +112,10 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   plain static site.
 - **The engine sits behind one interface, so Maia can join Stockfish as a second opponent.** Maia
   predicts the move a player of a given rating would play, which is a better training partner than
-  a perfect one; Stockfish keeps the endgames and the post-game analysis. Its versions, weights,
-  licence and offline cost are documented in [MAIA.md](./MAIA.md), and the game mode picks the
-  opponent when it is built.
+  a perfect one. The game mode ships with Stockfish; Maia is not chosen yet. What it needs beyond the
+  interface as written — a rating instead of a skill, the move history, a sampler — and its
+  versions, weights, licence and offline cost are in [MAIA.md](./MAIA.md). Widening the interface
+  comes with that decision, not before it.
 
 ## Persistence
 

@@ -1,9 +1,10 @@
 # Maia
 
 Maia is a family of chess models that predict the move a player of a given rating would play,
-rather than the best move. It is the intended opponent of the game mode. This document records
-what was verified on 31 October 2026, before any code; the lasting choice lives in the **Engine**
-section of [DECISIONS.md](./DECISIONS.md#engine).
+rather than the best move. It is the candidate opponent of the game mode. It records what was
+verified on 31 October 2026, before the engine existed; the engine and the game mode have since
+shipped with Stockfish, so the section on the interface describes what a second opponent would meet.
+The lasting choice lives in the **Engine** section of [DECISIONS.md](./DECISIONS.md#engine).
 
 ## What it is
 
@@ -104,40 +105,69 @@ carries no licence statement of its own, which is a second reason to convert fro
 
 ## Behind the engine interface
 
-The engine interface is written with the game mode, not here. Maia constrains it in four ways.
+The interface ships in [`src/engine/uci.ts`](../src/engine/uci.ts):
 
-**The contract is a move, not a best move.** Both providers answer "which move does this side play
-in this position", and nothing more; a mode that needs an evaluation or a principal variation keeps
-using Stockfish directly. Stockfish's `bestmove`, `info depth` and `pv` must not leak into the
-interface, or Maia cannot implement it.
+```ts
+interface Engine {
+  bestMove(fen: string, request?: MoveRequest): Promise<string | null>;
+  prepare(): Promise<void>;
+  cancel(): void;
+  stop(): void;
+}
+```
 
-**The strength is an Elo, and it is continuous for Maia-3.** The level the user sets is already an
-approximate Elo in [GLOSSARY.md](../GLOSSARY.md), so the interface takes one. Stockfish maps it to
-its own skill level; Maia feeds it to the network.
+`MoveRequest` carries Stockfish's `skill` from 0 to 20 and a `movetimeMs`; `UciEngine` implements it
+over an `EngineTransport` that speaks UCI text to a Worker. The game mode owns the level — an
+approximate Elo, 1350 to 2850 in eleven steps — and the engine maps it to its own skill.
 
-**The move is sampled, not chosen.** At `Temperature 0` a Maia plays the same game every time, which
-upstream works around with opening books for its Lichess bots. The sampler — a temperature, a
-nucleus, a fixed seed for a replayable game — belongs to the interface, and both providers
-implement it their own way.
+Maia does not meet that contract as it stands. Four points, in the order they bite:
 
-**The position carries a history.** Maia-3 reads up to eight previous positions; Stockfish needs
-one. The interface takes the move list and lets a provider use as much of it as it wants.
+**The strength is not a skill.** The interface takes Stockfish's 0 to 20, while Maia-3 wants a
+rating, continuously. The mode would have to pass its Elo and let each engine map it; the mapping is
+not comparable — a "1350" of Skill 0 still calculates, while Maia at 1350 plays the average move of
+a Lichess player of that rating, and the slider's top, 2850, is beyond the 2600 the model was
+trained to.
 
-The scope stays narrow: Maia plays the games. The endgames need a result the app can trust, and the
-post-game analysis needs the best moves and the blunders — that is Stockfish, and the
-[DECISIONS.md](./DECISIONS.md#engine) entry on it does not change.
+**The position has no history.** `bestMove` takes a FEN. Maia-3 reads the eight positions before
+it, which changes its answer after a long manoeuvre; the interface has nowhere to put them. Either
+it takes the move list, or Maia plays without the history it was trained with, and that is a quality
+question, not a detail.
+
+**The move is chosen, not sampled.** A UCI engine under `go nodes 1` returns one move, and at
+`Temperature 0` a Maia returns the same one every time — upstream works around that with opening
+books for its Lichess bots. A sampled opponent needs a temperature, a nucleus and a seed for a
+replayable game, which is a second thing the contract has no room for.
+
+**There is no thinking time.** `movetimeMs` tunes a search that a Maia does not perform: one forward
+pass, about 86 ms measured below. The field is meaningless for it, and a mode that waits for it would
+wait for nothing.
+
+Two shapes are possible, and the choice belongs to the implementation: a `UciEngine` over a worker
+that wraps the ONNX model and answers `bestmove` — upstream's own Python wrapper is a UCI engine, so
+the shape exists — or a second implementation of `Engine` whose transport is messages rather than
+UCI text, reusing `prepare`, `cancel` and `stop`. Either keeps the scope narrow: Maia plays the
+games, while the endgames need a result the app can trust and the analysis needs the best moves and
+the blunders, which are Stockfish's.
+
+Widening `Engine` touches the shipped play and hint paths, so it is a decision for the owner, taken
+when Maia is actually built — not something a document settles.
 
 ## Offline
 
-The weights have to be on the device before the first game, and there are two ways to get them:
+The weights ship in the image either way, so the question is not where they live but when the browser
+reads them.
 
-- **Baked into the image**, like the puzzle subset. Costs the size of the model on every pull of
-  the image, and nothing at runtime.
-- **Downloaded once and cached in IndexedDB**, as the Maia platform does. It is a network request at
-  runtime: it needs the owner's agreement, the host in the `Content-Security-Policy`, and it leaves
-  the first launch without an opponent on a cold cache.
+- **In the service worker's precache**: offline from the first launch, at the cost of the install
+  size. `globPatterns` in [vite.config.ts](../vite.config.ts) already carries `.gz` and `.wasm`, so a
+  model dropped in `public/` joins it as soon as `.onnx` is added to the list.
+- **Fetched from the origin at first play, then cached in IndexedDB**, as the Maia platform does. The
+  install stays light and the opponent arrives after a download. The app already works this way: the
+  puzzle archive is fetched from its own origin on first use
+  ([`content.ts`](../src/features/puzzles/content.ts)), which the rule allows and `connect-src 'self'`
+  already covers.
 
-Only the first is compliant with the rule as it stands. The sizes that matter:
+The second suits 45 MB of weights; the first wants a model small enough not to weigh on every
+install. The sizes that matter:
 
 | Weights           | float32  | float16             |
 | ----------------- | -------- | ------------------- |
@@ -147,23 +177,20 @@ Only the first is compliant with the rule as it stands. The sizes that matter:
 | Maia-1, nine nets | 11.4 MB  | —                   |
 
 The runtime adds about 12 MB of WebAssembly whatever the weights weigh, 14.2 MB in
-`onnxruntime-web` 1.31. The smallest honest option is therefore about 25 MB in the image, weights
-and runtime together, and as much again in the first install of the service worker.
+`onnxruntime-web` 1.31. The smallest honest option is therefore about 25 MB added to the image; only
+the precache carries it into the install.
 
-Three consequences for the app as it stands:
+Two constraints remain, and the first is already met:
 
-- **WebAssembly needs a CSP token.** `script-src 'self'` in [nginx.conf](../nginx.conf) does not
-  allow compiling a Wasm module; the header needs `'wasm-unsafe-eval'`. This applies to Stockfish
-  as soon as the engine is wired, Maia or not.
-- **The threaded runtime wants `SharedArrayBuffer`.** The official platform ships the
-  `simd-threaded` build and serves the whole site with `Cross-Origin-Opener-Policy: same-origin` and
+- **WebAssembly compiles.** `script-src 'self' 'wasm-unsafe-eval'` is in [nginx.conf](../nginx.conf)
+  since the engine landed, with a comment saying it does not allow JavaScript `eval`. Stockfish runs
+  under it; `onnxruntime-web` has not been tried there yet, as _Not measured yet_ says. The header
+  itself needs nothing.
+- **The threaded runtime wants `SharedArrayBuffer`.** The official platform ships the `simd-threaded`
+  build and serves its whole site with `Cross-Origin-Opener-Policy: same-origin` and
   `Cross-Origin-Embedder-Policy: require-corp`. We already send the first and not the second; adding
   COEP constrains every resource and every embed. A single-threaded runtime avoids it, at a latency
   cost that has to be measured before choosing.
-- **The service worker must ship the model.** `globPatterns` in [vite.config.ts](../vite.config.ts)
-  precaches JavaScript, CSS, HTML, SVG and PNG only: a model left in `public/` would not be offline
-  after the first launch, and there is no fetch to warm it up. It belongs in the precache list, with
-  its size in the install budget.
 
 Memory and start-up are the fixed cost of any runtime: the Wasm module has to be compiled, the
 weights parsed, and a session created, once per page load. On a phone that is seconds, not
@@ -184,17 +211,19 @@ that the load, not the move, is the cost the user will notice.
 ## Recommendation
 
 Maia-3, 5M in float16, converted from the pinned upstream checkpoint into ONNX by our own script,
-run in the same Worker pattern as Stockfish behind the engine interface. It is the only generation
-with an official browser path, the only one that covers 600 to 2600 with a continuous strength, and
-about 10 MB is a twentieth of Maia-2's 267 MB.
+run in a Worker behind a widened `Engine`. It is the only generation with an official browser path,
+the only one that covers 600 to 2600 with a continuous strength, and about 10 MB is a twentieth of
+Maia-2's 267 MB.
 
-It stays a recommendation until four things are settled with the game mode:
+It stays a recommendation until five things are settled:
 
 1. the licence of the 5M weights, confirmed with upstream (see above);
-2. the latency of one inference on the target phone with a single-threaded runtime, and whether the
+2. the widening of `Engine` — a rating, a move history and a sampler — against the play and hint
+   paths it already serves;
+3. the latency of one inference on the target phone with a single-threaded runtime, and whether the
    threaded build is worth COEP;
-3. the size added to the service worker's install, and the parse time of the weights at start-up;
-4. the quality of our own ONNX export: the published accuracy belongs to the model with its eight
+4. precache or IndexedDB, and the parse time of the weights at start-up;
+5. the quality of our own ONNX export: the published accuracy belongs to the model with its eight
    positions of history, and an export that drops them has to be compared on a sample of positions.
 
 Fallbacks, in order: the 23M if the 5M is too weak in play, the 3M if the 5M is too slow. Maia-2 is
@@ -205,7 +234,8 @@ else, and then with the `lc0.js` risk above.
 
 - One inference on a phone, single-threaded and threaded.
 - The play strength of a Maia-3 ONNX export without the eight positions of history.
-- The behaviour of `onnxruntime-web` under our CSP, with `'wasm-unsafe-eval'` and without COEP.
+- `onnxruntime-web` under our CSP: Stockfish already compiles with `'wasm-unsafe-eval'` and no COEP,
+  but the ONNX runtime has not been run there.
 - The 5M and the 23M once we convert them ourselves: the figures above come from the platform's
   export of the 23M, not from ours.
 
