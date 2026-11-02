@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import Dexie from 'dexie';
 import { Rating, type Grade } from 'ts-fsrs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { GambitDatabase } from './db';
@@ -200,9 +201,34 @@ describe('the database', () => {
 
     const reopened = new GambitDatabase(name);
     try {
-      expect(reopened.verno).toBe(1);
+      expect(reopened.verno).toBe(2);
       expect(await reopened.reviews.count()).toBe(1);
+      expect(await reopened.games.count()).toBe(0);
       expect(await reopened.meta.get('scheduler')).toEqual({ key: 'scheduler', ...SCHEDULER });
+    } finally {
+      reopened.close();
+    }
+  });
+
+  it('inherits a v1 journal when the schema gains the games table', async () => {
+    // What the app was before v2: no games table, the journal and the scheduler record as they
+    // are. Reopening as GambitDatabase must upgrade, keep both and never repopulate.
+    const name = `gambit-test-${crypto.randomUUID()}`;
+    const legacy = new Dexie(name);
+    legacy.version(1).stores({ reviews: '++id, cardId, reviewedAt', meta: 'key' });
+    legacy.on('populate', () => legacy.table('meta').add({ key: 'scheduler', ...SCHEDULER }));
+    await legacy.open();
+    await legacy
+      .table('reviews')
+      .add({ cardId: 'puzzle:demo', rating: Rating.Good, reviewedAt: START });
+    legacy.close();
+
+    const reopened = new GambitDatabase(name);
+    try {
+      expect(await reopened.reviews.count()).toBe(1);
+      expect(await reopened.meta.count()).toBe(1);
+      expect(await reopened.meta.get('scheduler')).toEqual({ key: 'scheduler', ...SCHEDULER });
+      expect(await reopened.games.count()).toBe(0);
     } finally {
       reopened.close();
     }

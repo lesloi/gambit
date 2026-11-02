@@ -1,6 +1,13 @@
+export interface MoveRequest {
+  /** Stockfish's Skill Level option, 0 to 20; omitted keeps the engine's current setting. */
+  skill?: number;
+  /** How long the engine may think, in milliseconds. */
+  movetimeMs?: number;
+}
+
 export interface Engine {
   /** The engine's first choice in the position, in UCI, or null when it has no legal move. */
-  bestMove(fen: string): Promise<string | null>;
+  bestMove(fen: string, request?: MoveRequest): Promise<string | null>;
   /** Loads the engine and waits until it accepts a position. */
   prepare(): Promise<void>;
   /** Stops a search in flight, so it cannot hold up the next command. */
@@ -41,6 +48,8 @@ export class UciEngine implements Engine {
   private pending: PendingAnswer | null = null;
   private ready = false;
   private stopped = false;
+  /** The Skill Level last sent, so a game does not reset it before every move. */
+  private skill: number | null = null;
   private queue: Promise<unknown> = Promise.resolve();
 
   constructor(transport: EngineTransport, options: UciEngineOptions = {}) {
@@ -61,13 +70,19 @@ export class UciEngine implements Engine {
     return this.enqueue(() => this.handshake());
   }
 
-  bestMove(fen: string): Promise<string | null> {
+  bestMove(fen: string, request: MoveRequest = {}): Promise<string | null> {
     return this.enqueue(async () => {
       await this.handshake();
 
+      const skill = request.skill === undefined ? null : Math.min(Math.max(request.skill, 0), 20);
+      if (skill !== null && skill !== this.skill) {
+        this.transport.post(`setoption name Skill Level value ${skill}`);
+        this.skill = skill;
+      }
+
       const answer = this.waitFor((line) => line.startsWith('bestmove '), this.timeoutMs);
       this.transport.post(`position fen ${fen}`);
-      this.transport.post(`go movetime ${this.movetimeMs}`);
+      this.transport.post(`go movetime ${request.movetimeMs ?? this.movetimeMs}`);
 
       // `bestmove` may carry a `ponder` move after the move itself; only the first token is ours.
       const line = await answer;

@@ -1,5 +1,6 @@
 import { Chess } from 'chess.js';
 import type { PromotionPiece } from '../../lib/chess';
+import { gameEnd, type GameEnd } from '../../lib/position';
 
 export type EndgameResult = 'win' | 'draw';
 
@@ -15,12 +16,7 @@ export interface Endgame {
 
 export type EndgameOutcome = 'playing' | 'solved' | 'failed';
 
-export type EndgameEnd =
-  | { kind: 'mate'; winner: 'white' | 'black' }
-  | { kind: 'stalemate' }
-  | { kind: 'insufficient' }
-  | { kind: 'fifty-move' }
-  | { kind: 'threefold' };
+export type EndgameEnd = GameEnd;
 
 export interface EndgameState {
   endgame: Endgame;
@@ -38,35 +34,10 @@ function colorToMove(chess: Chess): 'white' | 'black' {
   return chess.turn() === 'w' ? 'white' : 'black';
 }
 
-/**
- * The four first fields identify a position: the halfmove clock and the move number change without
- * the position changing, so threefold repetition must ignore them.
- */
-export function positionKey(fen: string): string {
-  return fen.split(' ').slice(0, 4).join(' ');
-}
+export { positionKey } from '../../lib/position';
 
 /** How the game ended, or null while it is still being played. */
-export function endgameEnd(fen: string, positions: readonly string[]): EndgameEnd | null {
-  const chess = new Chess(fen);
-
-  if (chess.isCheckmate()) {
-    // The side to move is the one mated, so the other side gave mate.
-    return { kind: 'mate', winner: chess.turn() === 'w' ? 'black' : 'white' };
-  }
-  if (chess.isStalemate()) return { kind: 'stalemate' };
-  if (chess.isInsufficientMaterial()) return { kind: 'insufficient' };
-
-  const halfmove = Number(fen.split(' ')[4] ?? 0);
-  if (halfmove >= 100) return { kind: 'fifty-move' };
-
-  const key = positionKey(fen);
-  if (positions.filter((position) => positionKey(position) === key).length >= 3) {
-    return { kind: 'threefold' };
-  }
-
-  return null;
-}
+export const endgameEnd = gameEnd;
 
 /** Whether the end the board reached is the result the content expects of the user's side. */
 export function judgeEndgame(

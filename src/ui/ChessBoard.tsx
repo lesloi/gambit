@@ -11,6 +11,8 @@ export interface ChessBoardProps {
   movable: boolean;
   dests: Map<string, string[]>;
   onMove: (from: string, to: string) => void;
+  /** A suggested move drawn as an arrow, or null to clear it. */
+  hint?: { from: string; to: string } | null;
   /** Bumped to apply `fen` again after the board moved a piece without a state change. */
   resetKey?: number;
 }
@@ -23,6 +25,12 @@ function asMove(lastMove: [string, string] | null): Key[] | undefined {
   return lastMove as Key[] | undefined;
 }
 
+function asShapes(
+  hint: { from: string; to: string } | null,
+): { orig: Key; dest: Key; brush: string }[] {
+  return hint ? [{ orig: hint.from as Key, dest: hint.to as Key, brush: 'paleBlue' }] : [];
+}
+
 export function ChessBoard({
   fen,
   orientation,
@@ -31,6 +39,7 @@ export function ChessBoard({
   movable,
   dests,
   onMove,
+  hint = null,
   resetKey = 0,
 }: ChessBoardProps) {
   const host = useRef<HTMLDivElement>(null);
@@ -50,6 +59,7 @@ export function ChessBoard({
       animation: { enabled: true, duration: 180 },
       highlight: { lastMove: true, check: true },
       lastMove: asMove(lastMove),
+      drawable: { autoShapes: asShapes(hint) },
       movable: {
         free: false,
         color: movable ? turn : undefined,
@@ -74,12 +84,13 @@ export function ChessBoard({
       orientation,
       turnColor: turn,
       lastMove: asMove(lastMove),
+      drawable: { autoShapes: asShapes(hint) },
       movable: {
         color: movable ? turn : undefined,
         dests: asKeys(dests),
       },
     });
-  }, [fen, orientation, turn, lastMove, movable, dests, resetKey]);
+  }, [fen, orientation, turn, lastMove, movable, dests, hint, resetKey]);
 
   return <div ref={host} className="aspect-square w-full overflow-hidden rounded-xl" />;
 }

@@ -28,12 +28,14 @@ export function HomePage({
   onStartPuzzle,
   onStartEndgame,
   onStartOpening,
+  onStartPlay,
   onShowCredits,
 }: {
   onStartSession: () => void;
   onStartPuzzle: () => void;
   onStartEndgame: () => void;
   onStartOpening: () => void;
+  onStartPlay: () => void;
   onShowCredits: () => void;
 }) {
   const [session] = useState(readSession);
@@ -257,30 +259,33 @@ export function HomePage({
             <ul className="mt-4">
               {MODES.filter((mode) => mode.group === 'play').map(
                 ({ id, icon: Icon, available }) => (
-                  <li
-                    key={id}
-                    data-testid={`mode-${id}`}
-                    className="border-line bg-paper-raised flex items-start gap-3 rounded-xl border p-4"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="bg-accent-soft text-accent grid size-9 shrink-0 place-items-center rounded-lg"
+                  <li key={id} data-testid={`mode-${id}`}>
+                    <button
+                      type="button"
+                      onClick={onStartPlay}
+                      disabled={!available}
+                      className="border-line bg-paper-raised hover:border-accent/40 flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-colors disabled:cursor-default disabled:opacity-100"
                     >
-                      <Icon size={18} strokeWidth={1.75} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-sm font-semibold">{fr.modes[id].name}</h3>
-                        {available ? null : (
-                          <span className="border-line text-ink-muted shrink-0 rounded-full border px-2 py-0.5 text-[10px] tracking-wider uppercase">
-                            {fr.home.comingSoon}
-                          </span>
-                        )}
+                      <span
+                        aria-hidden="true"
+                        className="bg-accent-soft text-accent grid size-9 shrink-0 place-items-center rounded-lg"
+                      >
+                        <Icon size={18} strokeWidth={1.75} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="text-sm font-semibold">{fr.modes[id].name}</h3>
+                          {available ? null : (
+                            <span className="border-line text-ink-muted shrink-0 rounded-full border px-2 py-0.5 text-[10px] tracking-wider uppercase">
+                              {fr.home.comingSoon}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-ink-muted mt-1 text-sm leading-snug">
+                          {fr.modes[id].goal}
+                        </p>
                       </div>
-                      <p className="text-ink-muted mt-1 text-sm leading-snug">
-                        {fr.modes[id].goal}
-                      </p>
-                    </div>
+                    </button>
                   </li>
                 ),
               )}

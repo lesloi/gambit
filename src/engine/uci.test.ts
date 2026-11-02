@@ -73,6 +73,55 @@ describe('UCI engine', () => {
     );
   });
 
+  it('sets the skill level before the position and honours the requested think time', async () => {
+    const transport = new FakeTransport();
+    const engine = new UciEngine(transport);
+
+    await engine.bestMove(START, { skill: 8, movetimeMs: 900 });
+
+    expect(transport.commands).toEqual([
+      'uci',
+      'isready',
+      'setoption name Skill Level value 8',
+      `position fen ${START}`,
+      'go movetime 900',
+    ]);
+  });
+
+  it('does not repeat a skill level the engine already holds', async () => {
+    const transport = new FakeTransport();
+    const engine = new UciEngine(transport);
+
+    await engine.bestMove(START, { skill: 8 });
+    await engine.bestMove(START, { skill: 8 });
+
+    expect(transport.commands.filter((command) => command.startsWith('setoption'))).toHaveLength(1);
+  });
+
+  it('sends the level back after a full-strength hint', async () => {
+    const transport = new FakeTransport();
+    const engine = new UciEngine(transport);
+
+    await engine.bestMove(START, { skill: 4 });
+    await engine.bestMove(START, { skill: 20 });
+    await engine.bestMove(START, { skill: 4 });
+
+    expect(transport.commands.filter((command) => command.startsWith('setoption'))).toEqual([
+      'setoption name Skill Level value 4',
+      'setoption name Skill Level value 20',
+      'setoption name Skill Level value 4',
+    ]);
+  });
+
+  it('clamps a skill level to the option range', async () => {
+    const transport = new FakeTransport();
+    const engine = new UciEngine(transport);
+
+    await engine.bestMove(START, { skill: 42 });
+
+    expect(transport.commands).toContain('setoption name Skill Level value 20');
+  });
+
   it('reads a best move that arrives with other lines in the same message', async () => {
     const transport = new FakeTransport((command) =>
       command.startsWith('go ') ? ['info depth 12\nbestmove e2e4'] : stockfish(command),

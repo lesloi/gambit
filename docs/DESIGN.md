@@ -59,6 +59,17 @@ downloaded, so the first paint needs no network.
   as a mistake.
 - No timer. The exercise is about holding the line, not speed; a clock would push towards guessing.
 
+## Play
+
+- The setup screen holds the level slider and the fixed 10+0 clock, then the primary action starts
+  the game from the initial position; White is the user.
+- The game screen stacks the opponent's clock, the board and the user's clock. Only the running
+  clock is highlighted, and a flag ends the game without waiting for a move.
+- The clock starts with the first move, so the user's first move costs no time.
+- A hint draws the engine's move as an arrow in the board's hint brush, at full strength whatever
+  level the game uses, and marks the game as assisted; there is no takeback.
+- The result panel names the winner and the reason, then offers a new game or a change of level.
+
 ## Accessibility
 
 The target is [WCAG 2.2](https://www.w3.org/TR/WCAG22/) level AA. In practice:
