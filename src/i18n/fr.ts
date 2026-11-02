@@ -205,6 +205,11 @@ export const fr = {
       white: 'Pendule des Blancs',
       black: 'Pendule des Noirs',
     },
+    material: {
+      white: 'Matériel : Blancs +{points}.',
+      black: 'Matériel : Noirs +{points}.',
+      even: 'Matériel : égalité.',
+    },
   },
   rating: {
     again: 'À revoir',

@@ -95,6 +95,9 @@ no network.
   the left, with the status and the result under them; the score sheet and the actions on the
   right. Under `md` the sheet drops under the board, capped so the buttons stay reachable.
 - A clock is a name and a time on one line; only the running one is in `ink` and semibold.
+- Each clock row carries the pieces its side has taken from the other, and the side ahead shows its
+  advantage in pawns. The list is decorative; the advantage is announced, and it is the board's
+  material, so a promotion counts even though it adds no piece to the list.
 - The score sheet replays the game's moves into standard notation, two per row, the last row in
   `ink`. It only appears once a move is played.
 - The clock starts with the first move, so the user's first move costs no time.
