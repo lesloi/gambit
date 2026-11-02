@@ -51,7 +51,7 @@ export function UpdatePrompt() {
         role="status"
         className={
           open
-            ? 'border-line bg-paper-raised pointer-events-auto mx-auto flex max-w-2xl flex-col gap-3 rounded-2xl border p-4 shadow-lg sm:flex-row sm:items-center'
+            ? 'border-line bg-paper-raised pointer-events-auto mx-auto flex max-w-2xl flex-col gap-3 rounded-sm border p-4 sm:flex-row sm:items-center'
             : 'sr-only'
         }
       >
@@ -62,7 +62,7 @@ export function UpdatePrompt() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="border-line text-ink-muted min-h-11 flex-1 rounded-xl border px-4 text-sm sm:flex-none"
+                className="border-line text-ink-muted min-h-11 flex-1 rounded-sm border px-4 text-sm sm:flex-none"
               >
                 {fr.pwa.later}
               </button>
@@ -70,7 +70,7 @@ export function UpdatePrompt() {
                 type="button"
                 onClick={reload}
                 disabled={updating}
-                className="bg-accent min-h-11 flex-1 rounded-xl px-4 text-sm font-semibold text-white disabled:opacity-60 sm:flex-none"
+                className="bg-accent min-h-11 flex-1 rounded-sm px-4 text-sm font-semibold text-white disabled:opacity-60 sm:flex-none"
               >
                 {updating ? fr.pwa.updating : fr.pwa.reload}
               </button>

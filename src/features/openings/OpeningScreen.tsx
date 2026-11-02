@@ -93,7 +93,7 @@ export function OpeningScreen({ onExit }: { onExit: () => void }) {
           </button>
           <h1 className="text-lg">{fr.opening.title}</h1>
           {selected ? (
-            <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
+            <span className="border-line text-ink-muted ml-auto rounded-xs border px-2.5 py-1 text-xs">
               {selected.color === 'white' ? fr.opening.white : fr.opening.black}
             </span>
           ) : null}
@@ -154,11 +154,11 @@ function OpeningList({
               {group.map((line) => {
                 const status = lineStatus(states.get(cardId('opening', line.id)) ?? null, now);
                 return (
-                  <li key={line.id} className="border-line bg-paper-raised rounded-xl border p-4">
+                  <li key={line.id} className="border-line bg-paper-raised rounded-sm border p-4">
                     <div className="flex items-start justify-between gap-3">
                       <h3 className="text-sm font-semibold">{line.name}</h3>
                       <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-[0.625rem] tracking-wider uppercase ${
+                        className={`shrink-0 rounded-xs px-2 py-0.5 text-[0.625rem] tracking-wider uppercase ${
                           status.kind === 'due'
                             ? 'bg-accent-soft text-accent-ink'
                             : 'border-line text-ink-muted border'
@@ -171,7 +171,7 @@ function OpeningList({
                     <button
                       type="button"
                       onClick={() => onPlay(line)}
-                      className="bg-accent mt-3 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                      className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
                     >
                       {fr.opening.review}
                     </button>
@@ -273,8 +273,8 @@ export function OpeningPlayer({
         <h2 className="text-lg">{line.name}</h2>
       </div>
 
-      <div className="border-line bg-paper-raised rounded-2xl border p-2.5 sm:p-3">
-        <div ref={boardHost} tabIndex={-1} aria-label={fr.opening.board} className="rounded-xl">
+      <div className="border-line bg-paper-raised rounded-sm border p-2.5 sm:p-3">
+        <div ref={boardHost} tabIndex={-1} aria-label={fr.opening.board} className="rounded-sm">
           <ChessBoard
             fen={state.fen}
             orientation={state.userColor}
@@ -296,7 +296,7 @@ export function OpeningPlayer({
           <button
             type="button"
             onClick={restart}
-            className="text-ink-muted hover:text-ink min-h-11 shrink-0 rounded-full px-3 text-xs"
+            className="text-ink-muted hover:text-ink min-h-11 shrink-0 rounded-sm px-3 text-xs"
           >
             {fr.opening.restart}
           </button>
@@ -306,7 +306,7 @@ export function OpeningPlayer({
       <div className="mt-4">
         {state.outcome === 'solved' ? (
           <>
-            <div role="status" className="bg-ok-soft text-ok rounded-xl p-4">
+            <div role="status" className="bg-ok-soft text-ok rounded-sm p-4">
               <p className="text-sm font-semibold">{fr.opening.solved}</p>
             </div>
 
@@ -317,7 +317,7 @@ export function OpeningPlayer({
             <button
               type="button"
               onClick={onOther}
-              className="bg-accent mt-3 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+              className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
             >
               {nextLabel}
             </button>
@@ -326,7 +326,7 @@ export function OpeningPlayer({
 
         {state.outcome === 'failed' ? (
           <>
-            <div role="status" className="bg-bad-soft text-bad rounded-xl p-4">
+            <div role="status" className="bg-bad-soft text-bad rounded-sm p-4">
               <p className="text-sm font-semibold">{fr.opening.failed}</p>
               <p className="mt-1 text-xs opacity-80">
                 {fr.opening.expectedMove.replace('{move}', state.expectedSan ?? '')}
@@ -337,14 +337,14 @@ export function OpeningPlayer({
               <button
                 type="button"
                 onClick={restart}
-                className="bg-accent flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                className="bg-accent flex-1 rounded-sm px-4 py-3 text-sm font-semibold text-white"
               >
                 {fr.opening.retry}
               </button>
               <button
                 type="button"
                 onClick={onOther}
-                className="border-line text-ink-muted flex-1 rounded-xl border px-4 py-3 text-sm"
+                className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm"
               >
                 {nextLabel}
               </button>

@@ -26,7 +26,7 @@ export function CreditsPage({ onExit }: { onExit: () => void }) {
 
           <ul className="mt-6 grid gap-3">
             {CREDITS.map((credit) => (
-              <li key={credit.id} className="border-line bg-paper-raised rounded-xl border p-4">
+              <li key={credit.id} className="border-line bg-paper-raised rounded-sm border p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                   <h2 className="text-sm font-semibold">
                     <a
@@ -41,7 +41,7 @@ export function CreditsPage({ onExit }: { onExit: () => void }) {
                     href={credit.licenceUrl}
                     rel="noreferrer"
                     aria-label={`${fr.credits.licence} ${credit.licence}`}
-                    className="border-line text-ink-muted hover:text-ink rounded-full border px-2 py-0.5 text-[0.6875rem]"
+                    className="border-line text-ink-muted hover:text-ink rounded-xs border px-2 py-0.5 text-[0.6875rem]"
                   >
                     {credit.licence}
                   </a>

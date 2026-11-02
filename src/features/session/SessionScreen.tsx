@@ -152,7 +152,7 @@ export function SessionScreen({ onExit }: { onExit: () => void }) {
           </button>
           <h1 className="text-lg">{fr.session.title}</h1>
           {state.status === 'ready' ? (
-            <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
+            <span className="border-line text-ink-muted ml-auto rounded-xs border px-2.5 py-1 text-xs">
               {state.cursor.position} / {state.cursor.total}
             </span>
           ) : null}
@@ -195,7 +195,7 @@ export function SessionScreen({ onExit }: { onExit: () => void }) {
               <button
                 type="button"
                 onClick={retry}
-                className="bg-accent mt-4 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                className="bg-accent mt-4 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
               >
                 {fr.session.retry}
               </button>
@@ -209,7 +209,7 @@ export function SessionScreen({ onExit }: { onExit: () => void }) {
               <button
                 type="button"
                 onClick={onExit}
-                className="border-line text-ink-muted mt-4 w-full rounded-xl border px-4 py-3 text-sm"
+                className="border-line text-ink-muted mt-4 w-full rounded-sm border px-4 py-3 text-sm"
               >
                 {fr.session.backHome}
               </button>
@@ -225,7 +225,7 @@ export function SessionScreen({ onExit }: { onExit: () => void }) {
               <button
                 type="button"
                 onClick={onExit}
-                className="bg-accent mt-4 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                className="bg-accent mt-4 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
               >
                 {fr.session.backHome}
               </button>

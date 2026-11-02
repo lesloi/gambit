@@ -107,13 +107,13 @@ export function GameReview({
       {state.status === 'failed' ? (
         <div
           role="alert"
-          className="border-line bg-paper-raised mt-6 rounded-2xl border p-4 text-center"
+          className="border-line bg-paper-raised mt-6 rounded-sm border p-4 text-center"
         >
           <p className="text-sm">{fr.play.analysis.failed}</p>
           <button
             type="button"
             onClick={retry}
-            className="bg-accent mt-3 rounded-xl px-4 py-3 text-sm font-semibold text-white"
+            className="bg-accent mt-3 rounded-sm px-4 py-3 text-sm font-semibold text-white"
           >
             {fr.play.analysis.retry}
           </button>
@@ -123,7 +123,7 @@ export function GameReview({
           <div
             ref={boardHost}
             aria-label={fr.play.board}
-            className="border-line bg-paper-raised mt-3 rounded-2xl border p-2.5 sm:p-3"
+            className="border-line bg-paper-raised mt-3 rounded-sm border p-2.5 sm:p-3"
           >
             <ChessBoard
               fen={finding.fen}
@@ -150,7 +150,7 @@ export function GameReview({
                   type="button"
                   aria-pressed={index === selected}
                   onClick={() => select(index)}
-                  className={`flex min-h-11 w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors ${
+                  className={`flex min-h-11 w-full items-center gap-3 rounded-sm border p-3 text-left transition-colors ${
                     index === selected
                       ? 'border-accent bg-paper-raised'
                       : 'border-line bg-paper-raised hover:border-accent/40'
@@ -165,7 +165,7 @@ export function GameReview({
                     </span>
                   </span>
                   <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs ${kindClass(item.kind)}`}
+                    className={`shrink-0 rounded-xs px-2.5 py-1 text-xs ${kindClass(item.kind)}`}
                   >
                     {kindLabel(item.kind)}
                   </span>
@@ -180,14 +180,14 @@ export function GameReview({
         <button
           type="button"
           onClick={onNewGame}
-          className="bg-accent flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-white"
+          className="bg-accent flex-1 rounded-sm px-4 py-3 text-sm font-semibold text-white"
         >
           {fr.play.newGame}
         </button>
         <button
           type="button"
           onClick={onChangeSettings}
-          className="border-line text-ink-muted flex-1 rounded-xl border px-4 py-3 text-sm"
+          className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm"
         >
           {fr.play.changeSettings}
         </button>

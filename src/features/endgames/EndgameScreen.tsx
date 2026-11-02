@@ -44,7 +44,7 @@ export function EndgameScreen({ onExit }: { onExit: () => void }) {
           </button>
           <h1 className="text-lg">{fr.endgame.title}</h1>
           {selected ? (
-            <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
+            <span className="border-line text-ink-muted ml-auto rounded-xs border px-2.5 py-1 text-xs">
               {selected.result === 'win' ? fr.endgame.win : fr.endgame.draw}
             </span>
           ) : null}
@@ -79,13 +79,13 @@ function EndgameList({
 
       <ul className="mt-5 grid gap-3">
         {endgames.map((endgame) => (
-          <li key={endgame.id} className="border-line bg-paper-raised rounded-xl border p-4">
+          <li key={endgame.id} className="border-line bg-paper-raised rounded-sm border p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="text-sm font-semibold">{endgame.name}</h2>
                 <p className="text-ink-muted mt-1 text-sm leading-snug">{endgame.goal}</p>
               </div>
-              <span className="border-line text-ink-muted shrink-0 rounded-full border px-2 py-0.5 text-[0.625rem] tracking-wider uppercase">
+              <span className="border-line text-ink-muted shrink-0 rounded-xs border px-2 py-0.5 text-[0.625rem] tracking-wider uppercase">
                 {endgame.result === 'win' ? fr.endgame.win : fr.endgame.draw}
               </span>
             </div>
@@ -93,7 +93,7 @@ function EndgameList({
             <button
               type="button"
               onClick={() => onPlay(endgame)}
-              className="bg-accent mt-3 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+              className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
             >
               {fr.endgame.play}
             </button>
@@ -284,8 +284,8 @@ export function EndgamePlayer({
         <p className="text-ink-muted mt-1 text-sm">{endgame.goal}</p>
       </div>
 
-      <div className="border-line bg-paper-raised rounded-2xl border p-2.5 sm:p-3">
-        <div ref={boardHost} tabIndex={-1} aria-label={fr.endgame.board} className="rounded-xl">
+      <div className="border-line bg-paper-raised rounded-sm border p-2.5 sm:p-3">
+        <div ref={boardHost} tabIndex={-1} aria-label={fr.endgame.board} className="rounded-sm">
           <ChessBoard
             fen={state.fen}
             orientation={state.userColor}
@@ -315,7 +315,7 @@ export function EndgamePlayer({
           <button
             type="button"
             onClick={restart}
-            className="text-ink-muted hover:text-ink min-h-11 shrink-0 rounded-full px-3 text-xs"
+            className="text-ink-muted hover:text-ink min-h-11 shrink-0 rounded-sm px-3 text-xs"
           >
             {fr.endgame.restart}
           </button>
@@ -325,13 +325,13 @@ export function EndgamePlayer({
       {engineState === 'failed' && state.outcome === 'playing' ? (
         <div
           role="alert"
-          className="bg-bad-soft text-bad mt-2 flex items-center justify-between gap-3 rounded-xl p-3"
+          className="bg-bad-soft text-bad mt-2 flex items-center justify-between gap-3 rounded-sm p-3"
         >
           <p className="text-xs">{fr.endgame.engineFailed}</p>
           <button
             type="button"
             onClick={retryEngine}
-            className="border-bad/30 min-h-11 shrink-0 rounded-full border px-3 text-xs font-semibold"
+            className="border-bad/30 min-h-11 shrink-0 rounded-sm border px-3 text-xs font-semibold"
           >
             {fr.endgame.engineRetry}
           </button>
@@ -341,7 +341,7 @@ export function EndgamePlayer({
       <div className="mt-4">
         {state.outcome === 'solved' ? (
           <>
-            <div role="status" className="bg-ok-soft text-ok rounded-xl p-4">
+            <div role="status" className="bg-ok-soft text-ok rounded-sm p-4">
               <p className="text-sm font-semibold">{fr.endgame.solved}</p>
               {state.end ? (
                 <p className="mt-1 text-xs opacity-80">{endgameReason(state.end)}</p>
@@ -355,7 +355,7 @@ export function EndgamePlayer({
             <button
               type="button"
               onClick={onOther}
-              className="bg-accent mt-3 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+              className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
             >
               {nextLabel}
             </button>
@@ -364,7 +364,7 @@ export function EndgamePlayer({
 
         {state.outcome === 'failed' ? (
           <>
-            <div role="status" className="bg-bad-soft text-bad rounded-xl p-4">
+            <div role="status" className="bg-bad-soft text-bad rounded-sm p-4">
               <p className="text-sm font-semibold">{fr.endgame.failed}</p>
               {state.end ? (
                 <p className="mt-1 text-xs opacity-80">{endgameReason(state.end)}</p>
@@ -375,14 +375,14 @@ export function EndgamePlayer({
               <button
                 type="button"
                 onClick={restart}
-                className="bg-accent flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                className="bg-accent flex-1 rounded-sm px-4 py-3 text-sm font-semibold text-white"
               >
                 {fr.endgame.retry}
               </button>
               <button
                 type="button"
                 onClick={onOther}
-                className="border-line text-ink-muted flex-1 rounded-xl border px-4 py-3 text-sm"
+                className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm"
               >
                 {nextLabel}
               </button>

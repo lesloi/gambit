@@ -60,8 +60,8 @@ no network.
 - The session panel's button is the home screen's only filled action. A game in progress has
   none: the board is the action, and a filled hint button would push people to use it. Once the
   game is over, the analysis button takes that role.
-- Corners are `rounded-sm` (4 px) and separators are hairlines on the screens of this direction;
-  the mode screens still carry their older radii and shadows until they are redone.
+- Corners are `rounded-sm` (4 px), badges are `rounded-xs`, separators are hairlines, and nothing
+  casts a shadow.
 
 ## Board
 

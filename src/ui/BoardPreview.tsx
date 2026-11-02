@@ -13,7 +13,7 @@ const ROWS = [
 export function BoardPreview({ className = '' }: { className?: string }) {
   return (
     <div
-      className={`border-line grid aspect-square grid-cols-8 grid-rows-[repeat(8,minmax(0,1fr))] overflow-hidden rounded-lg border ${className}`}
+      className={`border-line grid aspect-square grid-cols-8 grid-rows-[repeat(8,minmax(0,1fr))] overflow-hidden rounded-sm border ${className}`}
       aria-hidden="true"
     >
       {ROWS.flatMap((row, rank) =>
