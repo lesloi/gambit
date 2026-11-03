@@ -3,6 +3,17 @@ export interface MoveRequest {
   skill?: number;
   /** How long the engine may think, in milliseconds. */
   movetimeMs?: number;
+  /**
+   * The opponent's approximate rating, for an engine that plays a human level rather than a skill.
+   * Maia conditions on both sides; the game passes its level for both until a mode needs them apart.
+   */
+  rating?: number;
+  /** The moves played so far from the initial position, in UCI, for an engine that reads history. */
+  history?: readonly string[];
+  /** Sampling temperature for an engine whose move is drawn rather than searched; 0 is the top move. */
+  temperature?: number;
+  /** A seed that makes a drawn move repeatable. */
+  seed?: number;
 }
 
 /** A position's value from the side to move, in centipawns or in moves to mate. */
@@ -24,7 +35,7 @@ export interface AnalyseRequest {
 }
 
 export interface Engine {
-  /** The engine's first choice in the position, in UCI, or null when it has no legal move. */
+  /** The engine's move in the position, in UCI, or null when it has no legal move. */
   bestMove(fen: string, request?: MoveRequest): Promise<string | null>;
   /** Loads the engine and waits until it accepts a position. */
   prepare(): Promise<void>;
