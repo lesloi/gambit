@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable, type Table } from 'dexie';
+import type { Opponent } from '../engine/uci';
 import type { GameResult } from '../lib/position';
 import type { ReviewEntry } from './fsrs';
 import { SCHEDULER } from './fsrs';
@@ -18,6 +19,8 @@ export interface StoredGame {
   endedAt: number;
   /** The approximate Elo of the level the engine played at. */
   level: number;
+  /** Which engine played the other side: a Stockfish game and a Maia game do not compare. */
+  engine: Opponent;
   userColor: 'white' | 'black';
   controlMs: number;
   /** The increment added after each move, in milliseconds. */
@@ -67,6 +70,21 @@ export class GambitDatabase extends Dexie {
           .toCollection()
           .modify((game) => {
             game.incrementMs ??= 0;
+          }),
+      );
+    // Games recorded before Maia existed were all played against Stockfish.
+    this.version(4)
+      .stores({
+        reviews: '++id, cardId, reviewedAt',
+        games: '++id, startedAt',
+        meta: 'key',
+      })
+      .upgrade((transaction) =>
+        transaction
+          .table('games')
+          .toCollection()
+          .modify((game) => {
+            game.engine ??= 'stockfish';
           }),
       );
     this.on('populate', () => this.meta.add({ key: 'scheduler', ...SCHEDULER }));

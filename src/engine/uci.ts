@@ -1,3 +1,6 @@
+/** The program that plays the other side; a game records which one it faced. */
+export type Opponent = 'stockfish' | 'maia';
+
 export interface MoveRequest {
   /** Stockfish's Skill Level option, 0 to 20; omitted keeps the engine's current setting. */
   skill?: number;

@@ -1,8 +1,10 @@
 import type { GambitDatabase, StoredGame } from '../../db/db';
+import type { Opponent } from '../../engine/uci';
 import type { PlayState } from './game';
 
 export interface GameMeta {
   level: number;
+  engine: Opponent;
   controlMs: number;
   incrementMs: number;
   startedAt: number;
@@ -17,6 +19,7 @@ export function gameRecord(state: PlayState, meta: GameMeta): StoredGame {
     startedAt: meta.startedAt,
     endedAt: meta.endedAt,
     level: meta.level,
+    engine: meta.engine,
     userColor: state.userColor,
     controlMs: meta.controlMs,
     incrementMs: meta.incrementMs,

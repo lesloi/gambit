@@ -3,10 +3,13 @@ import type { StorageLike } from '../../lib/storage';
 import { DEFAULT_LEVEL_INDEX, LEVELS } from './level';
 import {
   PLAY_LEVEL_STORAGE_KEY,
+  PLAY_OPPONENT_STORAGE_KEY,
   PLAY_TIME_CONTROL_STORAGE_KEY,
   readPlayLevel,
+  readPlayOpponent,
   readPlayTimeControl,
   savePlayLevel,
+  savePlayOpponent,
   savePlayTimeControl,
 } from './settings';
 import { DEFAULT_TIME_CONTROL_INDEX, TIME_CONTROLS } from './timeControl';
@@ -29,6 +32,29 @@ const stored = (value: unknown): StorageLike =>
 
 const storedControl = (value: unknown): StorageLike =>
   memoryStorage({ [PLAY_TIME_CONTROL_STORAGE_KEY]: JSON.stringify(value) });
+
+const storedOpponent = (value: unknown): StorageLike =>
+  memoryStorage({ [PLAY_OPPONENT_STORAGE_KEY]: JSON.stringify(value) });
+
+describe('play opponent preference', () => {
+  it('starts against Stockfish', () => {
+    expect(readPlayOpponent(memoryStorage())).toBe('stockfish');
+  });
+
+  it('reads back the opponent it saved', () => {
+    const storage = memoryStorage();
+
+    savePlayOpponent('maia', storage);
+
+    expect(readPlayOpponent(storage)).toBe('maia');
+  });
+
+  it('falls back to Stockfish for a value it cannot read', () => {
+    for (const value of [null, [], 'maia', 42, { engine: 'human' }]) {
+      expect(readPlayOpponent(storedOpponent(value)), JSON.stringify(value)).toBe('stockfish');
+    }
+  });
+});
 
 describe('play level preference', () => {
   it('starts on the default level', () => {

@@ -1,3 +1,4 @@
+import type { Opponent } from '../../engine/uci';
 import { browserStorage, type StorageLike } from '../../lib/storage';
 import { DEFAULT_LEVEL_INDEX, levelAt, levelIndex } from './level';
 import {
@@ -8,6 +9,7 @@ import {
 } from './timeControl';
 
 export const PLAY_LEVEL_STORAGE_KEY = 'gambit:play-level';
+export const PLAY_OPPONENT_STORAGE_KEY = 'gambit:play-opponent';
 export const PLAY_TIME_CONTROL_STORAGE_KEY = 'gambit:play-time-control';
 
 /** The level slider position, out of the backup like the puzzle filters: losing it costs a default. */
@@ -61,6 +63,37 @@ export function readPlayTimeControl(storage: StorageLike | null = browserStorage
     return index === -1 ? DEFAULT_TIME_CONTROL_INDEX : index;
   } catch {
     return DEFAULT_TIME_CONTROL_INDEX;
+  }
+}
+
+/** The opponent of the next game; a game already played keeps the one it was played against. */
+export type { Opponent };
+
+export function readPlayOpponent(storage: StorageLike | null = browserStorage()): Opponent {
+  if (!storage) return 'stockfish';
+
+  try {
+    const raw = storage.getItem(PLAY_OPPONENT_STORAGE_KEY);
+    if (raw === null) return 'stockfish';
+    const value: unknown = JSON.parse(raw);
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) return 'stockfish';
+    const { engine } = value as Record<string, unknown>;
+    return engine === 'maia' ? 'maia' : 'stockfish';
+  } catch {
+    return 'stockfish';
+  }
+}
+
+export function savePlayOpponent(
+  opponent: Opponent,
+  storage: StorageLike | null = browserStorage(),
+): void {
+  if (!storage) return;
+
+  try {
+    storage.setItem(PLAY_OPPONENT_STORAGE_KEY, JSON.stringify({ engine: opponent }));
+  } catch {
+    // A full or blocked storage only costs the preference; the screen keeps working.
   }
 }
 

@@ -1,8 +1,9 @@
 import { ChevronLeft, Lightbulb, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { database } from '../../db/db';
+import { createMaiaEngine } from '../../engine/maiaEngine';
 import { createStockfishEngine, type StockfishEngine } from '../../engine/stockfish';
-import type { PositionEval } from '../../engine/uci';
+import type { Engine, PositionEval } from '../../engine/uci';
 import { fr } from '../../i18n/fr';
 import { legalDests, promotionPieces, sideToMove, type PromotionPiece } from '../../lib/chess';
 import type { GameReason, GameResult, Side } from '../../lib/position';
@@ -32,7 +33,15 @@ import { HINT_MOVETIME_MS, HINT_SKILL, LEVELS, type Level } from './level';
 import { materialOf, type CapturedPiece, type Material, type MaterialColor } from './material';
 import { thinkTimeMs } from './pacing';
 import { gameRecord, saveGame } from './record';
-import { readPlayLevel, readPlayTimeControl, savePlayLevel, savePlayTimeControl } from './settings';
+import {
+  readPlayLevel,
+  readPlayOpponent,
+  readPlayTimeControl,
+  savePlayLevel,
+  savePlayOpponent,
+  savePlayTimeControl,
+  type Opponent,
+} from './settings';
 import { formatTimeControl, TIME_CONTROLS, type TimeControl } from './timeControl';
 
 type EngineState = 'loading' | 'ready' | 'failed';
@@ -49,12 +58,14 @@ interface PendingPromotion {
 export function PlayScreen({ onExit }: { onExit: () => void }) {
   const [levelIndex, setLevelIndex] = useState(readPlayLevel);
   const [controlIndex, setControlIndex] = useState(readPlayTimeControl);
+  const [opponent, setOpponent] = useState<Opponent>(readPlayOpponent);
   const [gameKey, setGameKey] = useState(0);
   const [playing, setPlaying] = useState(false);
 
   const start = () => {
     savePlayLevel(levelIndex);
     savePlayTimeControl(controlIndex);
+    savePlayOpponent(opponent);
     setGameKey((key) => key + 1);
     setPlaying(true);
   };
@@ -74,7 +85,7 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
           <h1 className="text-[0.9375rem] font-semibold">{fr.play.title}</h1>
           {playing ? (
             <span className="border-line text-ink-muted ml-auto rounded-sm border px-2 py-0.5 text-[0.6875rem]">
-              {fr.play.levelValue.replace('{elo}', String(LEVELS[levelIndex].elo))}
+              {`${fr.play.opponents[opponent].name} · ${fr.play.levelValue.replace('{elo}', String(LEVELS[levelIndex].elo))}`}
             </span>
           ) : null}
         </header>
@@ -83,6 +94,7 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
           {playing ? (
             <PlayGame
               key={gameKey}
+              opponent={opponent}
               level={LEVELS[levelIndex]}
               control={TIME_CONTROLS[controlIndex]}
               onNewGame={() => setGameKey((key) => key + 1)}
@@ -92,6 +104,8 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
             <PlaySetup
               levelIndex={levelIndex}
               onLevelChange={setLevelIndex}
+              opponent={opponent}
+              onOpponentChange={setOpponent}
               controlIndex={controlIndex}
               onControlChange={setControlIndex}
               onStart={start}
@@ -106,12 +120,16 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
 function PlaySetup({
   levelIndex,
   onLevelChange,
+  opponent,
+  onOpponentChange,
   controlIndex,
   onControlChange,
   onStart,
 }: {
   levelIndex: number;
   onLevelChange: (index: number) => void;
+  opponent: Opponent;
+  onOpponentChange: (opponent: Opponent) => void;
   controlIndex: number;
   onControlChange: (index: number) => void;
   onStart: () => void;
@@ -145,6 +163,32 @@ function PlaySetup({
         <p className="mt-2 text-sm font-medium" aria-live="polite">
           {levelText}
         </p>
+
+        <div className="mt-5">
+          <span className="text-sm font-semibold">{fr.play.opponent}</span>
+          <div
+            role="group"
+            aria-label={fr.play.opponent}
+            className="border-line mt-3 flex overflow-hidden rounded-sm border"
+          >
+            {(['stockfish', 'maia'] as const).map((engine) => (
+              <button
+                key={engine}
+                type="button"
+                aria-pressed={opponent === engine}
+                onClick={() => onOpponentChange(engine)}
+                className={
+                  opponent === engine
+                    ? 'bg-accent min-h-11 flex-1 px-3 text-sm font-semibold text-white'
+                    : 'text-ink-muted min-h-11 flex-1 px-3 text-sm'
+                }
+              >
+                {fr.play.opponents[engine].name}
+              </button>
+            ))}
+          </div>
+          <p className="text-ink-muted mt-2 text-xs">{fr.play.opponents[opponent].hint}</p>
+        </div>
 
         <div className="mt-5">
           <label htmlFor="play-time-control" className="text-sm font-semibold">
@@ -202,11 +246,13 @@ const REASON_LABEL: Record<GameReason, string> = {
 };
 
 function PlayGame({
+  opponent,
   level,
   control,
   onNewGame,
   onChangeLevel,
 }: {
+  opponent: Opponent;
   level: Level;
   control: TimeControl;
   onNewGame: () => void;
@@ -226,6 +272,13 @@ function PlayGame({
   const [reviewing, setReviewing] = useState(false);
   const [browsedPly, setBrowsedPly] = useState<number | null>(null);
   const engine = useRef<StockfishEngine | null>(null);
+  // Maia moves; Stockfish keeps the hints and the review. Two workers, one per job.
+  const maia = useRef<Engine | null>(null);
+  // Drawn once when the game mounts, so the same position offers the same move on a re-render.
+  const gameSeed = useRef(0);
+  useEffect(() => {
+    gameSeed.current = Math.floor(Math.random() * 2 ** 31);
+  }, []);
   const boardHost = useRef<HTMLDivElement>(null);
   const sheet = useRef<HTMLOListElement>(null);
   const recorded = useRef(false);
@@ -244,8 +297,10 @@ function PlayGame({
   useEffect(() => {
     let active = true;
     let instance: StockfishEngine;
+    let opponentEngine: Engine | null = null;
     try {
       instance = createStockfishEngine();
+      if (opponent === 'maia') opponentEngine = createMaiaEngine();
     } catch {
       queueMicrotask(() => {
         if (active) setEngineState('failed');
@@ -253,8 +308,13 @@ function PlayGame({
       return;
     }
     engine.current = instance;
+    maia.current = opponentEngine;
 
-    instance.prepare().then(
+    // Both have to be up before the first move: one plays, the other answers the hints.
+    const loading = opponentEngine
+      ? [instance.prepare(), opponentEngine.prepare()]
+      : [instance.prepare()];
+    Promise.all(loading).then(
       () => {
         if (active) setEngineState('ready');
       },
@@ -267,9 +327,11 @@ function PlayGame({
       active = false;
       generation.current += 1;
       instance.stop();
+      opponentEngine?.stop();
       if (engine.current === instance) engine.current = null;
+      if (maia.current === opponentEngine) maia.current = null;
     };
-  }, [engineAttempt]);
+  }, [engineAttempt, opponent]);
 
   const { moves: played, rows: pairs } = useMemo(() => scoreSheet(state.moves), [state.moves]);
   const livePly = state.moves.length;
@@ -310,6 +372,7 @@ function PlayGame({
 
       recorded.current = true;
       const record = gameRecord(after, {
+        engine: opponent,
         level: level.elo,
         controlMs,
         incrementMs,
@@ -321,7 +384,7 @@ function PlayGame({
         () => setSaved('failed'),
       );
     },
-    [controlMs, incrementMs, level.elo],
+    [controlMs, incrementMs, level.elo, opponent],
   );
 
   const applyMove = useCallback(
@@ -355,7 +418,17 @@ function PlayGame({
 
       const request = generation.current;
       setThinking(true);
-      instance.bestMove(game.fen, { skill: level.skill, movetimeMs: budget }).then(
+      const engineMove =
+        opponent === 'maia' && maia.current
+          ? maia.current.bestMove(game.fen, {
+              // The model learned play up to 2600; above that the label promises more than it has.
+              rating: Math.min(Math.max(level.elo, 600), 2600),
+              history: game.moves,
+              temperature: 1,
+              seed: gameSeed.current + game.moves.length,
+            })
+          : instance.bestMove(game.fen, { skill: level.skill, movetimeMs: budget });
+      engineMove.then(
         (uci) => {
           if (request !== generation.current) return;
           setThinking(false);
@@ -387,7 +460,7 @@ function PlayGame({
         },
       );
     },
-    [applyMove, complete, control, level.skill],
+    [applyMove, complete, control, level.skill, level.elo, opponent],
   );
 
   const playUserMove = (from: string, to: string, promotion?: PromotionPiece) => {

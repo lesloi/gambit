@@ -99,7 +99,7 @@ export const fr = {
     },
     play: {
       name: 'Parties',
-      goal: 'Joue contre Stockfish à ton niveau, avec une pendule.',
+      goal: 'Joue contre Stockfish ou Maia à ton niveau, avec une pendule.',
     },
   },
   endgame: {
@@ -159,6 +159,17 @@ export const fr = {
       'Une partie contre le moteur, du premier coup à la pendule. Aucun retour en arrière ; un indice marque la partie comme assistée.',
     level: 'Niveau',
     levelValue: '≈ {elo} Elo',
+    opponent: 'Adversaire',
+    opponents: {
+      stockfish: {
+        name: 'Stockfish',
+        hint: 'Le meilleur coup, bridé à ton niveau : il ne cède rien.',
+      },
+      maia: {
+        name: 'Maia',
+        hint: 'Le coup qu’un joueur de ton niveau jouerait : il se trompe comme toi.',
+      },
+    },
     clock: 'Pendule',
     sheet: 'Coups',
     review: {
