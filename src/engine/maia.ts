@@ -1,3 +1,5 @@
+import { Chess } from 'chess.js';
+
 /**
  * The move space and the sampler of Maia-3.
  *
@@ -112,4 +114,79 @@ export function seededRandom(seed: number): () => number {
     mixed ^= mixed + Math.imul(mixed ^ (mixed >>> 7), mixed | 61);
     return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+const PIECE_PLANES: Record<string, number> = { p: 1, n: 2, b: 3, r: 4, q: 5, k: 6 };
+
+/** How many positions the model reads, oldest first. */
+export const MAIA_HISTORY = 8;
+
+/**
+ * The positions the model reads, as 64 x 12 planes per position, Black mirrored to White's side.
+ * A position is padded with the earliest one when the game is younger than the history, which is
+ * what upstream does when a game starts.
+ */
+export function maiaTokens(fens: readonly string[], history = MAIA_HISTORY): Float32Array {
+  if (fens.length === 0) throw new Error('Maia needs at least one position');
+
+  const boards = fens.slice(-history).map((fen) => {
+    const chess = new Chess(fen);
+    return chess.turn() === 'b' ? mirrorFen(fen) : fen;
+  });
+  while (boards.length < history) boards.unshift(boards[0]);
+
+  // The tensor is (64 squares, position x plane): a square's channels sit side by side, then the
+  // next position of the same square. Laying positions out first reads as a different board.
+  const channels = 12 * history;
+  const tokens = new Float32Array(64 * channels);
+  boards.forEach((fen, position) => {
+    const base = position * 12;
+    const rows = fen.split(' ')[0].split('/');
+    for (let rank = 0; rank < 8; rank += 1) {
+      let file = 0;
+      for (const character of rows[rank]) {
+        const skip = Number(character);
+        if (Number.isNaN(skip)) {
+          const plane = PIECE_PLANES[character.toLowerCase()];
+          const black = character === character.toLowerCase() ? 6 : 0;
+          const square = (7 - rank) * 8 + file;
+          tokens[square * channels + base + plane - 1 + black] = 1;
+          file += 1;
+        } else {
+          file += skip;
+        }
+      }
+    }
+  });
+  return tokens;
+}
+
+/** The same position seen from the other side, which is the board the model expects for Black. */
+export function mirrorFen(fen: string): string {
+  const [placement, , castling, enPassant, halfmove, fullmove] = fen.split(' ');
+  const flipped = placement
+    .split('/')
+    .reverse()
+    .map((rank) =>
+      [...rank]
+        .map((character) =>
+          /[a-zA-Z]/.test(character) && character === character.toUpperCase()
+            ? character.toLowerCase()
+            : character === character.toLowerCase()
+              ? character.toUpperCase()
+              : character,
+        )
+        .join(''),
+    )
+    .join('/');
+  const swapped =
+    castling === '-'
+      ? '-'
+      : castling.replace(/[KQkq]/g, (right) =>
+          right === right.toUpperCase() ? right.toLowerCase() : right.toUpperCase(),
+        );
+  const mirroredCastling =
+    swapped === '-' ? '-' : [...'KQkq'].filter((right) => swapped.includes(right)).join('');
+  const mirroredEnPassant = enPassant === '-' ? '-' : mirrorSquare(enPassant);
+  return `${flipped} w ${mirroredCastling} ${mirroredEnPassant} ${halfmove} ${fullmove}`;
 }

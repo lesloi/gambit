@@ -1,6 +1,6 @@
 import { fr } from '../../i18n/fr';
 
-export type CreditId = 'pieces' | 'puzzles' | 'engine';
+export type CreditId = 'pieces' | 'puzzles' | 'engine' | 'maia' | 'onnxruntime';
 
 export interface Credit {
   id: CreditId;
@@ -47,6 +47,25 @@ export const CREDITS: readonly Credit[] = [
     sourceUrl: 'https://github.com/nmrugg/stockfish.js/tree/v19.0.1',
     path: 'public/stockfish/stockfish-19-lite-single.js',
     notice: 'Version 19, build lite single-threaded, copied unmodified.',
+  },
+  {
+    id: 'maia',
+    name: 'Maia-3',
+    licence: 'AGPL-3.0-only',
+    licenceUrl: 'https://www.gnu.org/licenses/agpl-3.0.html',
+    sourceUrl: 'https://huggingface.co/UofTCSSLab/Maia3-5M',
+    path: 'public/maia/maia3-5m.onnx',
+    notice:
+      'Checkpoint maia3-5m.pt at revision b6559de, sha256 ba14208b2992d85502f5fb501934abf6aaaeb355e9f3fdf90e326911f562524f, exported to ONNX by scripts/export-maia.py.',
+  },
+  {
+    id: 'onnxruntime',
+    name: 'ONNX Runtime Web',
+    licence: 'MIT',
+    licenceUrl: 'https://github.com/microsoft/onnxruntime/blob/main/LICENSE',
+    sourceUrl: 'https://github.com/microsoft/onnxruntime/tree/v1.31.1',
+    path: 'public/ort/ort-wasm-simd-threaded.wasm',
+    notice: 'Version 1.31.1, SIMD build, copied unmodified from the npm package.',
   },
 ];
 

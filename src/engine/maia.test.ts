@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MAIA_HISTORY,
   MAIA_MOVES,
   maiaMoveIndex,
+  maiaTokens,
+  mirrorFen,
   mirrorMove,
   movePolicy,
   sampleMove,
@@ -99,5 +102,44 @@ describe('Maia sampler', () => {
     const drawn = Array.from({ length: 20 }, () => sampleMove(policy, random));
 
     expect(new Set(drawn)).toEqual(new Set([1]));
+  });
+});
+
+describe('Maia position tokens', () => {
+  const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+  it('writes the twelve planes of every position, oldest first', () => {
+    const tokens = maiaTokens([START]);
+
+    expect(tokens).toHaveLength(64 * 12 * MAIA_HISTORY);
+    // a2 is square 8, and a white pawn is plane 0 of the first position.
+    expect(tokens[8 * 12 * MAIA_HISTORY]).toBe(1);
+    // a7 is square 48, and a black pawn is plane 6.
+    expect(tokens[48 * 12 * MAIA_HISTORY + 6]).toBe(1);
+    // The same square one position later is twelve channels along, not a block of its own.
+    expect(tokens[8 * 12 * MAIA_HISTORY + 12]).toBe(1);
+  });
+
+  it('pads a young game with its first position', () => {
+    const tokens = maiaTokens([START]);
+    const stride = 12 * MAIA_HISTORY;
+
+    for (let position = 1; position < MAIA_HISTORY; position += 1) {
+      expect(tokens[8 * stride + position * 12]).toBe(1);
+    }
+  });
+
+  it('reads a Black position from White’s side of the board', () => {
+    const afterBlack = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+    const mirrored = mirrorFen(afterBlack);
+
+    expect(maiaTokens([afterBlack])).toEqual(maiaTokens([mirrored]));
+  });
+
+  it('puts the board back when a position is mirrored twice', () => {
+    const black = 'r3k2r/8/8/8/8/8/8/R3K2R b KQkq e3 4 1';
+
+    // The model always reads White to move, so a mirrored position says `w`, not `b`.
+    expect(mirrorFen(mirrorFen(black))).toBe('r3k2r/8/8/8/8/8/8/R3K2R w KQkq e3 4 1');
   });
 });
