@@ -57,7 +57,8 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   medium, hard" would lose what each one says.
 - **A game has no takeback; a hint marks it as assisted.** Takeback erases the blunder the
   analysis exists to show. A hint is allowed, but the game is marked as assisted and stays out of
-  the blunder list.
+  the blunder list. The score sheet reopens any past position read-only, and the clock keeps
+  running: reviewing is not a pause.
 - **The app calls no third party at runtime.** No tablebase, no opening explorer, no CDN, no font
   service: every byte it shows comes from the image, and the CSP allows `'self'` only, plus
   `'wasm-unsafe-eval'` so the bundled Stockfish can compile. Reading that image is not a call out:

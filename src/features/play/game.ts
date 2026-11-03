@@ -79,6 +79,27 @@ export function playMove(
   };
 }
 
+export interface BoardPosition {
+  fen: string;
+  lastMove: [string, string] | null;
+}
+
+/**
+ * The position after `ply` moves, the start at zero. A ply outside the game clamps to its nearer
+ * end, so the live position stays the last one.
+ */
+export function positionAt(state: PlayState, ply: number): BoardPosition {
+  const at = Math.max(0, Math.min(ply, state.moves.length));
+  if (at === state.moves.length) return { fen: state.fen, lastMove: state.lastMove };
+  if (at === 0) return { fen: state.positions[0], lastMove: null };
+
+  const uci = state.moves[at - 1];
+  return {
+    fen: state.positions[at],
+    lastMove: [uci.slice(0, 2), uci.slice(2, 4)],
+  };
+}
+
 export function playUci(state: PlayState, uci: string): PlayState {
   const from = uci.slice(0, 2);
   const to = uci.slice(2, 4);

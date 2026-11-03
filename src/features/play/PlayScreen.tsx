@@ -9,7 +9,7 @@ import type { GameReason, GameResult, Side } from '../../lib/position';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { PromotionDialog, promotionAnchor } from '../../ui/PromotionDialog';
 import { GameReview } from './GameReview';
-import { movePairs } from './notation';
+import { moveLabel, scoreSheet, type SheetMove } from './notation';
 import {
   afterMove,
   createClock,
@@ -19,7 +19,15 @@ import {
   stopClock,
   type ClockState,
 } from './clock';
-import { flagSide, playMove, playUci, showHint, startGame, type PlayState } from './game';
+import {
+  flagSide,
+  playMove,
+  playUci,
+  positionAt,
+  showHint,
+  startGame,
+  type PlayState,
+} from './game';
 import { HINT_MOVETIME_MS, HINT_SKILL, LEVELS, type Level } from './level';
 import { materialOf, type CapturedPiece, type Material, type MaterialColor } from './material';
 import { thinkTimeMs } from './pacing';
@@ -29,6 +37,8 @@ import { formatTimeControl, TIME_CONTROLS, type TimeControl } from './timeContro
 
 type EngineState = 'loading' | 'ready' | 'failed';
 type Saved = 'idle' | 'saved' | 'failed';
+
+const NO_DESTS = new Map<string, string[]>();
 
 interface PendingPromotion {
   from: string;
@@ -214,8 +224,10 @@ function PlayGame({
   const [pending, setPending] = useState<PendingPromotion | null>(null);
   const [resetKey, setResetKey] = useState(0);
   const [reviewing, setReviewing] = useState(false);
+  const [browsedPly, setBrowsedPly] = useState<number | null>(null);
   const engine = useRef<StockfishEngine | null>(null);
   const boardHost = useRef<HTMLDivElement>(null);
+  const sheet = useRef<HTMLOListElement>(null);
   const recorded = useRef(false);
   const startedAt = useRef<number | null>(null);
   const generation = useRef(0);
@@ -259,6 +271,13 @@ function PlayGame({
     };
   }, [engineAttempt]);
 
+  const { moves: played, rows: pairs } = useMemo(() => scoreSheet(state.moves), [state.moves]);
+  const livePly = state.moves.length;
+  const shownPly = browsedPly ?? livePly;
+  const browsing = shownPly !== livePly;
+  const shown = useMemo(() => positionAt(state, shownPly), [state, shownPly]);
+  const shownMove = played[shownPly - 1] ?? null;
+
   const userTurn = sideToMove(state.fen) === state.userColor;
   const movable =
     state.outcome === 'playing' &&
@@ -266,20 +285,25 @@ function PlayGame({
     !thinking &&
     !hintPending &&
     pending === null &&
-    engineState === 'ready';
+    engineState === 'ready' &&
+    !browsing;
   // The engine's turn is when the user can queue a premove, which then plays on its reply.
-  const premovable = state.outcome === 'playing' && !userTurn && engineState === 'ready';
-  const dests = useMemo(
-    () => (movable ? legalDests(state.fen) : new Map<string, string[]>()),
-    [movable, state.fen],
-  );
+  const premovable =
+    state.outcome === 'playing' && !userTurn && engineState === 'ready' && !browsing;
+  const dests = useMemo(() => (movable ? legalDests(state.fen) : NO_DESTS), [movable, state.fen]);
   const remaining = remainingMs(clock, now);
-  const material = useMemo(() => materialOf(state.fen, state.moves), [state.fen, state.moves]);
+  const liveMaterial = useMemo(() => materialOf(state.fen, state.moves), [state.fen, state.moves]);
+  const material = useMemo(
+    () => (browsing ? materialOf(shown.fen, state.moves.slice(0, shownPly)) : liveMaterial),
+    [browsing, shown.fen, state.moves, shownPly, liveMaterial],
+  );
 
   const complete = useCallback(
     (after: PlayState) => {
       setState(after);
       setClock((current) => stopClock(current, Date.now()));
+      // The result and its analysis button take over as soon as the game ends, even mid-review.
+      setBrowsedPly(null);
       // The game can end while the promotion chooser waits, for instance at the flag.
       setPending(null);
       if (after.outcome !== 'over' || after.result === null || recorded.current) return;
@@ -470,6 +494,30 @@ function PlayGame({
     return () => clearInterval(timer);
   }, [clockRunning, clock, state, complete]);
 
+  const browse = (ply: number) => {
+    const at = Math.min(Math.max(ply, 0), livePly);
+    setBrowsedPly(at >= livePly ? null : at);
+  };
+
+  const selectMove = (ply: number) => {
+    browse(ply);
+    // The sheet sits under the board on a phone: bring the board back into view.
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      boardHost.current?.scrollIntoView({ block: 'center' });
+    }
+  };
+
+  const backToGame = () => {
+    setBrowsedPly(null);
+    sheet.current?.lastElementChild?.scrollIntoView({ block: 'nearest' });
+    boardHost.current?.focus();
+  };
+
+  const startReview = () => {
+    setBrowsedPly(null);
+    setReviewing(true);
+  };
+
   if (reviewing) {
     return (
       <GameReview
@@ -491,8 +539,6 @@ function PlayGame({
           : userTurn
             ? fr.play.yourMove
             : fr.play.thinking;
-
-  const pairs = movePairs(state.moves);
 
   return (
     <>
@@ -524,14 +570,14 @@ function PlayGame({
               className="my-1 rounded-sm"
             >
               <ChessBoard
-                fen={state.fen}
+                fen={shown.fen}
                 orientation={state.userColor}
-                turn={sideToMove(state.fen)}
-                lastMove={state.lastMove}
+                turn={sideToMove(shown.fen)}
+                lastMove={shown.lastMove}
                 movable={movable}
                 premovable={premovable}
                 dests={dests}
-                hint={state.hint}
+                hint={browsing ? null : state.hint}
                 onMove={move}
                 resetKey={resetKey}
               />
@@ -544,8 +590,26 @@ function PlayGame({
               material={material}
             />
 
+            {browsing ? (
+              <div className="bg-accent-soft mt-1.5 flex flex-wrap items-center justify-between gap-2 rounded-sm px-2.5 py-1 text-xs">
+                <p role="status">
+                  {(state.outcome === 'playing'
+                    ? fr.play.review.whilePlaying
+                    : fr.play.review.afterGame
+                  ).replace('{move}', shownMove ? moveLabel(shownMove) : '')}
+                </p>
+                <button
+                  type="button"
+                  onClick={backToGame}
+                  className="border-line text-ink min-h-11 shrink-0 rounded-sm border px-3 text-xs font-semibold"
+                >
+                  {fr.play.review.back}
+                </button>
+              </div>
+            ) : null}
+
             <p className="sr-only" role="status">
-              {materialLabel(material.advantage)}
+              {materialLabel(liveMaterial.advantage)}
             </p>
           </div>
 
@@ -554,11 +618,13 @@ function PlayGame({
           </p>
 
           <p className="text-ink-muted mt-1 min-h-4 text-xs" role="status">
-            {hintPending
-              ? fr.play.hintPending
-              : state.hint
-                ? fr.play.hintShown.replace('{move}', state.hint.san)
-                : ''}
+            {browsing
+              ? ''
+              : hintPending
+                ? fr.play.hintPending
+                : state.hint
+                  ? fr.play.hintShown.replace('{move}', state.hint.san)
+                  : ''}
           </p>
 
           {engineState === 'failed' && state.outcome === 'playing' ? (
@@ -599,7 +665,7 @@ function PlayGame({
                 ) : (
                   <button
                     type="button"
-                    onClick={() => setReviewing(true)}
+                    onClick={startReview}
                     disabled={engineState !== 'ready'}
                     className="bg-accent mt-2 min-h-11 w-full rounded-sm px-4 text-[0.8125rem] font-semibold text-white disabled:opacity-50"
                   >
@@ -634,17 +700,27 @@ function PlayGame({
               <h2 className="border-line text-ink-muted border-b px-2.5 py-1.5 text-[0.625rem] font-semibold tracking-[0.12em] uppercase">
                 {fr.play.sheet}
               </h2>
-              <ol className="max-h-32 overflow-y-auto py-1 text-xs md:max-h-[40vh]">
-                {pairs.map((pair, index) => (
+              <ol ref={sheet} className="max-h-40 overflow-y-auto py-1 text-xs md:max-h-[40vh]">
+                {pairs.map((pair) => (
                   <li
                     key={pair.number}
-                    className={`grid grid-cols-[20px_1fr_1fr] gap-1 px-2.5 py-0.5 tabular-nums ${
-                      index === pairs.length - 1 ? 'text-ink font-semibold' : ''
-                    }`}
+                    className="grid grid-cols-[20px_1fr_1fr] items-center gap-1 px-1.5 tabular-nums"
                   >
-                    <span className="text-ink-muted opacity-70">{pair.number}.</span>
-                    <span>{pair.white}</span>
-                    <span>{pair.black ?? ''}</span>
+                    <span className="text-ink-muted px-1 opacity-70">{pair.number}.</span>
+                    <SheetMoveButton
+                      move={pair.white}
+                      current={pair.white.ply === shownPly}
+                      onSelect={selectMove}
+                    />
+                    {pair.black ? (
+                      <SheetMoveButton
+                        move={pair.black}
+                        current={pair.black.ply === shownPly}
+                        onSelect={selectMove}
+                      />
+                    ) : (
+                      <span />
+                    )}
                   </li>
                 ))}
               </ol>
@@ -656,7 +732,9 @@ function PlayGame({
               <button
                 type="button"
                 onClick={askHint}
-                disabled={!userTurn || thinking || hintPending || engineState !== 'ready'}
+                disabled={
+                  browsing || !userTurn || thinking || hintPending || engineState !== 'ready'
+                }
                 className="border-line text-ink flex min-h-11 items-center justify-center gap-2 rounded-sm border px-3 text-xs disabled:opacity-50"
               >
                 <Lightbulb size={15} aria-hidden="true" />
@@ -689,6 +767,34 @@ function PlayGame({
         />
       ) : null}
     </>
+  );
+}
+
+/**
+ * A move in the score sheet. A 32px row stays above the 24px target minimum of WCAG 2.2 while a
+ * forty-move game keeps a compact sheet; the whole cell is the button.
+ */
+function SheetMoveButton({
+  move,
+  current,
+  onSelect,
+}: {
+  move: SheetMove;
+  current: boolean;
+  onSelect: (ply: number) => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-current={current ? 'true' : undefined}
+      aria-label={moveLabel(move)}
+      onClick={() => onSelect(move.ply)}
+      className={`flex min-h-8 items-center rounded-xs px-1.5 text-left tabular-nums transition-colors ${
+        current ? 'bg-accent-soft text-ink font-semibold' : 'hover:bg-paper'
+      }`}
+    >
+      {move.san}
+    </button>
   );
 }
 
