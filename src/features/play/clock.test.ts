@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { afterMove, createClock, flagged, formatClock, remainingMs, stopClock } from './clock';
+import {
+  afterMove,
+  createClock,
+  flagged,
+  formatClock,
+  pauseClock,
+  remainingMs,
+  startClock,
+  stopClock,
+} from './clock';
 
 const T0 = 1_000_000;
 const TEN_MINUTES = 600_000;
@@ -63,6 +72,25 @@ describe('play clock', () => {
 
     expect(remainingMs(stopped, T0 + 60_000)).toEqual({ white: TEN_MINUTES, black: 595_000 });
     expect(flagged(stopped, T0 + 60_000)).toBeNull();
+  });
+
+  it('pauses a running clock and starts it again from the time it kept', () => {
+    const clock = afterMove(createClock(TEN_MINUTES), 'white', T0);
+
+    const paused = pauseClock(clock, T0 + 5_000);
+    expect(paused).toMatchObject({ running: 'black', since: null });
+    expect(remainingMs(paused, T0 + 60_000)).toEqual({ white: TEN_MINUTES, black: 595_000 });
+
+    const resumed = startClock(paused, T0 + 120_000);
+    expect(remainingMs(resumed, T0 + 125_000)).toEqual({ white: TEN_MINUTES, black: 590_000 });
+  });
+
+  it('leaves an idle or already running clock alone when started', () => {
+    const idle = createClock(TEN_MINUTES);
+    const running = afterMove(idle, 'white', T0);
+
+    expect(startClock(idle, T0)).toBe(idle);
+    expect(startClock(running, T0 + 1_000)).toBe(running);
   });
 
   it('formats the remaining time as minutes and seconds', () => {

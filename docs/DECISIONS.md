@@ -136,6 +136,13 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   initial position, and the backup will copy it as JSON; a PGN string would need parsing and would
   freeze the notation. An abandoned game is not stored: only a game that reached a result is worth
   analysing.
+- **An unfinished game is a draft in localStorage, not a row in `games`.** It is rewritten after
+  every move and on the way out, with the time left frozen at that instant, so a reload, a
+  navigation or a closed tab resumes the same position without charging the absence; the clock
+  starts again once the engine is ready. The finished game is then written once, with the start
+  time the draft carried. The draft is small, synchronous to write as the page closes and
+  ephemeral, so it stays out of the backup like the session cursor; two tabs share one draft and
+  the last writer wins.
 - **A backup is a file, not a sync.** Two devices would need an account, a server, conflict
   resolution and a second image; the owner uses one device. Import replaces the local data after
   showing what the file holds, so no merge or tombstone is needed. There is no automatic export,
