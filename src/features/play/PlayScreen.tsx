@@ -1,8 +1,9 @@
 import { ChevronLeft, Lightbulb, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { database } from '../../db/db';
+import { createMaiaEngine } from '../../engine/maiaEngine';
 import { createStockfishEngine, type StockfishEngine } from '../../engine/stockfish';
-import type { PositionEval } from '../../engine/uci';
+import type { Engine, PositionEval } from '../../engine/uci';
 import { fr } from '../../i18n/fr';
 import { legalDests, promotionPieces, sideToMove, type PromotionPiece } from '../../lib/chess';
 import type { GameReason, GameResult, Side } from '../../lib/position';
@@ -28,17 +29,20 @@ import {
   startGame,
   type PlayState,
 } from './game';
-import { HINT_MOVETIME_MS, HINT_SKILL, LEVELS, type Level } from './level';
+import { HINT_MOVETIME_MS, HINT_SKILL, LEVELS, levelAt, levelIndex, type Level } from './level';
 import { materialOf, type CapturedPiece, type Material, type MaterialColor } from './material';
 import { thinkTimeMs } from './pacing';
 import { gameRecord, saveGame } from './record';
-import { readPlayLevel, readPlayTimeControl, savePlayLevel, savePlayTimeControl } from './settings';
+import { readPlayElo, readPlayTimeControl, savePlayElo, savePlayTimeControl } from './settings';
 import { formatTimeControl, TIME_CONTROLS, type TimeControl } from './timeControl';
 
 type EngineState = 'loading' | 'ready' | 'failed';
 type Saved = 'idle' | 'saved' | 'failed';
 
 const NO_DESTS = new Map<string, string[]>();
+
+/** Waits, so a move that took milliseconds can still read as a thought. */
+const pause = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 interface PendingPromotion {
   from: string;
@@ -47,13 +51,14 @@ interface PendingPromotion {
 }
 
 export function PlayScreen({ onExit }: { onExit: () => void }) {
-  const [levelIndex, setLevelIndex] = useState(readPlayLevel);
+  const [elo, setElo] = useState(readPlayElo);
   const [controlIndex, setControlIndex] = useState(readPlayTimeControl);
+  const levelPosition = levelIndex(elo);
   const [gameKey, setGameKey] = useState(0);
   const [playing, setPlaying] = useState(false);
 
   const start = () => {
-    savePlayLevel(levelIndex);
+    savePlayElo(levelAt(levelPosition).elo);
     savePlayTimeControl(controlIndex);
     setGameKey((key) => key + 1);
     setPlaying(true);
@@ -74,7 +79,7 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
           <h1 className="text-[0.9375rem] font-semibold">{fr.play.title}</h1>
           {playing ? (
             <span className="border-line text-ink-muted ml-auto rounded-sm border px-2 py-0.5 text-[0.6875rem]">
-              {fr.play.levelValue.replace('{elo}', String(LEVELS[levelIndex].elo))}
+              {fr.play.levelValue.replace('{elo}', String(levelAt(levelPosition).elo))}
             </span>
           ) : null}
         </header>
@@ -83,15 +88,15 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
           {playing ? (
             <PlayGame
               key={gameKey}
-              level={LEVELS[levelIndex]}
+              level={levelAt(levelPosition)}
               control={TIME_CONTROLS[controlIndex]}
               onNewGame={() => setGameKey((key) => key + 1)}
               onChangeLevel={() => setPlaying(false)}
             />
           ) : (
             <PlaySetup
-              levelIndex={levelIndex}
-              onLevelChange={setLevelIndex}
+              levelIndex={levelPosition}
+              onLevelChange={(index) => setElo(LEVELS[index].elo)}
               controlIndex={controlIndex}
               onControlChange={setControlIndex}
               onStart={start}
@@ -226,6 +231,13 @@ function PlayGame({
   const [reviewing, setReviewing] = useState(false);
   const [browsedPly, setBrowsedPly] = useState<number | null>(null);
   const engine = useRef<StockfishEngine | null>(null);
+  // Maia moves; Stockfish keeps the hints and the review. Two workers, one per job.
+  const maia = useRef<Engine | null>(null);
+  // Drawn once when the game mounts, so the same position offers the same move on a re-render.
+  const gameSeed = useRef(0);
+  useEffect(() => {
+    gameSeed.current = Math.floor(Math.random() * 2 ** 31);
+  }, []);
   const boardHost = useRef<HTMLDivElement>(null);
   const sheet = useRef<HTMLOListElement>(null);
   const recorded = useRef(false);
@@ -244,8 +256,10 @@ function PlayGame({
   useEffect(() => {
     let active = true;
     let instance: StockfishEngine;
+    let maiaEngine: Engine;
     try {
       instance = createStockfishEngine();
+      maiaEngine = createMaiaEngine();
     } catch {
       queueMicrotask(() => {
         if (active) setEngineState('failed');
@@ -253,8 +267,12 @@ function PlayGame({
       return;
     }
     engine.current = instance;
+    maia.current = maiaEngine;
 
-    instance.prepare().then(
+    // Only the engine that plays holds up the board. Stockfish still loads beside Maia for the
+    // hints and the review; if it fails there, the game goes on and those stay unavailable.
+    instance.prepare().catch(() => {});
+    maiaEngine.prepare().then(
       () => {
         if (active) setEngineState('ready');
       },
@@ -267,7 +285,9 @@ function PlayGame({
       active = false;
       generation.current += 1;
       instance.stop();
+      maiaEngine.stop();
       if (engine.current === instance) engine.current = null;
+      if (maia.current === maiaEngine) maia.current = null;
     };
   }, [engineAttempt]);
 
@@ -310,6 +330,7 @@ function PlayGame({
 
       recorded.current = true;
       const record = gameRecord(after, {
+        engine: 'maia',
         level: level.elo,
         controlMs,
         incrementMs,
@@ -355,7 +376,20 @@ function PlayGame({
 
       const request = generation.current;
       setThinking(true);
-      instance.bestMove(game.fen, { skill: level.skill, movetimeMs: budget }).then(
+      const engineMove = maia.current
+        ? Promise.all([
+            maia.current.bestMove(game.fen, {
+              rating: level.elo,
+              history: game.moves,
+              temperature: 1,
+              seed: gameSeed.current + game.moves.length,
+            }),
+            // Maia does not search, so the move lands in milliseconds. The pause is what her
+            // level would spend thinking, and what her clock pays for the move.
+            pause(level.movetimeMs),
+          ]).then(([move]) => move)
+        : Promise.reject(new Error('The Maia engine is not ready'));
+      engineMove.then(
         (uci) => {
           if (request !== generation.current) return;
           setThinking(false);
@@ -387,7 +421,7 @@ function PlayGame({
         },
       );
     },
-    [applyMove, complete, control, level.skill],
+    [applyMove, complete, control, level.movetimeMs],
   );
 
   const playUserMove = (from: string, to: string, promotion?: PromotionPiece) => {

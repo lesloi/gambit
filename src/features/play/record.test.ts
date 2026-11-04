@@ -10,6 +10,7 @@ afterAll(async () => {
 
 const meta = {
   level: 1500,
+  engine: 'stockfish' as const,
   controlMs: 600_000,
   incrementMs: 10_000,
   startedAt: 1_000,
@@ -22,6 +23,7 @@ describe('gameRecord', () => {
 
     expect(gameRecord(state, meta)).toEqual({
       level: 1500,
+      engine: 'stockfish',
       controlMs: 600_000,
       incrementMs: 10_000,
       userColor: 'white',
@@ -31,6 +33,12 @@ describe('gameRecord', () => {
       startedAt: 1_000,
       endedAt: 2_000,
     });
+  });
+
+  it('keeps the opponent the game was played against', () => {
+    const state = flagSide(playMove(startGame(), 'e2', 'e4'), 'white');
+
+    expect(gameRecord(state, { ...meta, engine: 'maia' }).engine).toBe('maia');
   });
 
   it('keeps the assisted mark of a game that used a hint', () => {

@@ -1,0 +1,4 @@
+# `onnxruntime-web` pulls `protobufjs`; its install script is approved so a frozen install runs it
+# instead of stopping on it.
+allowBuilds:
+  protobufjs: true

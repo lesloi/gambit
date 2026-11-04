@@ -80,6 +80,8 @@ export const fr = {
       pieces: 'Les pièces de l’échiquier, dessinées par Alexis Luengas.',
       puzzles: 'Les positions des puzzles, filtrées depuis la base publique de Lichess.',
       engine: 'Le moteur d’échecs Stockfish, compilé en WebAssembly (version lite, un seul fil).',
+      maia: 'Le modèle Maia-3, qui prédit le coup qu’un joueur de ton niveau jouerait, converti en ONNX depuis son checkpoint.',
+      onnxruntime: 'ONNX Runtime, en WebAssembly, qui fait tourner le modèle dans le navigateur.',
     },
   },
   modes: {
@@ -97,7 +99,7 @@ export const fr = {
     },
     play: {
       name: 'Parties',
-      goal: 'Joue contre Stockfish à ton niveau, avec une pendule.',
+      goal: 'Joue à ton niveau, avec une pendule.',
     },
   },
   endgame: {

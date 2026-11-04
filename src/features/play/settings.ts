@@ -1,5 +1,5 @@
 import { browserStorage, type StorageLike } from '../../lib/storage';
-import { DEFAULT_LEVEL_INDEX, levelAt, levelIndex } from './level';
+import { DEFAULT_ELO } from './level';
 import {
   DEFAULT_TIME_CONTROL_INDEX,
   timeControlAt,
@@ -10,29 +10,30 @@ import {
 export const PLAY_LEVEL_STORAGE_KEY = 'gambit:play-level';
 export const PLAY_TIME_CONTROL_STORAGE_KEY = 'gambit:play-time-control';
 
-/** The level slider position, out of the backup like the puzzle filters: losing it costs a default. */
-export function readPlayLevel(storage: StorageLike | null = browserStorage()): number {
-  if (!storage) return DEFAULT_LEVEL_INDEX;
+/**
+ * The strength the user last chose, as an Elo rather than a slider position: a later change to the
+ * list of levels then lands on the nearest step instead of on a number.
+ */
+export function readPlayElo(storage: StorageLike | null = browserStorage()): number {
+  if (!storage) return DEFAULT_ELO;
 
   try {
     const raw = storage.getItem(PLAY_LEVEL_STORAGE_KEY);
-    if (raw === null) return DEFAULT_LEVEL_INDEX;
+    if (raw === null) return DEFAULT_ELO;
     const value: unknown = JSON.parse(raw);
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-      return DEFAULT_LEVEL_INDEX;
-    }
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) return DEFAULT_ELO;
     const { elo } = value as Record<string, unknown>;
-    return typeof elo === 'number' && Number.isFinite(elo) ? levelIndex(elo) : DEFAULT_LEVEL_INDEX;
+    return typeof elo === 'number' && Number.isFinite(elo) ? elo : DEFAULT_ELO;
   } catch {
-    return DEFAULT_LEVEL_INDEX;
+    return DEFAULT_ELO;
   }
 }
 
-export function savePlayLevel(index: number, storage: StorageLike | null = browserStorage()): void {
+export function savePlayElo(elo: number, storage: StorageLike | null = browserStorage()): void {
   if (!storage) return;
 
   try {
-    storage.setItem(PLAY_LEVEL_STORAGE_KEY, JSON.stringify({ elo: levelAt(index).elo }));
+    storage.setItem(PLAY_LEVEL_STORAGE_KEY, JSON.stringify({ elo }));
   } catch {
     // A full or blocked storage only costs the preference; the screen keeps working.
   }

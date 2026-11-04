@@ -36,6 +36,19 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,gz,wasm}'],
+        // The Maia model and its runtime weigh 21 and 15 MB: precaching them would make every
+        // install pay for a mode the user may never open. They are cached on first use instead.
+        globIgnores: ['**/maia/**', '**/ort/**', '**/ort-wasm-*'],
+        runtimeCaching: [
+          {
+            urlPattern: /\/(maia|ort)\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'gambit-engine',
+              expiration: { maxEntries: 8 },
+            },
+          },
+        ],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
         // The prompt sends SKIP_WAITING to the new worker. Without claiming the clients, that
