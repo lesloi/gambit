@@ -3,13 +3,10 @@ import type { StorageLike } from '../../lib/storage';
 import { DEFAULT_ELO } from './level';
 import {
   PLAY_LEVEL_STORAGE_KEY,
-  PLAY_OPPONENT_STORAGE_KEY,
   PLAY_TIME_CONTROL_STORAGE_KEY,
   readPlayElo,
-  readPlayOpponent,
   readPlayTimeControl,
   savePlayElo,
-  savePlayOpponent,
   savePlayTimeControl,
 } from './settings';
 import { DEFAULT_TIME_CONTROL_INDEX, TIME_CONTROLS } from './timeControl';
@@ -33,29 +30,6 @@ const stored = (value: unknown): StorageLike =>
 const storedControl = (value: unknown): StorageLike =>
   memoryStorage({ [PLAY_TIME_CONTROL_STORAGE_KEY]: JSON.stringify(value) });
 
-const storedOpponent = (value: unknown): StorageLike =>
-  memoryStorage({ [PLAY_OPPONENT_STORAGE_KEY]: JSON.stringify(value) });
-
-describe('play opponent preference', () => {
-  it('starts against Stockfish', () => {
-    expect(readPlayOpponent(memoryStorage())).toBe('stockfish');
-  });
-
-  it('reads back the opponent it saved', () => {
-    const storage = memoryStorage();
-
-    savePlayOpponent('maia', storage);
-
-    expect(readPlayOpponent(storage)).toBe('maia');
-  });
-
-  it('falls back to Stockfish for a value it cannot read', () => {
-    for (const value of [null, [], 'maia', 42, { engine: 'human' }]) {
-      expect(readPlayOpponent(storedOpponent(value)), JSON.stringify(value)).toBe('stockfish');
-    }
-  });
-});
-
 describe('play level preference', () => {
   it('starts on the default strength', () => {
     expect(readPlayElo(memoryStorage())).toBe(DEFAULT_ELO);
@@ -69,7 +43,7 @@ describe('play level preference', () => {
     expect(readPlayElo(storage)).toBe(2100);
   });
 
-  it('reads an Elo outside the current opponent range', () => {
+  it('reads an Elo outside the slider', () => {
     expect(readPlayElo(stored({ elo: 600 }))).toBe(600);
     expect(readPlayElo(stored({ elo: 2600 }))).toBe(2600);
   });

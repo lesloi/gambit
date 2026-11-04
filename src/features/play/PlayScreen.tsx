@@ -29,26 +29,11 @@ import {
   startGame,
   type PlayState,
 } from './game';
-import {
-  HINT_MOVETIME_MS,
-  HINT_SKILL,
-  levelAt,
-  levelIndexIn,
-  levelsFor,
-  type Level,
-} from './level';
+import { HINT_MOVETIME_MS, HINT_SKILL, LEVELS, levelAt, levelIndex, type Level } from './level';
 import { materialOf, type CapturedPiece, type Material, type MaterialColor } from './material';
 import { thinkTimeMs } from './pacing';
 import { gameRecord, saveGame } from './record';
-import {
-  readPlayElo,
-  readPlayOpponent,
-  readPlayTimeControl,
-  savePlayElo,
-  savePlayOpponent,
-  savePlayTimeControl,
-  type Opponent,
-} from './settings';
+import { readPlayElo, readPlayTimeControl, savePlayElo, savePlayTimeControl } from './settings';
 import { formatTimeControl, TIME_CONTROLS, type TimeControl } from './timeControl';
 
 type EngineState = 'loading' | 'ready' | 'failed';
@@ -68,18 +53,13 @@ interface PendingPromotion {
 export function PlayScreen({ onExit }: { onExit: () => void }) {
   const [elo, setElo] = useState(readPlayElo);
   const [controlIndex, setControlIndex] = useState(readPlayTimeControl);
-  const [opponent, setOpponent] = useState<Opponent>(readPlayOpponent);
-  // The two opponents offer different ranges, so the same rating lands on the nearest step of
-  // whichever list is showing.
-  const levels = levelsFor(opponent);
-  const levelIndex = levelIndexIn(levels, elo);
+  const levelPosition = levelIndex(elo);
   const [gameKey, setGameKey] = useState(0);
   const [playing, setPlaying] = useState(false);
 
   const start = () => {
-    savePlayElo(levels[levelIndex].elo);
+    savePlayElo(levelAt(levelPosition).elo);
     savePlayTimeControl(controlIndex);
-    savePlayOpponent(opponent);
     setGameKey((key) => key + 1);
     setPlaying(true);
   };
@@ -99,7 +79,7 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
           <h1 className="text-[0.9375rem] font-semibold">{fr.play.title}</h1>
           {playing ? (
             <span className="border-line text-ink-muted ml-auto rounded-sm border px-2 py-0.5 text-[0.6875rem]">
-              {`${fr.play.opponents[opponent].name} · ${fr.play.levelValue.replace('{elo}', String(levels[levelIndex].elo))}`}
+              {`${fr.play.opponent} · ${fr.play.levelValue.replace('{elo}', String(levelAt(levelPosition).elo))}`}
             </span>
           ) : null}
         </header>
@@ -108,19 +88,15 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
           {playing ? (
             <PlayGame
               key={gameKey}
-              opponent={opponent}
-              level={levels[levelIndex]}
+              level={levelAt(levelPosition)}
               control={TIME_CONTROLS[controlIndex]}
               onNewGame={() => setGameKey((key) => key + 1)}
               onChangeLevel={() => setPlaying(false)}
             />
           ) : (
             <PlaySetup
-              levels={levels}
-              levelIndex={levelIndex}
-              onLevelChange={(index) => setElo(levels[index].elo)}
-              opponent={opponent}
-              onOpponentChange={setOpponent}
+              levelIndex={levelPosition}
+              onLevelChange={(index) => setElo(LEVELS[index].elo)}
               controlIndex={controlIndex}
               onControlChange={setControlIndex}
               onStart={start}
@@ -133,25 +109,19 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
 }
 
 function PlaySetup({
-  levels,
   levelIndex,
   onLevelChange,
-  opponent,
-  onOpponentChange,
   controlIndex,
   onControlChange,
   onStart,
 }: {
-  levels: readonly Level[];
   levelIndex: number;
   onLevelChange: (index: number) => void;
-  opponent: Opponent;
-  onOpponentChange: (opponent: Opponent) => void;
   controlIndex: number;
   onControlChange: (index: number) => void;
   onStart: () => void;
 }) {
-  const level = levelAt(levels, levelIndex);
+  const level = LEVELS[levelIndex];
   const levelText = fr.play.levelValue.replace('{elo}', String(level.elo));
 
   return (
@@ -166,7 +136,7 @@ function PlaySetup({
           id="play-level"
           type="range"
           min={0}
-          max={levels.length - 1}
+          max={LEVELS.length - 1}
           step={1}
           value={levelIndex}
           onChange={(event) => onLevelChange(Number(event.target.value))}
@@ -174,38 +144,12 @@ function PlaySetup({
           className="accent-accent mt-3 h-11 w-full"
         />
         <div className="text-ink-muted flex justify-between text-xs">
-          <span>{levels[0].elo}</span>
-          <span>{levels[levels.length - 1].elo}</span>
+          <span>{LEVELS[0].elo}</span>
+          <span>{LEVELS[LEVELS.length - 1].elo}</span>
         </div>
         <p className="mt-2 text-sm font-medium" aria-live="polite">
           {levelText}
         </p>
-
-        <div className="mt-5">
-          <span className="text-sm font-semibold">{fr.play.opponent}</span>
-          <div
-            role="group"
-            aria-label={fr.play.opponent}
-            className="border-line mt-3 flex overflow-hidden rounded-sm border"
-          >
-            {(['stockfish', 'maia'] as const).map((engine) => (
-              <button
-                key={engine}
-                type="button"
-                aria-pressed={opponent === engine}
-                onClick={() => onOpponentChange(engine)}
-                className={
-                  opponent === engine
-                    ? 'bg-accent min-h-11 flex-1 px-3 text-sm font-semibold text-white'
-                    : 'text-ink-muted min-h-11 flex-1 px-3 text-sm'
-                }
-              >
-                {fr.play.opponents[engine].name}
-              </button>
-            ))}
-          </div>
-          <p className="text-ink-muted mt-2 text-xs">{fr.play.opponents[opponent].hint}</p>
-        </div>
 
         <div className="mt-5">
           <label htmlFor="play-time-control" className="text-sm font-semibold">
@@ -263,13 +207,11 @@ const REASON_LABEL: Record<GameReason, string> = {
 };
 
 function PlayGame({
-  opponent,
   level,
   control,
   onNewGame,
   onChangeLevel,
 }: {
-  opponent: Opponent;
   level: Level;
   control: TimeControl;
   onNewGame: () => void;
@@ -314,10 +256,10 @@ function PlayGame({
   useEffect(() => {
     let active = true;
     let instance: StockfishEngine;
-    let opponentEngine: Engine | null = null;
+    let maiaEngine: Engine;
     try {
       instance = createStockfishEngine();
-      if (opponent === 'maia') opponentEngine = createMaiaEngine();
+      maiaEngine = createMaiaEngine();
     } catch {
       queueMicrotask(() => {
         if (active) setEngineState('failed');
@@ -325,13 +267,12 @@ function PlayGame({
       return;
     }
     engine.current = instance;
-    maia.current = opponentEngine;
+    maia.current = maiaEngine;
 
-    // Both have to be up before the first move: one plays, the other answers the hints.
-    const loading = opponentEngine
-      ? [instance.prepare(), opponentEngine.prepare()]
-      : [instance.prepare()];
-    Promise.all(loading).then(
+    // Only the engine that plays holds up the board. Stockfish still loads beside Maia for the
+    // hints and the review; if it fails there, the game goes on and those stay unavailable.
+    instance.prepare().catch(() => {});
+    maiaEngine.prepare().then(
       () => {
         if (active) setEngineState('ready');
       },
@@ -344,11 +285,11 @@ function PlayGame({
       active = false;
       generation.current += 1;
       instance.stop();
-      opponentEngine?.stop();
+      maiaEngine.stop();
       if (engine.current === instance) engine.current = null;
-      if (maia.current === opponentEngine) maia.current = null;
+      if (maia.current === maiaEngine) maia.current = null;
     };
-  }, [engineAttempt, opponent]);
+  }, [engineAttempt]);
 
   const { moves: played, rows: pairs } = useMemo(() => scoreSheet(state.moves), [state.moves]);
   const livePly = state.moves.length;
@@ -389,7 +330,7 @@ function PlayGame({
 
       recorded.current = true;
       const record = gameRecord(after, {
-        engine: opponent,
+        engine: 'maia',
         level: level.elo,
         controlMs,
         incrementMs,
@@ -401,7 +342,7 @@ function PlayGame({
         () => setSaved('failed'),
       );
     },
-    [controlMs, incrementMs, level.elo, opponent],
+    [controlMs, incrementMs, level.elo],
   );
 
   const applyMove = useCallback(
@@ -435,20 +376,19 @@ function PlayGame({
 
       const request = generation.current;
       setThinking(true);
-      const engineMove =
-        opponent === 'maia' && maia.current
-          ? Promise.all([
-              maia.current.bestMove(game.fen, {
-                rating: level.elo,
-                history: game.moves,
-                temperature: 1,
-                seed: gameSeed.current + game.moves.length,
-              }),
-              // Maia does not search, so the move lands in milliseconds. The pause is what her
-              // level would spend thinking, and what her clock pays for the move.
-              pause(level.movetimeMs),
-            ]).then(([move]) => move)
-          : instance.bestMove(game.fen, { skill: level.skill, movetimeMs: budget });
+      const engineMove = maia.current
+        ? Promise.all([
+            maia.current.bestMove(game.fen, {
+              rating: level.elo,
+              history: game.moves,
+              temperature: 1,
+              seed: gameSeed.current + game.moves.length,
+            }),
+            // Maia does not search, so the move lands in milliseconds. The pause is what her
+            // level would spend thinking, and what her clock pays for the move.
+            pause(level.movetimeMs),
+          ]).then(([move]) => move)
+        : Promise.reject(new Error('The Maia engine is not ready'));
       engineMove.then(
         (uci) => {
           if (request !== generation.current) return;
@@ -481,7 +421,7 @@ function PlayGame({
         },
       );
     },
-    [applyMove, complete, control, level.skill, level.elo, opponent],
+    [applyMove, complete, control, level.movetimeMs],
   );
 
   const playUserMove = (from: string, to: string, promotion?: PromotionPiece) => {
