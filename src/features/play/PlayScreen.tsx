@@ -16,10 +16,21 @@ import {
   createClock,
   flagged,
   formatClock,
+  pauseClock,
   remainingMs,
+  startClock,
   stopClock,
   type ClockState,
 } from './clock';
+import {
+  clearDraft,
+  draftFromGame,
+  readDraft,
+  resumeClock,
+  resumeGame,
+  saveDraft,
+  type PlayDraft,
+} from './draft';
 import {
   flagSide,
   playMove,
@@ -29,7 +40,14 @@ import {
   startGame,
   type PlayState,
 } from './game';
-import { HINT_MOVETIME_MS, HINT_SKILL, LEVELS, levelAt, levelIndex, type Level } from './level';
+import {
+  HINT_MOVETIME_MS,
+  HINT_SKILL,
+  LEVELS,
+  levelAt,
+  levelIndex as levelIndexOf,
+  type Level,
+} from './level';
 import { materialOf, type CapturedPiece, type Material, type MaterialColor } from './material';
 import { gameRecord, saveGame } from './record';
 import { readPlayElo, readPlayTimeControl, savePlayElo, savePlayTimeControl } from './settings';
@@ -52,16 +70,47 @@ interface PendingPromotion {
 export function PlayScreen({ onExit }: { onExit: () => void }) {
   const [elo, setElo] = useState(readPlayElo);
   const [controlIndex, setControlIndex] = useState(readPlayTimeControl);
-  const levelPosition = levelIndex(elo);
+  const levelPosition = levelIndexOf(elo);
   const [gameKey, setGameKey] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [draft, setDraft] = useState<PlayDraft | null>(readDraft);
+  const [resume, setResume] = useState<PlayDraft | null>(null);
+
+  // The child saves on its way out, so the setup has to look at the draft again once it is gone.
+  useEffect(() => {
+    // Reading storage once the child has unmounted is a deliberate sync with an external system.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!playing) setDraft(readDraft());
+  }, [playing]);
 
   const start = () => {
     savePlayElo(levelAt(levelPosition).elo);
     savePlayTimeControl(controlIndex);
+    clearDraft();
+    setDraft(null);
+    setResume(null);
     setGameKey((key) => key + 1);
     setPlaying(true);
   };
+
+  const resumeStoredGame = () => {
+    if (draft === null) return;
+    setResume(draft);
+    setGameKey((key) => key + 1);
+    setPlaying(true);
+  };
+
+  const newGame = () => {
+    clearDraft();
+    setDraft(null);
+    setResume(null);
+    setGameKey((key) => key + 1);
+  };
+
+  const level = resume ? levelAt(levelIndexOf(resume.level)) : levelAt(levelPosition);
+  const control = resume
+    ? { controlMs: resume.controlMs, incrementMs: resume.incrementMs }
+    : TIME_CONTROLS[controlIndex];
 
   return (
     <div className="min-h-dvh bg-paper">
@@ -78,7 +127,7 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
           <h1 className="text-[0.9375rem] font-semibold">{fr.play.title}</h1>
           {playing ? (
             <span className="border-line text-ink-muted ml-auto rounded-sm border px-2 py-0.5 text-[0.6875rem]">
-              {fr.play.levelValue.replace('{elo}', String(levelAt(levelPosition).elo))}
+              {fr.play.levelValue.replace('{elo}', String(level.elo))}
             </span>
           ) : null}
         </header>
@@ -87,9 +136,10 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
           {playing ? (
             <PlayGame
               key={gameKey}
-              level={levelAt(levelPosition)}
-              control={TIME_CONTROLS[controlIndex]}
-              onNewGame={() => setGameKey((key) => key + 1)}
+              level={level}
+              control={control}
+              initialDraft={resume}
+              onNewGame={newGame}
               onChangeLevel={() => setPlaying(false)}
             />
           ) : (
@@ -98,7 +148,9 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
               onLevelChange={(index) => setElo(LEVELS[index].elo)}
               controlIndex={controlIndex}
               onControlChange={setControlIndex}
+              draft={draft}
               onStart={start}
+              onResume={resumeStoredGame}
             />
           )}
         </div>
@@ -112,13 +164,17 @@ function PlaySetup({
   onLevelChange,
   controlIndex,
   onControlChange,
+  draft,
   onStart,
+  onResume,
 }: {
   levelIndex: number;
   onLevelChange: (index: number) => void;
   controlIndex: number;
   onControlChange: (index: number) => void;
+  draft: PlayDraft | null;
   onStart: () => void;
+  onResume: () => void;
 }) {
   const level = LEVELS[levelIndex];
   const levelText = fr.play.levelValue.replace('{elo}', String(level.elo));
@@ -126,6 +182,30 @@ function PlaySetup({
   return (
     <>
       <p className="text-ink-muted text-sm">{fr.play.intro}</p>
+
+      {draft ? (
+        <section className="border-line bg-paper-raised mt-5 rounded-sm border p-4">
+          <h2 className="text-sm font-semibold">{fr.play.resumeTitle}</h2>
+          <p className="text-ink-muted mt-1 text-xs">
+            {fr.play.resumeDetail
+              .replace('{elo}', String(levelAt(levelIndexOf(draft.level)).elo))
+              .replace(
+                '{clock}',
+                formatTimeControl({
+                  controlMs: draft.controlMs,
+                  incrementMs: draft.incrementMs,
+                }),
+              )}
+          </p>
+          <button
+            type="button"
+            onClick={onResume}
+            className="bg-accent mt-3 min-h-11 w-full rounded-sm px-4 text-sm font-semibold text-white"
+          >
+            {fr.play.resume}
+          </button>
+        </section>
+      ) : null}
 
       <section className="border-line bg-paper-raised mt-5 rounded-sm border p-4">
         <label htmlFor="play-level" className="text-sm font-semibold">
@@ -173,7 +253,7 @@ function PlaySetup({
           onClick={onStart}
           className="bg-accent mt-4 min-h-11 w-full rounded-sm px-4 text-sm font-semibold text-white"
         >
-          {fr.play.start}
+          {draft ? fr.play.newGame : fr.play.start}
         </button>
       </section>
     </>
@@ -208,17 +288,23 @@ const REASON_LABEL: Record<GameReason, string> = {
 function PlayGame({
   level,
   control,
+  initialDraft,
   onNewGame,
   onChangeLevel,
 }: {
   level: Level;
   control: TimeControl;
+  initialDraft: PlayDraft | null;
   onNewGame: () => void;
   onChangeLevel: () => void;
 }) {
   const { controlMs, incrementMs } = control;
-  const [state, setState] = useState(startGame);
-  const [clock, setClock] = useState(() => createClock(controlMs, incrementMs));
+  const [state, setState] = useState<PlayState>(() =>
+    initialDraft ? resumeGame(initialDraft) : startGame(),
+  );
+  const [clock, setClock] = useState<ClockState>(() =>
+    initialDraft ? resumeClock(initialDraft) : createClock(controlMs, incrementMs),
+  );
   const [now, setNow] = useState(() => Date.now());
   const [engineState, setEngineState] = useState<EngineState>('loading');
   const [engineAttempt, setEngineAttempt] = useState(0);
@@ -240,9 +326,15 @@ function PlayGame({
   const boardHost = useRef<HTMLDivElement>(null);
   const sheet = useRef<HTMLOListElement>(null);
   const recorded = useRef(false);
-  const startedAt = useRef<number | null>(null);
+  const startedAt = useRef<number | null>(initialDraft?.startedAt ?? null);
   const generation = useRef(0);
   const clockRef = useRef(clock);
+  const stateRef = useRef(state);
+  const engineStateRef = useRef<EngineState>('loading');
+  // The ply the resumed game was loaded at, and whether its engine turn was already asked for.
+  const resumePly = initialDraft?.moves.length ?? null;
+  const autoAsked = useRef<number | null>(null);
+  const discarding = useRef(false);
 
   useEffect(() => {
     startedAt.current ??= Date.now();
@@ -253,13 +345,63 @@ function PlayGame({
   }, [clock]);
 
   useEffect(() => {
+    engineStateRef.current = engineState;
+  }, [engineState]);
+
+  // A draft follows the live game after every move and hint; a finished game leaves none.
+  useEffect(() => {
+    stateRef.current = state;
+    const draft = draftFromGame(
+      { state, clock, startedAt: startedAt.current ?? Date.now(), level: level.elo },
+      Date.now(),
+    );
+    if (draft) saveDraft(draft);
+    else clearDraft();
+  }, [state, clock, level.elo]);
+
+  // Reads the refs, so a page close or an unmount saves the time left at that instant.
+  const saveNow = useCallback(
+    (at = Date.now()) => {
+      if (discarding.current) return;
+      const draft = draftFromGame(
+        {
+          state: stateRef.current,
+          clock: clockRef.current,
+          startedAt: startedAt.current ?? at,
+          level: level.elo,
+        },
+        at,
+      );
+      if (draft) saveDraft(draft);
+    },
+    [level.elo],
+  );
+
+  // A resumed clock waits for the engine: the closed time and the engine's load cost nothing.
+  const startResumedClock = useCallback(() => {
+    // A hidden page stays frozen, and so does a clock whose engine cannot play yet.
+    if (document.visibilityState === 'hidden' || engineStateRef.current !== 'ready') return;
+    const at = Date.now();
+    setNow(at);
+    const started = startClock(clockRef.current, at);
+    if (started !== clockRef.current) {
+      clockRef.current = started;
+      setClock(started);
+    }
+  }, []);
+
+  useEffect(() => {
     let active = true;
     let instance: StockfishEngine;
     let maiaEngine: Engine;
+    // A fresh worker has not been asked for the resumed position yet.
+    autoAsked.current = null;
+    engineStateRef.current = 'loading';
     try {
       instance = createStockfishEngine();
       maiaEngine = createMaiaEngine();
     } catch {
+      engineStateRef.current = 'failed';
       queueMicrotask(() => {
         if (active) setEngineState('failed');
       });
@@ -273,9 +415,13 @@ function PlayGame({
     instance.prepare().catch(() => {});
     maiaEngine.prepare().then(
       () => {
-        if (active) setEngineState('ready');
+        if (!active) return;
+        engineStateRef.current = 'ready';
+        setEngineState('ready');
+        startResumedClock();
       },
       () => {
+        engineStateRef.current = 'failed';
         if (active) setEngineState('failed');
       },
     );
@@ -288,7 +434,41 @@ function PlayGame({
       if (engine.current === instance) engine.current = null;
       if (maia.current === maiaEngine) maia.current = null;
     };
-  }, [engineAttempt]);
+  }, [engineAttempt, startResumedClock]);
+
+  // Hidden means the clock stops paying: the page may be closed, frozen or put away for a while.
+  useEffect(() => {
+    const hide = () => {
+      const at = Date.now();
+      saveNow(at);
+      const paused = pauseClock(clockRef.current, at);
+      clockRef.current = paused;
+      setNow(at);
+      setClock(paused);
+    };
+
+    const show = () => {
+      startResumedClock();
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') hide();
+      else show();
+    };
+    const onPageHide = () => hide();
+    const onPageShow = () => show();
+
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', onPageHide);
+    window.addEventListener('pageshow', onPageShow);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', onPageHide);
+      window.removeEventListener('pageshow', onPageShow);
+      saveNow();
+    };
+  }, [saveNow, startResumedClock]);
 
   const { moves: played, rows: pairs } = useMemo(() => scoreSheet(state.moves), [state.moves]);
   const livePly = state.moves.length;
@@ -325,6 +505,8 @@ function PlayGame({
       setBrowsedPly(null);
       // The game can end while the promotion chooser waits, for instance at the flag.
       setPending(null);
+      // A finished game must not be resumable, even if the tab closes before the effect below.
+      if (after.outcome === 'over') clearDraft();
       if (after.outcome !== 'over' || after.result === null || recorded.current) return;
 
       recorded.current = true;
@@ -350,7 +532,9 @@ function PlayGame({
         complete(after);
         return null;
       }
-      const clock = afterMove(clockRef.current, mover, at);
+      // A move that lands while the page is hidden must not start the next clock behind it.
+      const moved = afterMove(clockRef.current, mover, at);
+      const clock = document.visibilityState === 'hidden' ? pauseClock(moved, at) : moved;
       setState(after);
       setNow(at);
       setClock(clock);
@@ -391,6 +575,7 @@ function PlayGame({
           if (request !== generation.current) return;
           setThinking(false);
           if (uci === null) {
+            engineStateRef.current = 'failed';
             setEngineState('failed');
             return;
           }
@@ -406,6 +591,7 @@ function PlayGame({
           const after = playUci(game, uci);
           if (after === game) {
             // The engine named a move the board refuses; it can no longer be trusted for this game.
+            engineStateRef.current = 'failed';
             setEngineState('failed');
             return;
           }
@@ -414,12 +600,24 @@ function PlayGame({
         () => {
           if (request !== generation.current) return;
           setThinking(false);
+          engineStateRef.current = 'failed';
           setEngineState('failed');
         },
       );
     },
-    [applyMove, complete, level.movetimeMs],
+    [applyMove, complete, level.elo, level.movetimeMs],
   );
+
+  // A resumed game may have been left on the engine's turn; ask it once, and again after a retry.
+  useEffect(() => {
+    if (engineState !== 'ready' || state.outcome !== 'playing') return;
+    if (resumePly === null || state.moves.length !== resumePly) return;
+    if (sideToMove(state.fen) === state.userColor) return;
+    if (autoAsked.current === resumePly) return;
+
+    autoAsked.current = resumePly;
+    askEngine(state, clockRef.current);
+  }, [engineState, state, resumePly, askEngine]);
 
   const playUserMove = (from: string, to: string, promotion?: PromotionPiece) => {
     const at = Date.now();
@@ -490,6 +688,7 @@ function PlayGame({
     engine.current?.cancel();
     setThinking(false);
     setHintPending(false);
+    engineStateRef.current = 'loading';
     setEngineState('loading');
     setEngineAttempt((attempt) => attempt + 1);
   };
@@ -503,7 +702,8 @@ function PlayGame({
       : Promise.reject(new Error('The engine is not ready'));
   }, []);
 
-  const clockRunning = state.outcome === 'playing' && clock.running !== null;
+  const clockRunning =
+    state.outcome === 'playing' && clock.running !== null && clock.since !== null;
 
   useEffect(() => {
     if (!clockRunning) return;
@@ -549,12 +749,18 @@ function PlayGame({
     setReviewing(true);
   };
 
+  // Starting over throws the game in progress away: its draft must not come back on the way out.
+  const restart = () => {
+    discarding.current = true;
+    onNewGame();
+  };
+
   if (reviewing) {
     return (
       <GameReview
         analyse={analysePosition}
         game={state}
-        onNewGame={onNewGame}
+        onNewGame={restart}
         onChangeSettings={onChangeLevel}
       />
     );
@@ -708,7 +914,7 @@ function PlayGame({
               <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
                 <button
                   type="button"
-                  onClick={onNewGame}
+                  onClick={restart}
                   className="border-line text-ink min-h-11 rounded-sm border px-3 text-xs"
                 >
                   {fr.play.newGame}
@@ -773,7 +979,7 @@ function PlayGame({
               </button>
               <button
                 type="button"
-                onClick={onNewGame}
+                onClick={restart}
                 className="border-line text-ink-muted hover:text-ink flex min-h-11 items-center justify-center gap-2 rounded-sm border px-3 text-xs"
               >
                 <RotateCcw size={15} aria-hidden="true" />

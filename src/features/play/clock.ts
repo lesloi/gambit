@@ -66,6 +66,20 @@ export function stopClock(clock: ClockState, now: number): ClockState {
   return { ...clock, whiteMs: left.white, blackMs: left.black, running: null, since: null };
 }
 
+/**
+ * Freezes a running clock at the time left now, keeping the side to move. The clock stops paying
+ * while the page is hidden, and `startClock` gives it back the same time when it comes back.
+ */
+export function pauseClock(clock: ClockState, now: number): ClockState {
+  const left = remainingMs(clock, now);
+  return { ...clock, whiteMs: left.white, blackMs: left.black, since: null };
+}
+
+/** Starts a paused or resumed clock from the time it kept, and leaves a running one alone. */
+export function startClock(clock: ClockState, now: number): ClockState {
+  return clock.running !== null && clock.since === null ? { ...clock, since: now } : clock;
+}
+
 /** The side whose clock reached zero, or null while both still have time. */
 export function flagged(clock: ClockState, now: number): Side | null {
   if (clock.running === null) return null;
