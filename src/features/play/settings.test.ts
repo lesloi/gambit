@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { StorageLike } from '../../lib/storage';
-import { DEFAULT_LEVEL_INDEX, LEVELS } from './level';
+import { DEFAULT_ELO } from './level';
 import {
   PLAY_LEVEL_STORAGE_KEY,
   PLAY_OPPONENT_STORAGE_KEY,
   PLAY_TIME_CONTROL_STORAGE_KEY,
-  readPlayLevel,
+  readPlayElo,
   readPlayOpponent,
   readPlayTimeControl,
-  savePlayLevel,
+  savePlayElo,
   savePlayOpponent,
   savePlayTimeControl,
 } from './settings';
@@ -57,26 +57,26 @@ describe('play opponent preference', () => {
 });
 
 describe('play level preference', () => {
-  it('starts on the default level', () => {
-    expect(readPlayLevel(memoryStorage())).toBe(DEFAULT_LEVEL_INDEX);
+  it('starts on the default strength', () => {
+    expect(readPlayElo(memoryStorage())).toBe(DEFAULT_ELO);
   });
 
-  it('reads back the level it saved', () => {
+  it('reads back the Elo it saved', () => {
     const storage = memoryStorage();
 
-    savePlayLevel(4, storage);
+    savePlayElo(2100, storage);
 
-    expect(readPlayLevel(storage)).toBe(4);
+    expect(readPlayElo(storage)).toBe(2100);
   });
 
-  it('finds the nearest level for an Elo stored by an older list', () => {
-    expect(readPlayLevel(stored({ elo: 1574 }))).toBe(1);
-    expect(readPlayLevel(stored({ elo: 1576 }))).toBe(2);
+  it('reads an Elo outside the current opponent range', () => {
+    expect(readPlayElo(stored({ elo: 600 }))).toBe(600);
+    expect(readPlayElo(stored({ elo: 2600 }))).toBe(2600);
   });
 
   it('falls back to the default for a value it cannot read', () => {
     for (const value of [null, [], 'high', 42, { elo: 'high' }]) {
-      expect(readPlayLevel(stored(value)), JSON.stringify(value)).toBe(DEFAULT_LEVEL_INDEX);
+      expect(readPlayElo(stored(value)), JSON.stringify(value)).toBe(DEFAULT_ELO);
     }
   });
 
@@ -93,10 +93,10 @@ describe('play level preference', () => {
       },
     };
 
-    expect(readPlayLevel(broken)).toBe(DEFAULT_LEVEL_INDEX);
-    expect(() => savePlayLevel(LEVELS.length - 1, broken)).not.toThrow();
+    expect(readPlayElo(broken)).toBe(DEFAULT_ELO);
+    expect(() => savePlayElo(2600, broken)).not.toThrow();
     expect(readPlayTimeControl(broken)).toBe(DEFAULT_TIME_CONTROL_INDEX);
-    expect(() => savePlayTimeControl(LEVELS.length - 1, broken)).not.toThrow();
+    expect(() => savePlayTimeControl(0, broken)).not.toThrow();
   });
 });
 

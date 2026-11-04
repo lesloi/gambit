@@ -29,15 +29,22 @@ import {
   startGame,
   type PlayState,
 } from './game';
-import { HINT_MOVETIME_MS, HINT_SKILL, LEVELS, type Level } from './level';
+import {
+  HINT_MOVETIME_MS,
+  HINT_SKILL,
+  levelAt,
+  levelIndexIn,
+  levelsFor,
+  type Level,
+} from './level';
 import { materialOf, type CapturedPiece, type Material, type MaterialColor } from './material';
 import { thinkTimeMs } from './pacing';
 import { gameRecord, saveGame } from './record';
 import {
-  readPlayLevel,
+  readPlayElo,
   readPlayOpponent,
   readPlayTimeControl,
-  savePlayLevel,
+  savePlayElo,
   savePlayOpponent,
   savePlayTimeControl,
   type Opponent,
@@ -49,6 +56,9 @@ type Saved = 'idle' | 'saved' | 'failed';
 
 const NO_DESTS = new Map<string, string[]>();
 
+/** Waits, so a move that took milliseconds can still read as a thought. */
+const pause = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 interface PendingPromotion {
   from: string;
   to: string;
@@ -56,14 +66,18 @@ interface PendingPromotion {
 }
 
 export function PlayScreen({ onExit }: { onExit: () => void }) {
-  const [levelIndex, setLevelIndex] = useState(readPlayLevel);
+  const [elo, setElo] = useState(readPlayElo);
   const [controlIndex, setControlIndex] = useState(readPlayTimeControl);
   const [opponent, setOpponent] = useState<Opponent>(readPlayOpponent);
+  // The two opponents offer different ranges, so the same rating lands on the nearest step of
+  // whichever list is showing.
+  const levels = levelsFor(opponent);
+  const levelIndex = levelIndexIn(levels, elo);
   const [gameKey, setGameKey] = useState(0);
   const [playing, setPlaying] = useState(false);
 
   const start = () => {
-    savePlayLevel(levelIndex);
+    savePlayElo(levels[levelIndex].elo);
     savePlayTimeControl(controlIndex);
     savePlayOpponent(opponent);
     setGameKey((key) => key + 1);
@@ -85,7 +99,7 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
           <h1 className="text-[0.9375rem] font-semibold">{fr.play.title}</h1>
           {playing ? (
             <span className="border-line text-ink-muted ml-auto rounded-sm border px-2 py-0.5 text-[0.6875rem]">
-              {`${fr.play.opponents[opponent].name} · ${fr.play.levelValue.replace('{elo}', String(LEVELS[levelIndex].elo))}`}
+              {`${fr.play.opponents[opponent].name} · ${fr.play.levelValue.replace('{elo}', String(levels[levelIndex].elo))}`}
             </span>
           ) : null}
         </header>
@@ -95,15 +109,16 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
             <PlayGame
               key={gameKey}
               opponent={opponent}
-              level={LEVELS[levelIndex]}
+              level={levels[levelIndex]}
               control={TIME_CONTROLS[controlIndex]}
               onNewGame={() => setGameKey((key) => key + 1)}
               onChangeLevel={() => setPlaying(false)}
             />
           ) : (
             <PlaySetup
+              levels={levels}
               levelIndex={levelIndex}
-              onLevelChange={setLevelIndex}
+              onLevelChange={(index) => setElo(levels[index].elo)}
               opponent={opponent}
               onOpponentChange={setOpponent}
               controlIndex={controlIndex}
@@ -118,6 +133,7 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
 }
 
 function PlaySetup({
+  levels,
   levelIndex,
   onLevelChange,
   opponent,
@@ -126,6 +142,7 @@ function PlaySetup({
   onControlChange,
   onStart,
 }: {
+  levels: readonly Level[];
   levelIndex: number;
   onLevelChange: (index: number) => void;
   opponent: Opponent;
@@ -134,7 +151,7 @@ function PlaySetup({
   onControlChange: (index: number) => void;
   onStart: () => void;
 }) {
-  const level = LEVELS[levelIndex];
+  const level = levelAt(levels, levelIndex);
   const levelText = fr.play.levelValue.replace('{elo}', String(level.elo));
 
   return (
@@ -149,7 +166,7 @@ function PlaySetup({
           id="play-level"
           type="range"
           min={0}
-          max={LEVELS.length - 1}
+          max={levels.length - 1}
           step={1}
           value={levelIndex}
           onChange={(event) => onLevelChange(Number(event.target.value))}
@@ -157,8 +174,8 @@ function PlaySetup({
           className="accent-accent mt-3 h-11 w-full"
         />
         <div className="text-ink-muted flex justify-between text-xs">
-          <span>{LEVELS[0].elo}</span>
-          <span>{LEVELS[LEVELS.length - 1].elo}</span>
+          <span>{levels[0].elo}</span>
+          <span>{levels[levels.length - 1].elo}</span>
         </div>
         <p className="mt-2 text-sm font-medium" aria-live="polite">
           {levelText}
@@ -420,13 +437,17 @@ function PlayGame({
       setThinking(true);
       const engineMove =
         opponent === 'maia' && maia.current
-          ? maia.current.bestMove(game.fen, {
-              // The model learned play up to 2600; above that the label promises more than it has.
-              rating: Math.min(Math.max(level.elo, 600), 2600),
-              history: game.moves,
-              temperature: 1,
-              seed: gameSeed.current + game.moves.length,
-            })
+          ? Promise.all([
+              maia.current.bestMove(game.fen, {
+                rating: level.elo,
+                history: game.moves,
+                temperature: 1,
+                seed: gameSeed.current + game.moves.length,
+              }),
+              // Maia does not search, so the move lands in milliseconds. The pause is what her
+              // level would spend thinking, and what her clock pays for the move.
+              pause(level.movetimeMs),
+            ]).then(([move]) => move)
           : instance.bestMove(game.fen, { skill: level.skill, movetimeMs: budget });
       engineMove.then(
         (uci) => {
