@@ -5,7 +5,7 @@
 
 FROM node:26-slim AS build
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 # Node 26 ships no Corepack, so pnpm is installed at the version package.json pins.
 RUN npm install --global --no-audit --no-fund "$(node -p "require('./package.json').packageManager")"
 RUN pnpm install --frozen-lockfile
