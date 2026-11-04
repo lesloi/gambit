@@ -94,6 +94,8 @@
   font-family: var(--font-sans);
   font-size: 0.55rem;
   opacity: 0.55;
+  /* The board keeps its wood in both schemes, so its labels keep one ink too. */
+  color: var(--color-board-label);
 }
 
 /*
