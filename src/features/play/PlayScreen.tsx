@@ -31,7 +31,6 @@ import {
 } from './game';
 import { HINT_MOVETIME_MS, HINT_SKILL, LEVELS, levelAt, levelIndex, type Level } from './level';
 import { materialOf, type CapturedPiece, type Material, type MaterialColor } from './material';
-import { thinkTimeMs } from './pacing';
 import { gameRecord, saveGame } from './record';
 import { readPlayElo, readPlayTimeControl, savePlayElo, savePlayTimeControl } from './settings';
 import { formatTimeControl, TIME_CONTROLS, type TimeControl } from './timeControl';
@@ -366,10 +365,8 @@ function PlayGame({
       if (!instance) return;
 
       const engineSide = sideToMove(game.fen);
-      const budget = thinkTimeMs(control, remainingMs(clock, Date.now())[engineSide]);
-      // A clock already at zero has lost before the engine can look: `go movetime 0` would search
-      // until the adapter's timeout instead of ending the game.
-      if (budget === 0) {
+      // A clock already at zero has lost before the engine can play, whatever it would answer.
+      if (remainingMs(clock, Date.now())[engineSide] <= 0) {
         complete(flagSide(game, engineSide));
         return;
       }
@@ -421,7 +418,7 @@ function PlayGame({
         },
       );
     },
-    [applyMove, complete, control, level.movetimeMs],
+    [applyMove, complete, level.movetimeMs],
   );
 
   const playUserMove = (from: string, to: string, promotion?: PromotionPiece) => {

@@ -34,5 +34,24 @@ AGPL-3.0-or-later of this app combines with. The licence text ships as
 [`public/stockfish/COPYING`](./public/stockfish/COPYING). The corresponding source is the upstream
 tag [`v19.0.1`](https://github.com/nmrugg/stockfish.js/tree/v19.0.1).
 
+## Maia-3
+
+The opponent of the game mode, in [`public/maia`](./public/maia), is the 5M model of
+[CSSLab/maia3](https://github.com/CSSLab/maia3). Its card defers the weights' licence to that
+repository, whose licence is the
+[GNU Affero General Public License, version 3](https://www.gnu.org/licenses/agpl-3.0.html); they keep
+it, and the AGPL of this app does not replace it. The text ships as
+[`public/maia/COPYING`](./public/maia/COPYING). The weights come from the checkpoint `maia3-5m.pt`
+of [`UofTCSSLab/Maia3-5M`](https://huggingface.co/UofTCSSLab/Maia3-5M), revision `b6559de`, sha256
+`ba14208b2992d85502f5fb501934abf6aaaeb355e9f3fdf90e326911f562524f`, converted to ONNX by
+[`scripts/export-maia.py`](./scripts/export-maia.py).
+
+## ONNX Runtime
+
+[`public/ort`](./public/ort) holds the WebAssembly build of
+[ONNX Runtime](https://github.com/microsoft/onnxruntime) 1.31.1, which runs the model in the browser.
+It is released under the [MIT licence](https://github.com/microsoft/onnxruntime/blob/main/LICENSE),
+copied unmodified from the npm package, with the text as [`public/ort/COPYING`](./public/ort/COPYING).
+
 The app is licensed under the [AGPL-3.0-or-later](./LICENSE), which covers the code but neither the
-piece set, the puzzle data nor the engine.
+piece set, the puzzle data, the engines nor the model.

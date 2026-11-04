@@ -51,7 +51,7 @@ export const CREDITS: readonly Credit[] = [
   {
     id: 'maia',
     name: 'Maia-3',
-    licence: 'AGPL-3.0-only',
+    licence: 'AGPL-3.0',
     licenceUrl: 'https://www.gnu.org/licenses/agpl-3.0.html',
     sourceUrl: 'https://huggingface.co/UofTCSSLab/Maia3-5M',
     path: 'public/maia/maia3-5m.onnx',
