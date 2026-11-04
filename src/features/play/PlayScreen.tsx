@@ -79,7 +79,7 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
           <h1 className="text-[0.9375rem] font-semibold">{fr.play.title}</h1>
           {playing ? (
             <span className="border-line text-ink-muted ml-auto rounded-sm border px-2 py-0.5 text-[0.6875rem]">
-              {`${fr.play.opponent} · ${fr.play.levelValue.replace('{elo}', String(levelAt(levelPosition).elo))}`}
+              {fr.play.levelValue.replace('{elo}', String(levelAt(levelPosition).elo))}
             </span>
           ) : null}
         </header>

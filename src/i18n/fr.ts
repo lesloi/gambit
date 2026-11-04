@@ -99,7 +99,7 @@ export const fr = {
     },
     play: {
       name: 'Parties',
-      goal: 'Joue contre Maia, qui se trompe comme un joueur de ton niveau.',
+      goal: 'Joue à ton niveau, avec une pendule.',
     },
   },
   endgame: {
@@ -159,7 +159,6 @@ export const fr = {
       'Une partie contre le moteur, du premier coup à la pendule. Aucun retour en arrière ; un indice marque la partie comme assistée.',
     level: 'Niveau',
     levelValue: '≈ {elo} Elo',
-    opponent: 'Maia',
     clock: 'Pendule',
     sheet: 'Coups',
     review: {
