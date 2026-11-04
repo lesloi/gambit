@@ -94,4 +94,36 @@
   font-family: var(--font-sans);
   font-size: 0.55rem;
   opacity: 0.55;
+  /* The board keeps its wood in both schemes, so its labels keep one ink too. */
+  color: var(--color-board-label);
+}
+
+/*
+ * Chessground's own offsets push the file letters a quarter square to the right and lift the
+ * ranks off the board, so the two labels of a square never meet. Pin each row to its edge of
+ * the board: rank numbers centred on their rank, file letters in the bottom-left corner of
+ * their file, where a piece leaves room for them.
+ */
+.cg-wrap coords.files {
+  left: 0;
+  bottom: 1px;
+  width: 100%;
+  height: auto;
+}
+.cg-wrap coords.files coord {
+  display: flex;
+  justify-content: flex-start;
+  line-height: 1.2;
+  padding-left: 0.125rem;
+}
+.cg-wrap coords.ranks {
+  top: 0;
+  left: 0;
+  width: 0.75rem;
+}
+.cg-wrap coords.ranks coord {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: none;
 }

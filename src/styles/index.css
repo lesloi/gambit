@@ -12,6 +12,7 @@
   --color-accent-soft: var(--accent-soft);
   --color-board-light: #f0d9b5;
   --color-board-dark: #b58863;
+  --color-board-label: #1c1a18;
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
   --color-bad: var(--bad);
