@@ -111,15 +111,18 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   `SharedArrayBuffer`, so COOP and COEP headers, which complicate the CSP and every embed. The
   single-threaded build plays strong enough at every level the trainer offers, and the app stays a
   plain static site.
-- **The engine sits behind one interface, so Maia can replace it later.** Maia plays like a human
-  and is a better opponent for training, but its weights are large and its licence has to be
-  checked. It is tracked as an issue of documentation first.
-- **The engine's pace follows the clock; the level is only its strength.** A fixed movetime per
-  level made every opponent answer in 0.3 to 1.3 s, so even a 10+0 or 15+10 game felt like a bot
-  blitzing and the engine's clock never moved. Handing Stockfish its raw clock is the other
-  extreme: at 10+0 it thinks about 15 s a move. The budget is therefore a third of an even
-  forty-move share of the control plus the increment, capped at 4 s and at a fifth of the time
-  left, and the level sets nothing but Skill Level.
+- **The games are played by Maia; Stockfish keeps the verdict.** Maia predicts the move a player of
+  the chosen rating would play and does not search, which is a better partner than an engine bridged
+  to a weaker level; a hint and a review need a best move and a score, which it cannot give. Its
+  level also sets a pause before the move, because a model that does not search answers in
+  milliseconds and would never spend its clock.
+- **The Maia weights come from the AGPL-3.0 repository, and the export that ships is ours.** The
+  model card says "CC BY 4.0 (paper); see repo for code/weights license": the article is CC BY, the
+  weights are deferred to the repository, whose licence is AGPL-3.0. They live outside the
+  repository, so the credit pins the checkpoint revision and its SHA-256, and the ONNX is converted
+  from it by `scripts/export-maia.py` rather than taken from another project's build. The 5M model
+  is the one kept: 25 to 57 ms an answer in the browser, against 86 ms for the Maia platform's 23M
+  export measured the same way; the larger models were not measured.
 
 ## Persistence
 
