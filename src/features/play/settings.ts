@@ -1,4 +1,5 @@
 import { browserStorage, type StorageLike } from '../../lib/storage';
+import { DEFAULT_PLAY_COLOR, isPlayColor, type PlayColor } from './color';
 import { DEFAULT_ELO } from './level';
 import {
   DEFAULT_TIME_CONTROL_INDEX,
@@ -9,6 +10,7 @@ import {
 
 export const PLAY_LEVEL_STORAGE_KEY = 'gambit:play-level';
 export const PLAY_TIME_CONTROL_STORAGE_KEY = 'gambit:play-time-control';
+export const PLAY_COLOR_STORAGE_KEY = 'gambit:play-color';
 
 /**
  * The strength the user last chose, as an Elo rather than a slider position: a later change to the
@@ -74,6 +76,37 @@ export function savePlayTimeControl(
   const control: TimeControl = timeControlAt(index);
   try {
     storage.setItem(PLAY_TIME_CONTROL_STORAGE_KEY, JSON.stringify(control));
+  } catch {
+    // A full or blocked storage only costs the preference; the screen keeps working.
+  }
+}
+
+/** The colour the setup offers next: a fixed side or a fresh draw at every new game. */
+export function readPlayColor(storage: StorageLike | null = browserStorage()): PlayColor {
+  if (!storage) return DEFAULT_PLAY_COLOR;
+
+  try {
+    const raw = storage.getItem(PLAY_COLOR_STORAGE_KEY);
+    if (raw === null) return DEFAULT_PLAY_COLOR;
+    const value: unknown = JSON.parse(raw);
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      return DEFAULT_PLAY_COLOR;
+    }
+    const { color } = value as Record<string, unknown>;
+    return isPlayColor(color) ? color : DEFAULT_PLAY_COLOR;
+  } catch {
+    return DEFAULT_PLAY_COLOR;
+  }
+}
+
+export function savePlayColor(
+  color: PlayColor,
+  storage: StorageLike | null = browserStorage(),
+): void {
+  if (!storage) return;
+
+  try {
+    storage.setItem(PLAY_COLOR_STORAGE_KEY, JSON.stringify({ color }));
   } catch {
     // A full or blocked storage only costs the preference; the screen keeps working.
   }

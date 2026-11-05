@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { flagSide, playMove, playUci, positionAt, showHint, startGame } from './game';
+import {
+  engineTurnPly,
+  flagSide,
+  playMove,
+  playUci,
+  positionAt,
+  showHint,
+  startGame,
+} from './game';
 
 const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -16,6 +24,17 @@ describe('play game', () => {
       result: null,
       assisted: false,
       hint: null,
+    });
+  });
+
+  it('opens as Black when the user chose Black', () => {
+    const state = startGame('black');
+
+    expect(state).toMatchObject({
+      fen: START,
+      moves: [],
+      userColor: 'black',
+      outcome: 'playing',
     });
   });
 
@@ -123,6 +142,40 @@ describe('play game', () => {
     const before = startGame();
 
     expect(showHint(before, 'e2e5')).toBe(before);
+  });
+});
+
+describe('the engine turn the screen does not wait for', () => {
+  it('asks the engine to open when the user plays Black', () => {
+    expect(engineTurnPly(startGame('black'), null)).toBe(0);
+  });
+
+  it('leaves the opening to the user when they play White', () => {
+    expect(engineTurnPly(startGame('white'), null)).toBeNull();
+  });
+
+  it('asks the engine for the position a resumed game was left at', () => {
+    const state = playUci(startGame('white'), 'e2e4');
+
+    expect(engineTurnPly(state, 1)).toBe(1);
+  });
+
+  it('asks nothing for a position the resumed game has moved past', () => {
+    const state = playUci(playUci(startGame('black'), 'e2e4'), 'e7e5');
+
+    expect(engineTurnPly(state, 1)).toBeNull();
+  });
+
+  it('waits for the user when the resumed position is theirs', () => {
+    const state = playUci(startGame('black'), 'e2e4');
+
+    expect(engineTurnPly(state, 1)).toBeNull();
+  });
+
+  it('asks nothing once the game is over', () => {
+    const state = flagSide(startGame('black'), 'white');
+
+    expect(engineTurnPly(state, null)).toBeNull();
   });
 });
 

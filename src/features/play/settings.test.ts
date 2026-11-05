@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 import type { StorageLike } from '../../lib/storage';
 import { DEFAULT_ELO } from './level';
 import {
+  PLAY_COLOR_STORAGE_KEY,
   PLAY_LEVEL_STORAGE_KEY,
   PLAY_TIME_CONTROL_STORAGE_KEY,
+  readPlayColor,
   readPlayElo,
   readPlayTimeControl,
+  savePlayColor,
   savePlayElo,
   savePlayTimeControl,
 } from './settings';
@@ -29,6 +32,9 @@ const stored = (value: unknown): StorageLike =>
 
 const storedControl = (value: unknown): StorageLike =>
   memoryStorage({ [PLAY_TIME_CONTROL_STORAGE_KEY]: JSON.stringify(value) });
+
+const storedColor = (value: unknown): StorageLike =>
+  memoryStorage({ [PLAY_COLOR_STORAGE_KEY]: JSON.stringify(value) });
 
 describe('play level preference', () => {
   it('starts on the default strength', () => {
@@ -71,6 +77,8 @@ describe('play level preference', () => {
     expect(() => savePlayElo(2600, broken)).not.toThrow();
     expect(readPlayTimeControl(broken)).toBe(DEFAULT_TIME_CONTROL_INDEX);
     expect(() => savePlayTimeControl(0, broken)).not.toThrow();
+    expect(readPlayColor(broken)).toBe('white');
+    expect(() => savePlayColor('random', broken)).not.toThrow();
   });
 });
 
@@ -115,6 +123,36 @@ describe('play time control preference', () => {
       savePlayTimeControl(index, storage);
 
       expect(readPlayTimeControl(storage)).toBe(index);
+    }
+  });
+});
+
+describe('play colour preference', () => {
+  it('starts on White', () => {
+    expect(readPlayColor(memoryStorage())).toBe('white');
+  });
+
+  it('reads back the colour it saved', () => {
+    for (const color of ['white', 'black', 'random'] as const) {
+      const storage = memoryStorage();
+
+      savePlayColor(color, storage);
+
+      expect(readPlayColor(storage)).toBe(color);
+    }
+  });
+
+  it('falls back to White for a value the setup does not offer', () => {
+    for (const value of [
+      null,
+      [],
+      'red',
+      42,
+      { color: 'red' },
+      { colour: 'black' },
+      { color: 1 },
+    ]) {
+      expect(readPlayColor(storedColor(value)), JSON.stringify(value)).toBe('white');
     }
   });
 });

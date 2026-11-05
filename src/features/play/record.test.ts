@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { afterAll, describe, expect, it } from 'vitest';
 import { database } from '../../db/db';
-import { flagSide, playMove, showHint, startGame } from './game';
+import { flagSide, playMove, playUci, showHint, startGame } from './game';
 import { gameRecord, saveGame } from './record';
 
 afterAll(async () => {
@@ -45,6 +45,12 @@ describe('gameRecord', () => {
     const state = flagSide(showHint(startGame(), 'g1f3'), 'black');
 
     expect(gameRecord(state, meta).assisted).toBe(true);
+  });
+
+  it('keeps the side the user actually played', () => {
+    const state = flagSide(playUci(startGame('black'), 'e2e4'), 'black');
+
+    expect(gameRecord(state, meta).userColor).toBe('black');
   });
 
   it('refuses a game that is still being played', () => {
