@@ -1,4 +1,3 @@
-import { Chess } from 'chess.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fr } from '../../i18n/fr';
 import { sideToMove } from '../../lib/chess';
@@ -12,10 +11,13 @@ import {
   playMove,
   promotionPieces,
   revealSolution,
+  solutionSheet,
   startPuzzle,
   type PromotionPiece,
   type Puzzle,
   type PuzzleOutcome,
+  type SolutionPly,
+  type SolutionRow,
 } from './puzzle';
 import { missedAttemptRating, recordPuzzleReview } from './record';
 
@@ -44,6 +46,8 @@ export function PuzzlePlayer({
   const [rating, setRating] = useState<Rating | null>(null);
   const [pending, setPending] = useState<PendingPromotion | null>(null);
   const [resetKey, setResetKey] = useState(0);
+  /** The ply the revealed line is showing; null means its final position. */
+  const [browsedPly, setBrowsedPly] = useState<number | null>(null);
   const boardHost = useRef<HTMLDivElement>(null);
   const attemptRecorded = useRef(false);
   /** This attempt's journal write, so a tap on "next" cannot read the journal before it lands. */
@@ -54,30 +58,27 @@ export function PuzzlePlayer({
   }, []);
 
   const orientation = useMemo(() => sideToMove(puzzle.fen), [puzzle]);
-  const turn = useMemo(() => sideToMove(state.fen), [state.fen]);
+  const storedSheet = useMemo(() => solutionSheet(puzzle), [puzzle]);
+  const playedSheet = useMemo(() => solutionSheet(puzzle, state.moves), [puzzle, state.moves]);
+  // A solved puzzle reviews the line the user actually played; a revealed one shows the stored
+  // answer, which may start from the puzzle position after a wrong move.
+  const sheet =
+    state.outcome === 'revealed' ? storedSheet : state.outcome === 'solved' ? playedSheet : null;
+  const shown = sheet && browsedPly !== null ? (sheet.plies[browsedPly - 1] ?? null) : null;
+  const shownPly = sheet ? (browsedPly ?? sheet.plies.length) : 0;
+  const shownFen = shown?.fen ?? state.fen;
+  const turn = useMemo(() => sideToMove(shownFen), [shownFen]);
   const dests = useMemo(
     () => (state.outcome === 'playing' ? legalDests(state.fen) : new Map<string, string[]>()),
     [state.fen, state.outcome],
   );
-  const line = useMemo(() => {
-    const chess = new Chess(puzzle.fen);
-    return puzzle.solution
-      .map(
-        (uci) =>
-          chess.move({
-            from: uci.slice(0, 2),
-            to: uci.slice(2, 4),
-            promotion: uci.slice(4) || undefined,
-          }).san,
-      )
-      .join(' ');
-  }, [puzzle]);
 
   const reset = () => {
     setState(startPuzzle(puzzle));
     setHint(false);
     setRating(null);
     setPending(null);
+    setBrowsedPly(null);
     attemptRecorded.current = false;
   };
 
@@ -152,7 +153,17 @@ export function PuzzlePlayer({
   const reveal = () => {
     const next = revealSolution(state);
     setState(next);
+    setBrowsedPly(null);
     recordMissed(state.outcome, next.outcome);
+  };
+
+  const browse = (ply: number) => {
+    if (!sheet) return;
+    setBrowsedPly(ply >= sheet.plies.length ? null : ply);
+    // The sheet sits under the board on a phone: bring the board back into view.
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      boardHost.current?.scrollIntoView({ block: 'center' });
+    }
   };
 
   return (
@@ -160,10 +171,10 @@ export function PuzzlePlayer({
       <div className="border-line bg-paper-raised mt-3 rounded-sm border p-2.5 sm:p-3">
         <div ref={boardHost} tabIndex={-1} aria-label={fr.puzzle.board} className="rounded-sm">
           <ChessBoard
-            fen={state.fen}
+            fen={shownFen}
             orientation={orientation}
             turn={turn}
-            lastMove={state.lastMove}
+            lastMove={shown?.lastMove ?? state.lastMove}
             movable={state.outcome === 'playing'}
             dests={dests}
             onMove={move}
@@ -211,6 +222,12 @@ export function PuzzlePlayer({
               <p className="mt-1 text-xs opacity-80">{puzzle.themes.map(themeLabel).join(' · ')}</p>
             </div>
 
+            {sheet ? (
+              <div className="mt-3">
+                <SolutionMoves rows={sheet.rows} shownPly={shownPly} onSelect={browse} />
+              </div>
+            ) : null}
+
             <div className="mt-4">
               <RatingButtons rating={rating} onRate={(value) => void rate(value)} />
             </div>
@@ -255,12 +272,7 @@ export function PuzzlePlayer({
 
         {state.outcome === 'revealed' ? (
           <>
-            <div className="border-line bg-paper-raised rounded-sm border p-4">
-              <p className="text-accent-ink text-[0.6875rem] tracking-widest uppercase">
-                {fr.puzzle.solutionTitle}
-              </p>
-              <p className="mt-1 text-lg">{line}</p>
-            </div>
+            <SolutionMoves rows={storedSheet.rows} shownPly={shownPly} onSelect={browse} />
 
             <div className="mt-3 flex gap-2">
               <button
@@ -292,5 +304,83 @@ export function PuzzlePlayer({
         />
       ) : null}
     </>
+  );
+}
+
+/**
+ * The line as a score sheet, two moves per row. Every move is a button so the board can show the
+ * position it reached.
+ */
+function SolutionMoves({
+  rows,
+  shownPly,
+  onSelect,
+}: {
+  rows: readonly SolutionRow[];
+  shownPly: number;
+  onSelect: (ply: number) => void;
+}) {
+  return (
+    <div className="border-line bg-paper-raised rounded-sm border">
+      <p className="border-line text-accent-ink border-b px-3 py-2 text-[0.6875rem] tracking-widest uppercase">
+        {fr.puzzle.solutionTitle}
+      </p>
+      <ol className="py-1 text-sm" aria-label={fr.puzzle.solutionTitle}>
+        {rows.map((row) => (
+          <li
+            key={row.number}
+            className="grid grid-cols-[24px_1fr_1fr] items-center gap-1 px-1.5 tabular-nums"
+          >
+            <span className="text-ink-muted px-1 opacity-70">{row.number}.</span>
+            {row.white ? (
+              <SolutionMoveButton
+                move={row.white}
+                current={row.white.ply === shownPly}
+                onSelect={onSelect}
+              />
+            ) : (
+              <span />
+            )}
+            {row.black ? (
+              <SolutionMoveButton
+                move={row.black}
+                current={row.black.ply === shownPly}
+                onSelect={onSelect}
+              />
+            ) : (
+              <span />
+            )}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+/**
+ * A move of the revealed solution. A 36px row stays above the 24px target minimum of WCAG 2.2
+ * while a line of several moves keeps the sheet compact; the whole cell is the button.
+ */
+function SolutionMoveButton({
+  move,
+  current,
+  onSelect,
+}: {
+  move: SolutionPly;
+  current: boolean;
+  onSelect: (ply: number) => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-current={current ? 'true' : undefined}
+      aria-label={`${move.number}${move.side === 'white' ? '.' : '…'} ${move.san}`}
+      onClick={() => onSelect(move.ply)}
+      className={`flex min-h-9 items-center rounded-xs px-1.5 text-left tabular-nums transition-colors ${
+        current ? 'bg-accent-soft text-ink font-semibold' : 'hover:bg-paper'
+      }`}
+    >
+      {move.san}
+    </button>
   );
 }

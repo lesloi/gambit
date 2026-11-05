@@ -4,6 +4,7 @@ import {
   playMove,
   promotionPieces,
   revealSolution,
+  solutionSheet,
   startPuzzle,
   type PromotionPiece,
   type Puzzle,
@@ -160,5 +161,81 @@ describe('puzzle session', () => {
     }
 
     expect(state.outcome).toBe('solved');
+  });
+
+  it('keeps the moves played, including the forced replies', () => {
+    const first = playMove(startPuzzle(puzzle), 'd5', 'd8');
+    const state = playMove(first, 'd1', 'd8');
+
+    expect(state.moves).toEqual(['d5d8', 'a8d8', 'd1d8']);
+  });
+
+  it('keeps the move actually played when another mate solves', () => {
+    const state = playMove(startPuzzle(doubleMate), 'b1', 'b8');
+
+    expect(state.moves).toEqual(['b1b8']);
+  });
+
+  it('replaces the played moves with the solution when revealed', () => {
+    const failed = playMove(startPuzzle(puzzle), 'd5', 'f7');
+    const revealed = revealSolution(failed);
+
+    expect(revealed.moves).toEqual([...puzzle.solution]);
+  });
+});
+
+describe('solution sheet', () => {
+  it('writes the line two moves per row with the position each move reaches', () => {
+    const { plies, rows } = solutionSheet(puzzle);
+
+    expect(plies.map((ply) => [ply.ply, ply.number, ply.side, ply.san])).toEqual([
+      [1, 1, 'white', 'Qd8+'],
+      [2, 1, 'black', 'Rxd8'],
+      [3, 2, 'white', 'Rxd8#'],
+    ]);
+    expect(plies.map((ply) => ply.fen)).toEqual([
+      'r2Q2k1/5ppp/8/8/8/8/PPP2PPP/3R2K1 b - - 1 1',
+      '3r2k1/5ppp/8/8/8/8/PPP2PPP/3R2K1 w - - 0 2',
+      solvedFen,
+    ]);
+    expect(plies[0]?.lastMove).toEqual(['d5', 'd8']);
+    expect(rows.map((row) => [row.number, row.white?.san, row.black?.san])).toEqual([
+      [1, 'Qd8+', 'Rxd8'],
+      [2, 'Rxd8#', undefined],
+    ]);
+  });
+
+  it('numbers a line that starts with Black from the puzzle position', () => {
+    const blackToMove: Puzzle = {
+      id: 'test-black-to-move',
+      fen: '4k3/8/8/8/8/8/8/4K2R b - - 0 42',
+      solution: ['e8d8', 'h1h8'],
+      themes: [],
+      rating: 1000,
+      fullLine: true,
+    };
+
+    const { rows } = solutionSheet(blackToMove);
+
+    expect(rows.map((row) => [row.number, row.white?.san ?? null, row.black?.san ?? null])).toEqual(
+      [
+        [42, null, 'Kd8'],
+        [43, 'Rh8+', null],
+      ],
+    );
+  });
+
+  it('writes a promotion with the piece it chose', () => {
+    const { plies } = solutionSheet(promotionPuzzle);
+
+    expect(plies[0]?.san).toBe('g8=N');
+  });
+
+  it('writes a played line from the puzzle position', () => {
+    const { rows } = solutionSheet(puzzle, ['d5d8']);
+
+    expect(rows.map((row) => [row.number, row.white?.san, row.black?.san])).toEqual([
+      [1, 'Qd8+', undefined],
+    ]);
   });
 });
