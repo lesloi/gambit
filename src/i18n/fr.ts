@@ -150,8 +150,11 @@ export const fr = {
     retry: 'Rejouer',
     other: 'Autre ligne',
     solved: 'Ligne réussie',
+    corrected: 'Ligne terminée après correction',
+    correctedNote: 'Le coup raté reste compté.',
     failed: 'Coup hors du répertoire',
     expectedMove: 'Le coup du répertoire était {move}.',
+    rewind: 'Revenir au coup précédent',
     status: {
       new: 'Nouvelle',
       due: 'À revoir',

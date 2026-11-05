@@ -28,6 +28,11 @@ export interface OpeningState {
   wrongMove: string | null;
   /** The repertoire move that was expected, in SAN, when the user's move was refused. */
   expectedSan: string | null;
+  /**
+   * True once a rewind followed a miss. The attempt's review is already `again`, so finishing the
+   * line corrects the road through it, not the record.
+   */
+  corrected: boolean;
 }
 
 function applyUci(chess: Chess, uci: string): Move {
@@ -68,6 +73,7 @@ export function startOpening(line: OpeningLine): OpeningState {
     expected: solved ? null : line.moves[index]!,
     wrongMove: null,
     expectedSan: null,
+    corrected: false,
   };
 }
 
@@ -130,4 +136,30 @@ export function playOpeningMove(
 /** Puts the line back at its start after a miss or a finished attempt. */
 export function restartOpening(state: OpeningState): OpeningState {
   return startOpening(state.line);
+}
+
+/**
+ * Puts the board back where the miss happened, so the user replays that one move instead of the
+ * whole line. The journal already holds the miss: this corrects the attempt, not the record.
+ */
+export function rewindOpening(state: OpeningState): OpeningState {
+  if (state.outcome !== 'failed') return state;
+
+  const chess = new Chess();
+  let lastMove: [string, string] | null = null;
+  for (const uci of state.line.moves.slice(0, state.index)) {
+    const move = applyUci(chess, uci);
+    lastMove = [move.from, move.to];
+  }
+
+  return {
+    ...state,
+    outcome: 'playing',
+    fen: chess.fen(),
+    lastMove,
+    expected: state.line.moves[state.index] ?? null,
+    wrongMove: null,
+    expectedSan: null,
+    corrected: true,
+  };
 }
