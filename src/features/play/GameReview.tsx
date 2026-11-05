@@ -31,12 +31,10 @@ export function GameReview({
   analyse,
   game,
   onNewGame,
-  onChangeSettings,
 }: {
   analyse: (fen: string, movetimeMs: number) => Promise<PositionEval>;
   game: PlayState;
   onNewGame: () => void;
-  onChangeSettings: () => void;
 }) {
   const [state, setState] = useState<ReviewState>({ status: 'running', done: 0, total: 0 });
   const [findings, setFindings] = useState<readonly Finding[]>([]);
@@ -217,20 +215,13 @@ export function GameReview({
         </aside>
       </div>
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4">
         <button
           type="button"
           onClick={onNewGame}
-          className="bg-accent flex-1 rounded-sm px-4 py-3 text-sm font-semibold text-white"
+          className="bg-accent w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
         >
           {fr.play.newGame}
-        </button>
-        <button
-          type="button"
-          onClick={onChangeSettings}
-          className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm"
-        >
-          {fr.play.changeSettings}
         </button>
       </div>
     </>

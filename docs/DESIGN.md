@@ -112,8 +112,9 @@ no network.
   that gives away at least 20 points of winning chance is a blunder, or a missed win when the
   position was already won. The list shows the played move and the engine's choice, and a click
   puts the position before the move on the board with that choice drawn as an arrow.
-- The result panel names the winner and the reason, then offers a new game or a change of level;
-  it offers the analysis only when no hint was used.
+- The result panel names the winner and the reason, then offers a new game; changing the level
+  or the time control happens on the setup screen. It offers the analysis only when no hint was
+  used.
 
 ## Accessibility
 
