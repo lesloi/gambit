@@ -1,4 +1,4 @@
-import { ChevronLeft, Lightbulb, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lightbulb, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { database } from '../../db/db';
 import { createMaiaEngine } from '../../engine/maiaEngine';
@@ -730,6 +730,28 @@ function PlayGame({
     setBrowsedPly(at >= livePly ? null : at);
   };
 
+  const step = (delta: number) => {
+    const target = shownPly + delta;
+    browse(target);
+    // The next step from the last past position is the way back to the game: the board takes the
+    // focus, as it does through "Revenir à la partie".
+    if (target >= livePly) boardHost.current?.focus();
+  };
+
+  // A step can leave the current move outside the sheet's own scroll box; only that box moves, so
+  // the step buttons stay where the thumb left them.
+  useEffect(() => {
+    if (!browsing) return;
+    const list = sheet.current;
+    const cell = list?.querySelector<HTMLElement>('[aria-current="true"]');
+    if (!list || !cell) return;
+
+    const listRect = list.getBoundingClientRect();
+    const cellRect = cell.getBoundingClientRect();
+    if (cellRect.top < listRect.top) list.scrollTop += cellRect.top - listRect.top;
+    else if (cellRect.bottom > listRect.bottom) list.scrollTop += cellRect.bottom - listRect.bottom;
+  }, [browsing, shownPly]);
+
   const selectMove = (ply: number) => {
     browse(ply);
     // The sheet sits under the board on a phone: bring the board back into view.
@@ -776,6 +798,16 @@ function PlayGame({
           : userTurn
             ? fr.play.yourMove
             : fr.play.thinking;
+
+  // Stepping back to the start leaves no move to name, so the bar names the position instead.
+  const reviewText = shownMove
+    ? (state.outcome === 'playing'
+        ? fr.play.review.whilePlaying
+        : fr.play.review.afterGame
+      ).replace('{move}', moveLabel(shownMove))
+    : state.outcome === 'playing'
+      ? fr.play.review.startWhilePlaying
+      : fr.play.review.startAfterGame;
 
   return (
     <>
@@ -829,12 +861,7 @@ function PlayGame({
 
             {browsing ? (
               <div className="bg-accent-soft mt-1.5 flex flex-wrap items-center justify-between gap-2 rounded-sm px-2.5 py-1 text-xs">
-                <p role="status">
-                  {(state.outcome === 'playing'
-                    ? fr.play.review.whilePlaying
-                    : fr.play.review.afterGame
-                  ).replace('{move}', shownMove ? moveLabel(shownMove) : '')}
-                </p>
+                <p role="status">{reviewText}</p>
                 <button
                   type="button"
                   onClick={backToGame}
@@ -961,6 +988,26 @@ function PlayGame({
                   </li>
                 ))}
               </ol>
+              <div className="border-line grid grid-cols-2 gap-1 border-t p-1.5">
+                <button
+                  type="button"
+                  onClick={() => step(-1)}
+                  disabled={shownPly === 0}
+                  className="border-line text-ink flex min-h-9 items-center justify-center gap-1 rounded-xs border px-1 text-[0.6875rem] font-semibold disabled:opacity-50"
+                >
+                  <ChevronLeft size={14} aria-hidden="true" />
+                  {fr.play.review.previous}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => step(1)}
+                  disabled={shownPly === livePly}
+                  className="border-line text-ink flex min-h-9 items-center justify-center gap-1 rounded-xs border px-1 text-[0.6875rem] font-semibold disabled:opacity-50"
+                >
+                  {fr.play.review.next}
+                  <ChevronRight size={14} aria-hidden="true" />
+                </button>
+              </div>
             </div>
           ) : null}
 

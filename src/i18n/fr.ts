@@ -171,6 +171,10 @@ export const fr = {
     review: {
       whilePlaying: 'Relecture après {move}. La pendule continue.',
       afterGame: 'Relecture après {move}.',
+      startWhilePlaying: 'Relecture depuis la position de départ. La pendule continue.',
+      startAfterGame: 'Relecture depuis la position de départ.',
+      previous: 'Précédent',
+      next: 'Suivant',
       back: 'Revenir à la partie',
     },
     notAssisted: 'Partie non assistée. L’analyse est proposée à la fin, sans indice.',
