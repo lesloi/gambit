@@ -21,6 +21,31 @@ export interface Puzzle {
 
 export type PuzzleOutcome = 'playing' | 'solved' | 'failed' | 'revealed';
 
+export interface SolutionPly {
+  /** The full-move number of the move, from the puzzle's own FEN. */
+  number: number;
+  side: 'white' | 'black';
+  /** The position reached after this move, the start being zero. */
+  ply: number;
+  san: string;
+  fen: string;
+  lastMove: [string, string];
+}
+
+export interface SolutionRow {
+  /** The full-move number, starting from the puzzle's own FEN. */
+  number: number;
+  /** Null when the line starts with a Black move. */
+  white: SolutionPly | null;
+  /** Null while White's move is the last one of the line. */
+  black: SolutionPly | null;
+}
+
+export interface SolutionSheet {
+  plies: SolutionPly[];
+  rows: SolutionRow[];
+}
+
 export interface PuzzleState {
   puzzle: Puzzle;
   outcome: PuzzleOutcome;
@@ -48,6 +73,46 @@ function givesMate(fen: string, uci: string): boolean {
   const chess = new Chess(fen);
   moveFromUci(chess, uci);
   return chess.isCheckmate();
+}
+
+/** The solution as a score sheet, numbered and positioned from the puzzle's own FEN. */
+export function solutionSheet(puzzle: Puzzle): SolutionSheet {
+  const chess = new Chess(puzzle.fen);
+  const plies: SolutionPly[] = [];
+  const rows: SolutionRow[] = [];
+
+  for (const uci of puzzle.solution) {
+    const side = chess.turn() === 'w' ? 'white' : 'black';
+    const number = chess.moveNumber();
+    let move: Move;
+    try {
+      move = moveFromUci(chess, uci);
+    } catch {
+      // A move the board refuses ends the sheet rather than breaking it.
+      break;
+    }
+
+    const ply: SolutionPly = {
+      number,
+      side,
+      ply: plies.length + 1,
+      san: move.san,
+      fen: chess.fen(),
+      lastMove: [move.from, move.to],
+    };
+    plies.push(ply);
+
+    if (side === 'white') {
+      rows.push({ number, white: ply, black: null });
+      continue;
+    }
+
+    const last = rows[rows.length - 1];
+    if (last && last.number === number && last.black === null) last.black = ply;
+    else rows.push({ number, white: null, black: ply });
+  }
+
+  return { plies, rows };
 }
 
 export function startPuzzle(puzzle: Puzzle): PuzzleState {
