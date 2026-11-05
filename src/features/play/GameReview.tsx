@@ -1,20 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PositionEval } from '../../engine/uci';
 import { fr } from '../../i18n/fr';
 import { sideToMove } from '../../lib/chess';
 import { ChessBoard } from '../../ui/ChessBoard';
-import { ANALYSIS_MOVETIME_MS, reviewGame, type Finding } from './analysis';
-import type { PlayState } from './game';
+import { ANALYSIS_MOVETIME_MS, findingsBySheetPly, reviewGame, type Finding } from './analysis';
+import { positionAt, type PlayState } from './game';
+import { MoveSheet } from './MoveSheet';
+import { moveLabel, scoreSheet } from './notation';
 
 type ReviewState =
   { status: 'running'; done: number; total: number } | { status: 'ready' } | { status: 'failed' };
 
 const NO_DESTS = new Map<string, string[]>();
 const ignoreMove = () => {};
-
-function moveLabel(finding: Finding): string {
-  return `${finding.moveNumber}${finding.side === 'white' ? '.' : '…'}`;
-}
 
 function kindLabel(kind: Finding['kind']): string {
   return kind === 'missed-win' ? fr.play.analysis.missedWin : fr.play.analysis.blunder;
@@ -25,9 +23,9 @@ function kindClass(kind: Finding['kind']): string {
 }
 
 /**
- * Reads the finished game back at full strength, then shows the user's blunders and missed wins.
- * A click on a finding puts the position before that move on the board with the engine's choice
- * drawn as an arrow.
+ * Reads the finished game back at full strength, then lets the user replay every move. The
+ * findings are marked in the score sheet; one shows the engine's choice as an arrow on the
+ * position where the move could have been played better.
  */
 export function GameReview({
   analyse,
@@ -42,7 +40,8 @@ export function GameReview({
 }) {
   const [state, setState] = useState<ReviewState>({ status: 'running', done: 0, total: 0 });
   const [findings, setFindings] = useState<readonly Finding[]>([]);
-  const [selected, setSelected] = useState(0);
+  const [selectedPly, setSelectedPly] = useState(0);
+  const [showBest, setShowBest] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const boardHost = useRef<HTMLDivElement>(null);
 
@@ -70,14 +69,47 @@ export function GameReview({
     };
   }, [analyse, game, attempt]);
 
+  const { moves, rows } = useMemo(() => scoreSheet(game.moves), [game.moves]);
+  const livePly = moves.length;
+  const findingsByPly = useMemo(() => findingsBySheetPly(findings), [findings]);
+  const marks = useMemo(
+    () => new Map([...findingsByPly].map(([ply, finding]) => [ply, finding.kind] as const)),
+    [findingsByPly],
+  );
+
+  const shownPly = Math.min(Math.max(selectedPly, 0), livePly);
+  const shownMove = moves[shownPly - 1] ?? null;
+  const finding = findingsByPly.get(shownPly) ?? null;
+  const best = showBest && finding !== null;
+  const shown = useMemo(
+    () =>
+      best && finding
+        ? { fen: finding.fen, lastMove: finding.lastMove }
+        : positionAt(game, shownPly),
+    [best, finding, game, shownPly],
+  );
+
   const retry = () => {
     setState({ status: 'running', done: 0, total: 0 });
     setFindings([]);
-    setSelected(0);
+    setSelectedPly(0);
+    setShowBest(false);
     setAttempt((value) => value + 1);
   };
 
-  const finding = findings[selected] ?? null;
+  const show = (ply: number) => {
+    setSelectedPly(Math.min(Math.max(ply, 0), livePly));
+    setShowBest(false);
+  };
+
+  const select = (ply: number) => {
+    show(ply);
+    // The sheet sits under the board on a phone: bring the board back into view.
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      boardHost.current?.scrollIntoView({ block: 'center' });
+    }
+  };
+
   const progress =
     state.status === 'running'
       ? state.total === 0
@@ -85,16 +117,19 @@ export function GameReview({
         : fr.play.analysis.progress
             .replace('{done}', String(state.done))
             .replace('{total}', String(state.total))
-      : state.status === 'ready' && findings.length > 0
-        ? fr.play.analysis.finished
+      : state.status === 'ready' && findings.length === 0
+        ? fr.play.analysis.empty
         : state.status === 'ready'
-          ? fr.play.analysis.empty
+          ? findings.length === 1
+            ? fr.play.analysis.finishedOne
+            : fr.play.analysis.finishedMany.replace('{count}', String(findings.length))
           : '';
 
-  const select = (index: number) => {
-    setSelected(index);
-    boardHost.current?.scrollIntoView({ block: 'center' });
-  };
+  const line = shownMove
+    ? best && finding
+      ? `${fr.play.analysis.before.replace('{move}', moveLabel(shownMove))} · ${fr.play.analysis.best.replace('{move}', finding.bestSan)}`
+      : `${moveLabel(shownMove)}${finding ? ` · ${fr.play.analysis.best.replace('{move}', finding.bestSan)}` : ''}`
+    : fr.play.analysis.startPosition;
 
   return (
     <>
@@ -107,7 +142,7 @@ export function GameReview({
       {state.status === 'failed' ? (
         <div
           role="alert"
-          className="border-line bg-paper-raised mt-6 rounded-sm border p-4 text-center"
+          className="border-line bg-paper-raised mt-4 rounded-sm border p-4 text-center"
         >
           <p className="text-sm">{fr.play.analysis.failed}</p>
           <button
@@ -118,63 +153,69 @@ export function GameReview({
             {fr.play.analysis.retry}
           </button>
         </div>
-      ) : finding ? (
-        <>
+      ) : null}
+
+      <div className="mt-3 grid gap-4 md:grid-cols-[minmax(0,1fr)_190px] md:items-start">
+        <div className="min-w-0">
           <div
             ref={boardHost}
             aria-label={fr.play.board}
-            className="border-line bg-paper-raised mt-3 rounded-sm border p-2.5 sm:p-3"
+            className="border-line bg-paper-raised rounded-sm border p-2.5 sm:p-3"
           >
             <ChessBoard
-              fen={finding.fen}
+              fen={shown.fen}
               orientation={game.userColor}
-              turn={sideToMove(finding.fen)}
-              lastMove={finding.lastMove}
+              turn={sideToMove(shown.fen)}
+              lastMove={shown.lastMove}
               movable={false}
               dests={NO_DESTS}
               onMove={ignoreMove}
-              hint={{ from: finding.bestUci.slice(0, 2), to: finding.bestUci.slice(2, 4) }}
+              hint={
+                best && finding
+                  ? { from: finding.bestUci.slice(0, 2), to: finding.bestUci.slice(2, 4) }
+                  : null
+              }
             />
           </div>
 
-          <p className="mt-2 text-sm font-medium" aria-live="polite">
-            {moveLabel(finding)} {finding.playedSan} ·{' '}
-            {fr.play.analysis.best.replace('{move}', finding.bestSan)}
-          </p>
+          <div className="mt-2 flex items-start justify-between gap-3">
+            <p className="text-sm font-medium" aria-live="polite">
+              {line}
+              {finding ? <span className="sr-only">, {kindLabel(finding.kind)}</span> : null}
+            </p>
+            {finding ? (
+              <span
+                className={`shrink-0 rounded-xs px-2.5 py-1 text-xs ${kindClass(finding.kind)}`}
+              >
+                {kindLabel(finding.kind)}
+              </span>
+            ) : null}
+          </div>
 
-          <h3 className="text-ink-muted mt-5 text-sm">{fr.play.analysis.findings}</h3>
-          <ul className="mt-2 grid gap-2">
-            {findings.map((item, index) => (
-              <li key={item.ply}>
-                <button
-                  type="button"
-                  aria-pressed={index === selected}
-                  onClick={() => select(index)}
-                  className={`flex min-h-11 w-full items-center gap-3 rounded-sm border p-3 text-left transition-colors ${
-                    index === selected
-                      ? 'border-accent bg-paper-raised'
-                      : 'border-line bg-paper-raised hover:border-accent/40'
-                  }`}
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold">
-                      {moveLabel(item)} {item.playedSan}
-                    </span>
-                    <span className="text-ink-muted mt-1 block text-xs">
-                      {fr.play.analysis.best.replace('{move}', item.bestSan)}
-                    </span>
-                  </span>
-                  <span
-                    className={`shrink-0 rounded-xs px-2.5 py-1 text-xs ${kindClass(item.kind)}`}
-                  >
-                    {kindLabel(item.kind)}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : null}
+          {finding ? (
+            <button
+              type="button"
+              onClick={() => setShowBest((value) => !value)}
+              className="border-line text-ink mt-2 min-h-11 w-full rounded-xs border px-3 text-[0.6875rem] font-semibold"
+            >
+              {best ? fr.play.analysis.showPlayed : fr.play.analysis.showBest}
+            </button>
+          ) : null}
+        </div>
+
+        <aside className="min-w-0">
+          {rows.length > 0 ? (
+            <MoveSheet
+              rows={rows}
+              currentPly={shownPly}
+              marks={marks}
+              listClassName="max-h-56 md:max-h-[40vh]"
+              onSelect={select}
+              onStep={(delta) => show(shownPly + delta)}
+            />
+          ) : null}
+        </aside>
+      </div>
 
       <div className="mt-4 flex gap-2">
         <button

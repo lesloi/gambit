@@ -131,6 +131,14 @@ export async function reviewGame(
   return findings;
 }
 
+/**
+ * The findings keyed by the score sheet's ply. A finding names the position before the move, while
+ * the sheet counts the move that produced a position from one, so the played move is one ahead.
+ */
+export function findingsBySheetPly(findings: readonly Finding[]): ReadonlyMap<number, Finding> {
+  return new Map(findings.map((finding) => [finding.ply + 1, finding]));
+}
+
 /** The chance the side holding the score wins, from 0 to 100. */
 export function winPercent(score: Score): number {
   // Stockfish's `mate 0` means the side to move is already mated, not a draw.
