@@ -13,6 +13,7 @@ import { loadOpenings } from './content';
 import {
   playOpeningMove,
   restartOpening,
+  rewindOpening,
   startOpening,
   type LineColor,
   type OpeningLine,
@@ -220,6 +221,15 @@ export function OpeningPlayer({
     boardHost.current?.focus();
   };
 
+  // The miss's review is already written; the rewind reopens the board, not the attempt.
+  const rewind = () => {
+    const next = rewindOpening(state);
+    if (next === state) return;
+    setState(next);
+    setPending(null);
+    boardHost.current?.focus();
+  };
+
   const applyMove = (from: string, to: string, promotion?: PromotionPiece) => {
     const next = playOpeningMove(state, from, to, promotion);
     if (next === state) return;
@@ -305,23 +315,49 @@ export function OpeningPlayer({
 
       <div className="mt-4">
         {state.outcome === 'solved' ? (
-          <>
-            <div role="status" className="bg-ok-soft text-ok rounded-sm p-4">
-              <p className="text-sm font-semibold">{fr.opening.solved}</p>
-            </div>
+          state.corrected ? (
+            <>
+              <div role="status" className="border-line bg-paper-raised rounded-sm border p-4">
+                <p className="text-sm font-semibold">{fr.opening.corrected}</p>
+                <p className="mt-1 text-xs opacity-80">{fr.opening.correctedNote}</p>
+              </div>
 
-            <div className="mt-4">
-              <RatingButtons rating={rating} onRate={(value) => void rate(value)} />
-            </div>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={restart}
+                  className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm"
+                >
+                  {fr.opening.retry}
+                </button>
+                <button
+                  type="button"
+                  onClick={onOther}
+                  className="bg-accent flex-1 rounded-sm px-4 py-3 text-sm font-semibold text-white"
+                >
+                  {nextLabel}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div role="status" className="bg-ok-soft text-ok rounded-sm p-4">
+                <p className="text-sm font-semibold">{fr.opening.solved}</p>
+              </div>
 
-            <button
-              type="button"
-              onClick={onOther}
-              className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
-            >
-              {nextLabel}
-            </button>
-          </>
+              <div className="mt-4">
+                <RatingButtons rating={rating} onRate={(value) => void rate(value)} />
+              </div>
+
+              <button
+                type="button"
+                onClick={onOther}
+                className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
+              >
+                {nextLabel}
+              </button>
+            </>
+          )
         ) : null}
 
         {state.outcome === 'failed' ? (
@@ -333,11 +369,18 @@ export function OpeningPlayer({
               </p>
             </div>
 
-            <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={rewind}
+              className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
+            >
+              {fr.opening.rewind}
+            </button>
+            <div className="mt-2 flex gap-2">
               <button
                 type="button"
                 onClick={restart}
-                className="bg-accent flex-1 rounded-sm px-4 py-3 text-sm font-semibold text-white"
+                className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm"
               >
                 {fr.opening.retry}
               </button>

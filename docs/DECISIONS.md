@@ -100,7 +100,11 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   colours (London and Queen's Gambit with White, French and Slav with Black) is small, coherent
   and reviewable. An opening explorer would grow an unbounded tree the user has to prune by hand.
   The trainer plays a line back move by move: the app answers for the opponent, and a move outside
-  the line stops the attempt, because a line is a card, not a search for any playable move.
+  the line stops the attempt, because a line is a card, not a search for any playable move. That
+  move is written to the journal at once; a rewind then puts the board back before it, so the rest
+  of the line can be practised without re-reciting the start. The rewind corrects the attempt, not
+  the record: the `again` review stands, and a line finished afterwards adds none, since the miss
+  is that attempt's review.
 - **Endgames are a fixed set of classic positions.** The expected result (win or draw) is part of
   the content, Stockfish plays the opponent, and the app checks the conversion locally. No
   tablebase call: a local Syzygy set would add gigabytes, and the remote one would be the only

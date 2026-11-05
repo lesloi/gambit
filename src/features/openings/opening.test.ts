@@ -1,6 +1,12 @@
 import { Chess } from 'chess.js';
 import { describe, expect, it } from 'vitest';
-import { playOpeningMove, restartOpening, startOpening, type OpeningLine } from './opening';
+import {
+  playOpeningMove,
+  restartOpening,
+  rewindOpening,
+  startOpening,
+  type OpeningLine,
+} from './opening';
 
 const london: OpeningLine = {
   id: 'london-demo',
@@ -24,6 +30,14 @@ const replyLast: OpeningLine = {
   moves: ['d2d4', 'd7d5'],
 };
 
+/** A line no repertoire would hold, only a promotion on its last user move. */
+const promotionLine: OpeningLine = {
+  id: 'promotion-demo',
+  name: 'Promotion',
+  color: 'white',
+  moves: ['a2a4', 'b7b5', 'a4b5', 'a7a6', 'b5a6', 'b8c6', 'a6a7', 'c6b8', 'a7b8q'],
+};
+
 describe('opening line', () => {
   it('asks a White line for the first move from the initial position', () => {
     const state = startOpening(london);
@@ -32,6 +46,7 @@ describe('opening line', () => {
     expect(state.userColor).toBe('white');
     expect(state.fen).toBe(new Chess().fen());
     expect(state.expected).toBe('d2d4');
+    expect(state.corrected).toBe(false);
   });
 
   it('plays the opponent reply after the user move and asks again', () => {
@@ -125,6 +140,91 @@ describe('opening line', () => {
     expect(restarted.lastMove).toEqual(['e2', 'e4']);
     expect(restarted.fen).toBe(startOpening(french).fen);
     expect(restarted.index).toBe(1);
+  });
+
+  it('puts the board back before a missed first move and asks it again', () => {
+    const failed = playOpeningMove(startOpening(london), 'c2', 'c4');
+
+    const state = rewindOpening(failed);
+
+    expect(state.outcome).toBe('playing');
+    expect(state.index).toBe(0);
+    expect(state.expected).toBe('d2d4');
+    expect(state.fen).toBe(new Chess().fen());
+    expect(state.lastMove).toBeNull();
+    expect(state.wrongMove).toBeNull();
+    expect(state.expectedSan).toBeNull();
+    expect(state.corrected).toBe(true);
+  });
+
+  it('puts a Black line back before the missed reply', () => {
+    const failed = playOpeningMove(startOpening(french), 'g8', 'f6');
+
+    const state = rewindOpening(failed);
+
+    expect(state.outcome).toBe('playing');
+    expect(state.index).toBe(1);
+    expect(state.expected).toBe('e7e6');
+    expect(state.lastMove).toEqual(['e2', 'e4']);
+    expect(state.fen).toBe(startOpening(french).fen);
+    expect(state.corrected).toBe(true);
+  });
+
+  it('keeps the moves already played before the miss', () => {
+    const twoMoves = playOpeningMove(playOpeningMove(startOpening(london), 'd2', 'd4'), 'c1', 'f4');
+    const failed = playOpeningMove(twoMoves, 'e2', 'e4');
+
+    const state = rewindOpening(failed);
+
+    expect(state.index).toBe(4);
+    expect(state.expected).toBe('e2e3');
+    expect(state.lastMove).toEqual(['g8', 'f6']);
+    expect(state.fen).toBe(twoMoves.fen);
+  });
+
+  it('rewinds a missed promotion to the position before it', () => {
+    let state = startOpening(promotionLine);
+    while (state.index < 8) {
+      const uci = state.expected!;
+      state = playOpeningMove(state, uci.slice(0, 2), uci.slice(2, 4));
+    }
+    const failed = playOpeningMove(state, 'a7', 'b8', 'n');
+
+    const rewound = rewindOpening(failed);
+
+    expect(failed.outcome).toBe('failed');
+    expect(rewound.outcome).toBe('playing');
+    expect(rewound.index).toBe(8);
+    expect(rewound.expected).toBe('a7b8q');
+    expect(rewound.fen).toBe(state.fen);
+  });
+
+  it('leaves a state that did not miss untouched', () => {
+    const playing = startOpening(london);
+
+    expect(rewindOpening(playing)).toBe(playing);
+
+    const solved = playOpeningMove(startOpening(replyLast), 'd2', 'd4');
+
+    expect(rewindOpening(solved)).toBe(solved);
+  });
+
+  it('keeps the correction after another miss or a finished line', () => {
+    const rewound = rewindOpening(playOpeningMove(startOpening(replyLast), 'a2', 'a3'));
+
+    const missedAgain = playOpeningMove(rewound, 'a2', 'a3');
+    expect(missedAgain.outcome).toBe('failed');
+    expect(missedAgain.corrected).toBe(true);
+
+    const solved = playOpeningMove(rewound, 'd2', 'd4');
+    expect(solved.outcome).toBe('solved');
+    expect(solved.corrected).toBe(true);
+  });
+
+  it('clears the correction when the line restarts', () => {
+    const rewound = rewindOpening(playOpeningMove(startOpening(london), 'c2', 'c4'));
+
+    expect(restartOpening(rewound).corrected).toBe(false);
   });
 
   it('replays a line from the start to the end', () => {
