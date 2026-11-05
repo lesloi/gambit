@@ -186,7 +186,6 @@ export const fr = {
     resumeDetail: '≈ {elo} Elo · {clock}',
     resume: 'Reprendre la partie',
     newGame: 'Nouvelle partie',
-    changeSettings: 'Changer les réglages',
     hint: 'Indice',
     hintPending: 'Recherche d’un indice…',
     hintShown: 'Indice : {move}. La partie est marquée comme assistée.',

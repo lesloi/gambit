@@ -141,7 +141,6 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
               control={control}
               initialDraft={resume}
               onNewGame={newGame}
-              onChangeLevel={() => setPlaying(false)}
             />
           ) : (
             <PlaySetup
@@ -291,13 +290,11 @@ function PlayGame({
   control,
   initialDraft,
   onNewGame,
-  onChangeLevel,
 }: {
   level: Level;
   control: TimeControl;
   initialDraft: PlayDraft | null;
   onNewGame: () => void;
-  onChangeLevel: () => void;
 }) {
   const { controlMs, incrementMs } = control;
   const [state, setState] = useState<PlayState>(() =>
@@ -765,14 +762,7 @@ function PlayGame({
   };
 
   if (reviewing) {
-    return (
-      <GameReview
-        analyse={analysePosition}
-        game={state}
-        onNewGame={restart}
-        onChangeSettings={onChangeLevel}
-      />
-    );
+    return <GameReview analyse={analysePosition} game={state} onNewGame={restart} />;
   }
 
   const status =
@@ -925,22 +915,13 @@ function PlayGame({
                 )
               ) : null}
 
-              <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={restart}
-                  className="border-line text-ink min-h-11 rounded-sm border px-3 text-xs"
-                >
-                  {fr.play.newGame}
-                </button>
-                <button
-                  type="button"
-                  onClick={onChangeLevel}
-                  className="border-line text-ink-muted min-h-11 rounded-sm border px-3 text-xs"
-                >
-                  {fr.play.changeSettings}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={restart}
+                className="border-line text-ink mt-2 min-h-11 w-full rounded-sm border px-3 text-xs"
+              >
+                {fr.play.newGame}
+              </button>
             </div>
           ) : null}
         </div>
