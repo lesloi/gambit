@@ -64,7 +64,7 @@ describe('the session cursor', () => {
       { ...cursor, lastEntryId: -1 },
       { ...cursor, position: 1.5 },
       { ...cursor, newCount: 'five' },
-      { ...cursor, band: 'expert' },
+      { ...cursor, band: 'unknown' },
       { ...cursor, total: null },
       { ...cursor, dueCount: undefined },
       { ...cursor, completedAt: 'now' },

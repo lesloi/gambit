@@ -48,13 +48,16 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   does not reshape the queue, and reloading lands on the same card.
 - **A theme's statistics wait for ten reviews.** At one user, a cell below that is noise, and a
   discouraging one. The journal keeps everything; the screen only shows what means something.
-- **Difficulty is two measures, not one label.** The length in plies says what an exercise costs
-  and what it trains: the full-line drill counts depth, and a five-move puzzle is a different
-  exercise from a one-move one. The rating says how often other players solved it, a measurement
-  rather than a label, and it is the cold-start prior a single user cannot have on the first day.
-  The journal takes over as soon as a cell holds the reviews the statistics already wait for: the
-  session then follows the user's own record by motif and by depth. Folding both into "easy,
-  medium, hard" would lose what each one says.
+- **Difficulty is two measures, one of them named.** The length in plies says what an exercise
+  costs and what it trains: the full-line drill counts depth, and a five-move puzzle is a
+  different exercise from a one-move one. The rating says how often other players solved it, and
+  stays the cold-start prior a single user cannot have on the first day; the picker names it,
+  easy, medium, hard or expert, and keeps the number beside the name. A beginner reads "hard"
+  where an Elo says nothing, and a regular still finds the figure they know. The cuts sit at
+  1200, 1600 and 2000, which give three bands of about 3,400 puzzles over the archive's 800–2200
+  and a smaller expert band. The journal takes over as soon as a cell holds the reviews the
+  statistics already wait for: the session then follows the user's own record by motif and by
+  depth. Folding the length into the same name would lose what it says, so the two stay apart.
 - **A game has no takeback; a hint marks it as assisted.** Takeback erases the blunder the
   analysis exists to show. A hint is allowed, but the game is marked as assisted and stays out of
   the blunder list. The score sheet reopens any past position read-only, and the clock keeps

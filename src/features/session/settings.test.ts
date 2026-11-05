@@ -47,7 +47,7 @@ describe('session settings', () => {
       newCards: 5,
       band: 'high',
     });
-    expect(readSessionSettings(stored({ newCards: 3, band: 'expert' }))).toEqual({
+    expect(readSessionSettings(stored({ newCards: 3, band: 'unknown' }))).toEqual({
       newCards: 3,
       band: 'low',
     });

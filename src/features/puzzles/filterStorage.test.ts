@@ -29,6 +29,14 @@ describe('puzzle filter storage', () => {
     expect(readPuzzleFilters(storage)).toEqual({ length: '3', rating: 'middle' });
   });
 
+  it('keeps the expert band it saved', () => {
+    const storage = memoryStorage();
+
+    savePuzzleFilters({ length: 'any', rating: 'expert' }, storage);
+
+    expect(readPuzzleFilters(storage)).toEqual({ length: 'any', rating: 'expert' });
+  });
+
   it('returns the defaults when nothing is stored', () => {
     expect(readPuzzleFilters(memoryStorage())).toEqual(DEFAULT_PUZZLE_FILTERS);
   });

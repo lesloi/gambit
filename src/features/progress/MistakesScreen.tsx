@@ -4,7 +4,7 @@ import { database, type Review } from '../../db/db';
 import { fr } from '../../i18n/fr';
 import { PuzzlePlayer } from '../puzzles/PuzzlePlayer';
 import { loadPuzzleArchive } from '../puzzles/content';
-import { themeLabel } from '../puzzles/labels';
+import { levelLabel, themeLabel } from '../puzzles/labels';
 import type { Puzzle } from '../puzzles/puzzle';
 import { puzzleMistakes } from './mistakes';
 
@@ -186,7 +186,7 @@ export function MistakesScreen({ onExit }: { onExit: () => void }) {
                         </span>
                       </span>
                       <span className="border-line text-ink-muted shrink-0 rounded-xs border px-2.5 py-1 text-xs">
-                        {row.puzzle.rating}
+                        {levelLabel(row.puzzle.rating)} · {row.puzzle.rating}
                       </span>
                       <ChevronRight
                         size={18}

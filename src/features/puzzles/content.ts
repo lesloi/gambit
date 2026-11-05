@@ -6,15 +6,20 @@ export const LENGTH_FILTERS = ['any', '1', '3', '5', 'long'] as const;
 export type PuzzleLength = (typeof LENGTH_FILTERS)[number];
 
 /** The rating bands the picker and the session share, keyed by the Lichess puzzle rating. */
-export const RATING_BANDS = ['low', 'middle', 'high'] as const;
+export const RATING_BANDS = ['low', 'middle', 'high', 'expert'] as const;
 export type PuzzleBand = (typeof RATING_BANDS)[number];
 export type PuzzleRating = 'any' | PuzzleBand;
 
-/** The band a puzzle belongs to; the session groups motifs by it. */
+/**
+ * The band a puzzle belongs to; the session groups motifs by it. The cuts give three bands of
+ * about 3,400 puzzles over the archive's 800–2200 range and a smaller expert band, not round
+ * Lichess Elo milestones.
+ */
 export function ratingBand(rating: number): PuzzleBand {
   if (rating < 1200) return 'low';
   if (rating < 1600) return 'middle';
-  return 'high';
+  if (rating < 2000) return 'high';
+  return 'expert';
 }
 
 export interface PuzzleFilters {
