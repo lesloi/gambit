@@ -194,6 +194,7 @@ export const fr = {
       title: 'Analyse de la partie',
       start: 'Analyser la partie',
       progress: 'Analyse de la partie… {done}/{total}',
+      progressLabel: 'Progression de l’analyse',
       starting: 'Analyse de la partie…',
       unavailable: 'Le moteur n’est pas disponible : la partie ne peut pas être analysée.',
       failed: 'L’analyse n’a pas abouti.',

@@ -5,7 +5,7 @@ import { sideToMove } from '../../lib/chess';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { ANALYSIS_MOVETIME_MS, findingsBySheetPly, reviewGame, type Finding } from './analysis';
 import { positionAt, type PlayState } from './game';
-import { MoveSheet } from './MoveSheet';
+import { MoveSheet, MoveSheetSkeleton } from './MoveSheet';
 import { moveLabel, scoreSheet } from './notation';
 
 type ReviewState =
@@ -137,6 +137,28 @@ export function GameReview({
         {progress}
       </p>
 
+      {state.status === 'running' ? (
+        <div
+          role="progressbar"
+          aria-label={fr.play.analysis.progressLabel}
+          aria-valuemin={0}
+          aria-valuemax={state.total === 0 ? undefined : state.total}
+          aria-valuenow={state.total === 0 ? undefined : state.done}
+          className="bg-line mt-2 h-1.5 overflow-hidden rounded-full"
+        >
+          <div
+            className={`bg-accent h-full rounded-full motion-reduce:transition-none ${
+              state.total === 0
+                ? 'w-1/4 animate-pulse motion-reduce:animate-none'
+                : 'transition-[width]'
+            }`}
+            style={
+              state.total === 0 ? undefined : { width: `${(state.done / state.total) * 100}%` }
+            }
+          />
+        </div>
+      ) : null}
+
       {state.status === 'failed' ? (
         <div
           role="alert"
@@ -203,14 +225,18 @@ export function GameReview({
 
         <aside className="min-w-0">
           {rows.length > 0 ? (
-            <MoveSheet
-              rows={rows}
-              currentPly={shownPly}
-              marks={marks}
-              listClassName="max-h-56 md:max-h-[40vh]"
-              onSelect={select}
-              onStep={(delta) => show(shownPly + delta)}
-            />
+            state.status === 'running' ? (
+              <MoveSheetSkeleton rowCount={rows.length} listClassName="max-h-56 md:max-h-[40vh]" />
+            ) : (
+              <MoveSheet
+                rows={rows}
+                currentPly={shownPly}
+                marks={marks}
+                listClassName="max-h-56 md:max-h-[40vh]"
+                onSelect={select}
+                onStep={(delta) => show(shownPly + delta)}
+              />
+            )
           ) : null}
         </aside>
       </div>
