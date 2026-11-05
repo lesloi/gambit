@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PositionEval, Score } from '../../engine/uci';
-import { replayMoves, reviewGame, winPercent } from './analysis';
+import { findingsBySheetPly, replayMoves, reviewGame, winPercent } from './analysis';
 
 const CP = (cp: number): Score => ({ cp, mate: null });
 
@@ -47,6 +47,17 @@ describe('winPercent', () => {
     expect(winPercent(CP(0))).toBeCloseTo(50);
     expect(winPercent({ cp: null, mate: 3 })).toBe(100);
     expect(winPercent({ cp: null, mate: -3 })).toBe(0);
+  });
+});
+
+describe('findingsBySheetPly', () => {
+  it('keys a finding by the move that was played, not by the position before it', async () => {
+    const findings = await reviewOneMove(0, 243);
+
+    const byPly = findingsBySheetPly(findings ?? []);
+
+    expect([...byPly.keys()]).toEqual([1]);
+    expect(byPly.get(1)).toMatchObject({ playedSan: 'e4', kind: 'blunder' });
   });
 });
 

@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Lightbulb, RotateCcw } from 'lucide-react';
+import { ChevronLeft, Lightbulb, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { database } from '../../db/db';
 import { createMaiaEngine } from '../../engine/maiaEngine';
@@ -10,7 +10,8 @@ import type { GameReason, GameResult, Side } from '../../lib/position';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { PromotionDialog, promotionAnchor } from '../../ui/PromotionDialog';
 import { GameReview } from './GameReview';
-import { moveLabel, scoreSheet, type SheetMove } from './notation';
+import { MoveSheet } from './MoveSheet';
+import { moveLabel, scoreSheet } from './notation';
 import {
   afterMove,
   createClock,
@@ -738,20 +739,6 @@ function PlayGame({
     if (target >= livePly) boardHost.current?.focus();
   };
 
-  // A step can leave the current move outside the sheet's own scroll box; only that box moves, so
-  // the step buttons stay where the thumb left them.
-  useEffect(() => {
-    if (!browsing) return;
-    const list = sheet.current;
-    const cell = list?.querySelector<HTMLElement>('[aria-current="true"]');
-    if (!list || !cell) return;
-
-    const listRect = list.getBoundingClientRect();
-    const cellRect = cell.getBoundingClientRect();
-    if (cellRect.top < listRect.top) list.scrollTop += cellRect.top - listRect.top;
-    else if (cellRect.bottom > listRect.bottom) list.scrollTop += cellRect.bottom - listRect.bottom;
-  }, [browsing, shownPly]);
-
   const selectMove = (ply: number) => {
     browse(ply);
     // The sheet sits under the board on a phone: bring the board back into view.
@@ -960,55 +947,14 @@ function PlayGame({
 
         <aside className="min-w-0">
           {pairs.length > 0 ? (
-            <div className="border-line bg-paper-raised rounded-sm border">
-              <h2 className="border-line text-ink-muted border-b px-2.5 py-1.5 text-[0.625rem] font-semibold tracking-[0.12em] uppercase">
-                {fr.play.sheet}
-              </h2>
-              <ol ref={sheet} className="max-h-40 overflow-y-auto py-1 text-xs md:max-h-[40vh]">
-                {pairs.map((pair) => (
-                  <li
-                    key={pair.number}
-                    className="grid grid-cols-[20px_1fr_1fr] items-center gap-1 px-1.5 tabular-nums"
-                  >
-                    <span className="text-ink-muted px-1 opacity-70">{pair.number}.</span>
-                    <SheetMoveButton
-                      move={pair.white}
-                      current={pair.white.ply === shownPly}
-                      onSelect={selectMove}
-                    />
-                    {pair.black ? (
-                      <SheetMoveButton
-                        move={pair.black}
-                        current={pair.black.ply === shownPly}
-                        onSelect={selectMove}
-                      />
-                    ) : (
-                      <span />
-                    )}
-                  </li>
-                ))}
-              </ol>
-              <div className="border-line grid grid-cols-2 gap-1 border-t p-1.5">
-                <button
-                  type="button"
-                  onClick={() => step(-1)}
-                  disabled={shownPly === 0}
-                  className="border-line text-ink flex min-h-9 items-center justify-center gap-1 rounded-xs border px-1 text-[0.6875rem] font-semibold disabled:opacity-50"
-                >
-                  <ChevronLeft size={14} aria-hidden="true" />
-                  {fr.play.review.previous}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => step(1)}
-                  disabled={shownPly === livePly}
-                  className="border-line text-ink flex min-h-9 items-center justify-center gap-1 rounded-xs border px-1 text-[0.6875rem] font-semibold disabled:opacity-50"
-                >
-                  {fr.play.review.next}
-                  <ChevronRight size={14} aria-hidden="true" />
-                </button>
-              </div>
-            </div>
+            <MoveSheet
+              rows={pairs}
+              currentPly={shownPly}
+              follow={browsing}
+              listRef={sheet}
+              onSelect={selectMove}
+              onStep={step}
+            />
           ) : null}
 
           {state.outcome === 'playing' ? (
@@ -1051,34 +997,6 @@ function PlayGame({
         />
       ) : null}
     </>
-  );
-}
-
-/**
- * A move in the score sheet. A 32px row stays above the 24px target minimum of WCAG 2.2 while a
- * forty-move game keeps a compact sheet; the whole cell is the button.
- */
-function SheetMoveButton({
-  move,
-  current,
-  onSelect,
-}: {
-  move: SheetMove;
-  current: boolean;
-  onSelect: (ply: number) => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-current={current ? 'true' : undefined}
-      aria-label={moveLabel(move)}
-      onClick={() => onSelect(move.ply)}
-      className={`flex min-h-8 items-center rounded-xs px-1.5 text-left tabular-nums transition-colors ${
-        current ? 'bg-accent-soft text-ink font-semibold' : 'hover:bg-paper'
-      }`}
-    >
-      {move.san}
-    </button>
   );
 }
 
