@@ -17,6 +17,7 @@ import {
   type Puzzle,
   type PuzzleOutcome,
   type SolutionPly,
+  type SolutionRow,
 } from './puzzle';
 import { missedAttemptRating, recordPuzzleReview } from './record';
 
@@ -57,10 +58,14 @@ export function PuzzlePlayer({
   }, []);
 
   const orientation = useMemo(() => sideToMove(puzzle.fen), [puzzle]);
-  const sheet = useMemo(() => solutionSheet(puzzle), [puzzle]);
-  const revealed = state.outcome === 'revealed';
-  const shown = revealed && browsedPly !== null ? (sheet.plies[browsedPly - 1] ?? null) : null;
-  const shownPly = revealed ? (browsedPly ?? sheet.plies.length) : 0;
+  const storedSheet = useMemo(() => solutionSheet(puzzle), [puzzle]);
+  const playedSheet = useMemo(() => solutionSheet(puzzle, state.moves), [puzzle, state.moves]);
+  // A solved puzzle reviews the line the user actually played; a revealed one shows the stored
+  // answer, which may start from the puzzle position after a wrong move.
+  const sheet =
+    state.outcome === 'revealed' ? storedSheet : state.outcome === 'solved' ? playedSheet : null;
+  const shown = sheet && browsedPly !== null ? (sheet.plies[browsedPly - 1] ?? null) : null;
+  const shownPly = sheet ? (browsedPly ?? sheet.plies.length) : 0;
   const shownFen = shown?.fen ?? state.fen;
   const turn = useMemo(() => sideToMove(shownFen), [shownFen]);
   const dests = useMemo(
@@ -153,6 +158,7 @@ export function PuzzlePlayer({
   };
 
   const browse = (ply: number) => {
+    if (!sheet) return;
     setBrowsedPly(ply >= sheet.plies.length ? null : ply);
     // The sheet sits under the board on a phone: bring the board back into view.
     if (window.matchMedia('(max-width: 767px)').matches) {
@@ -216,6 +222,12 @@ export function PuzzlePlayer({
               <p className="mt-1 text-xs opacity-80">{puzzle.themes.map(themeLabel).join(' · ')}</p>
             </div>
 
+            {sheet ? (
+              <div className="mt-3">
+                <SolutionMoves rows={sheet.rows} shownPly={shownPly} onSelect={browse} />
+              </div>
+            ) : null}
+
             <div className="mt-4">
               <RatingButtons rating={rating} onRate={(value) => void rate(value)} />
             </div>
@@ -260,39 +272,7 @@ export function PuzzlePlayer({
 
         {state.outcome === 'revealed' ? (
           <>
-            <div className="border-line bg-paper-raised rounded-sm border">
-              <p className="border-line text-accent-ink border-b px-3 py-2 text-[0.6875rem] tracking-widest uppercase">
-                {fr.puzzle.solutionTitle}
-              </p>
-              <ol className="py-1 text-sm" aria-label={fr.puzzle.solutionTitle}>
-                {sheet.rows.map((row) => (
-                  <li
-                    key={row.number}
-                    className="grid grid-cols-[24px_1fr_1fr] items-center gap-1 px-1.5 tabular-nums"
-                  >
-                    <span className="text-ink-muted px-1 opacity-70">{row.number}.</span>
-                    {row.white ? (
-                      <SolutionMoveButton
-                        move={row.white}
-                        current={row.white.ply === shownPly}
-                        onSelect={browse}
-                      />
-                    ) : (
-                      <span />
-                    )}
-                    {row.black ? (
-                      <SolutionMoveButton
-                        move={row.black}
-                        current={row.black.ply === shownPly}
-                        onSelect={browse}
-                      />
-                    ) : (
-                      <span />
-                    )}
-                  </li>
-                ))}
-              </ol>
-            </div>
+            <SolutionMoves rows={storedSheet.rows} shownPly={shownPly} onSelect={browse} />
 
             <div className="mt-3 flex gap-2">
               <button
@@ -324,6 +304,56 @@ export function PuzzlePlayer({
         />
       ) : null}
     </>
+  );
+}
+
+/**
+ * The line as a score sheet, two moves per row. Every move is a button so the board can show the
+ * position it reached.
+ */
+function SolutionMoves({
+  rows,
+  shownPly,
+  onSelect,
+}: {
+  rows: readonly SolutionRow[];
+  shownPly: number;
+  onSelect: (ply: number) => void;
+}) {
+  return (
+    <div className="border-line bg-paper-raised rounded-sm border">
+      <p className="border-line text-accent-ink border-b px-3 py-2 text-[0.6875rem] tracking-widest uppercase">
+        {fr.puzzle.solutionTitle}
+      </p>
+      <ol className="py-1 text-sm" aria-label={fr.puzzle.solutionTitle}>
+        {rows.map((row) => (
+          <li
+            key={row.number}
+            className="grid grid-cols-[24px_1fr_1fr] items-center gap-1 px-1.5 tabular-nums"
+          >
+            <span className="text-ink-muted px-1 opacity-70">{row.number}.</span>
+            {row.white ? (
+              <SolutionMoveButton
+                move={row.white}
+                current={row.white.ply === shownPly}
+                onSelect={onSelect}
+              />
+            ) : (
+              <span />
+            )}
+            {row.black ? (
+              <SolutionMoveButton
+                move={row.black}
+                current={row.black.ply === shownPly}
+                onSelect={onSelect}
+              />
+            ) : (
+              <span />
+            )}
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 

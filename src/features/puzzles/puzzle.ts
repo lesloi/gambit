@@ -53,6 +53,8 @@ export interface PuzzleState {
   /** Index of the next move of the solution. Even indexes are the user's moves. */
   index: number;
   lastMove: [string, string] | null;
+  /** The moves played from the puzzle position, in UCI, replies included. */
+  moves: readonly string[];
   /** The move the user must play now, in UCI, or null when the puzzle is over. */
   expected: string | null;
   /** The move the user played when it was refused, in UCI. */
@@ -75,13 +77,19 @@ function givesMate(fen: string, uci: string): boolean {
   return chess.isCheckmate();
 }
 
-/** The solution as a score sheet, numbered and positioned from the puzzle's own FEN. */
-export function solutionSheet(puzzle: Puzzle): SolutionSheet {
+/**
+ * A line from the puzzle position as a score sheet, numbered and positioned from its own FEN.
+ * It defaults to the stored solution; the user's own line is passed once they have solved it.
+ */
+export function solutionSheet(
+  puzzle: Puzzle,
+  history: readonly string[] = puzzle.solution,
+): SolutionSheet {
   const chess = new Chess(puzzle.fen);
   const plies: SolutionPly[] = [];
   const rows: SolutionRow[] = [];
 
-  for (const uci of puzzle.solution) {
+  for (const uci of history) {
     const side = chess.turn() === 'w' ? 'white' : 'black';
     const number = chess.moveNumber();
     let move: Move;
@@ -122,6 +130,7 @@ export function startPuzzle(puzzle: Puzzle): PuzzleState {
     fen: puzzle.fen,
     index: 0,
     lastMove: null,
+    moves: [],
     expected: puzzle.solution[0] ?? null,
     wrongMove: null,
     bestSan: null,
@@ -160,6 +169,7 @@ export function playMove(
         fen: chess.fen(),
         index: state.puzzle.solution.length,
         lastMove: [move.from, move.to],
+        moves: [...state.moves, played],
         expected: null,
         wrongMove: null,
         bestSan: null,
@@ -173,6 +183,7 @@ export function playMove(
       outcome: 'failed',
       fen: chess.fen(),
       lastMove: [from, to],
+      moves: [...state.moves, played],
       expected: null,
       wrongMove: played,
       bestSan: bestMove.san,
@@ -181,11 +192,14 @@ export function playMove(
 
   let index = state.index + 1;
   let lastMove: [string, string] = [move.from, move.to];
+  const moves = [...state.moves, played];
 
   // The opponent's reply is forced: apply it, then wait for the user again.
   if (index < state.puzzle.solution.length) {
-    const reply = moveFromUci(chess, state.puzzle.solution[index]);
+    const uci = state.puzzle.solution[index];
+    const reply = moveFromUci(chess, uci);
     lastMove = [reply.from, reply.to];
+    moves.push(uci);
     index += 1;
   }
 
@@ -196,6 +210,7 @@ export function playMove(
     fen: chess.fen(),
     index,
     lastMove,
+    moves,
     expected: solved ? null : state.puzzle.solution[index],
     wrongMove: null,
     bestSan: null,
@@ -219,6 +234,7 @@ export function revealSolution(state: PuzzleState): PuzzleState {
     fen: chess.fen(),
     index: state.puzzle.solution.length,
     lastMove,
+    moves: [...state.puzzle.solution],
     expected: null,
   };
 }

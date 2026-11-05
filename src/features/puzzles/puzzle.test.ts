@@ -162,6 +162,26 @@ describe('puzzle session', () => {
 
     expect(state.outcome).toBe('solved');
   });
+
+  it('keeps the moves played, including the forced replies', () => {
+    const first = playMove(startPuzzle(puzzle), 'd5', 'd8');
+    const state = playMove(first, 'd1', 'd8');
+
+    expect(state.moves).toEqual(['d5d8', 'a8d8', 'd1d8']);
+  });
+
+  it('keeps the move actually played when another mate solves', () => {
+    const state = playMove(startPuzzle(doubleMate), 'b1', 'b8');
+
+    expect(state.moves).toEqual(['b1b8']);
+  });
+
+  it('replaces the played moves with the solution when revealed', () => {
+    const failed = playMove(startPuzzle(puzzle), 'd5', 'f7');
+    const revealed = revealSolution(failed);
+
+    expect(revealed.moves).toEqual([...puzzle.solution]);
+  });
 });
 
 describe('solution sheet', () => {
@@ -209,5 +229,13 @@ describe('solution sheet', () => {
     const { plies } = solutionSheet(promotionPuzzle);
 
     expect(plies[0]?.san).toBe('g8=N');
+  });
+
+  it('writes a played line from the puzzle position', () => {
+    const { rows } = solutionSheet(puzzle, ['d5d8']);
+
+    expect(rows.map((row) => [row.number, row.white?.san, row.black?.san])).toEqual([
+      [1, 'Qd8+', undefined],
+    ]);
   });
 });
