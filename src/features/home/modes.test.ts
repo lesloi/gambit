@@ -4,7 +4,7 @@ import { MODES } from './modes';
 
 describe('training modes', () => {
   it('exposes the four modes of the first version', () => {
-    expect(MODES.map((mode) => mode.id)).toEqual(['puzzles', 'openings', 'endgames', 'play']);
+    expect(MODES.map((mode) => mode.id)).toEqual(['puzzles', 'endgames', 'openings', 'play']);
   });
 
   it('names and describes every mode in French', () => {
@@ -17,8 +17,8 @@ describe('training modes', () => {
   it('marks the modes with a working flow as available', () => {
     expect(MODES.filter((mode) => mode.available).map((mode) => mode.id)).toEqual([
       'puzzles',
-      'openings',
       'endgames',
+      'openings',
       'play',
     ]);
   });
@@ -26,8 +26,8 @@ describe('training modes', () => {
   it('groups the three training modes apart from playing', () => {
     expect(MODES.filter((mode) => mode.group === 'train').map((mode) => mode.id)).toEqual([
       'puzzles',
-      'openings',
       'endgames',
+      'openings',
     ]);
     expect(MODES.filter((mode) => mode.group === 'play').map((mode) => mode.id)).toEqual(['play']);
   });

@@ -14,6 +14,7 @@ type View = 'home' | 'session' | 'puzzle' | 'mistakes' | 'endgame' | 'opening' |
 
 export function App() {
   const [view, setView] = useState<View>('home');
+  const [mistakesBack, setMistakesBack] = useState<'home' | 'puzzle'>('home');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -26,9 +27,15 @@ export function App() {
       {view === 'session' ? (
         <SessionScreen onExit={() => setView('home')} />
       ) : view === 'puzzle' ? (
-        <PuzzleScreen onExit={() => setView('home')} onReviewMistakes={() => setView('mistakes')} />
+        <PuzzleScreen
+          onExit={() => setView('home')}
+          onReviewMistakes={() => {
+            setMistakesBack('puzzle');
+            setView('mistakes');
+          }}
+        />
       ) : view === 'mistakes' ? (
-        <MistakesScreen onExit={() => setView('puzzle')} />
+        <MistakesScreen onExit={() => setView(mistakesBack)} />
       ) : view === 'endgame' ? (
         <EndgameScreen onExit={() => setView('home')} />
       ) : view === 'opening' ? (
@@ -44,6 +51,10 @@ export function App() {
           onStartEndgame={() => setView('endgame')}
           onStartOpening={() => setView('opening')}
           onStartPlay={() => setView('play')}
+          onShowMistakes={() => {
+            setMistakesBack('home');
+            setView('mistakes');
+          }}
           onShowCredits={() => setView('credits')}
         />
       )}

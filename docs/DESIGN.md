@@ -43,23 +43,24 @@ no network.
 
 - One column, `max-w-2xl`: `px-5` on the home screen, `px-4` on the game screens, which add
   `sm:px-6`.
-- The home screen reads top to bottom: the header rule, the session panel, the modes, the
-  appearance row, the footer.
-- The header is the wordmark and the tagline on one line, closed by a rule.
-- The session panel holds a small board on the phone (stacked) and beside the text from `sm`. It
-  states the due and new counts, then carries the screen's primary action: start the session,
-  resume it, or start a new one. Its two settings, the number of new cards and their rating band,
-  sit under the button.
+- The home screen reads top to bottom: the header rule, the board hero and its session card, the
+  three trainers, the play row, the mistakes row, the appearance row, the footer.
+- The header is the wordmark and the date on one line, closed by a rule.
+- The hero is a decorative board, about 300 px and centred, never wider than the column. The
+  session card overlaps its lower edge, inset by 12 px; it carries the state, the counts, the
+  screen's primary action (start, resume, or start a new one) and the session settings.
+- The trainers are numbered rows (01–03): the number, the name, the goal, a due badge when the
+  session preview knows it, then a chevron. A mode whose flow does not work yet is disabled and
+  shows the "Bientôt" badge in the chevron's place. Playing is a row of its own under them, with
+  the level and the time control; it opens the play screen, where a stored game resumes. The
+  mistakes row follows, and opens the puzzles marked for review.
 - The session screen holds the progress (`done / total`, a bar and the remaining counts), then the
   current card in the player of its mode. The next button says "Terminer" on the last one.
-- The modes are rows, not cards: an icon, the name, the goal, then a chevron. A row whose mode
-  does not work yet is disabled and shows the "Bientôt" badge in the chevron's place, so it never
-  leads to a dead end.
 - The appearance row is the last thing before the footer: a three-way choice, always visible, no
   hidden state. A preference set once does not deserve a menu.
-- The session panel's button is the home screen's only filled action. A game in progress has
-  none: the board is the action, and a filled hint button would push people to use it. Once the
-  game is over, the analysis button takes that role.
+- The session card's button is the home screen's only filled action; the play and mistakes rows are
+  outlined or text. A game in progress has none: the board is the action, and a filled hint button
+  would push people to use it. Once the game is over, the analysis button takes that role.
 - Corners are `rounded-sm` (4 px), badges are `rounded-xs`, separators are hairlines, and nothing
   casts a shadow.
 

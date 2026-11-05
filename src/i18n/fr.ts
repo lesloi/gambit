@@ -1,7 +1,6 @@
 export const fr = {
   app: {
     name: 'Gambit',
-    tagline: 'Entraînement aux échecs',
   },
   appearance: {
     label: 'Apparence',
@@ -24,6 +23,10 @@ export const fr = {
     playTitle: 'Jouer',
     playHint: 'Une partie contre Stockfish, à ton niveau et à la pendule.',
     comingSoon: 'Bientôt',
+    settings: 'Réglages',
+    settingsNone: 'Aucune nouvelle',
+    mistakesOne: '1 puzzle',
+    mistakesMany: '{count} puzzles',
     privacy: 'Sans compte, sans pisteur. Tout reste dans ton navigateur.',
     license: 'AGPL-3.0-or-later',
     credits: 'Crédits',
@@ -53,6 +56,10 @@ export const fr = {
     newMany: '{count} nouvelles fiches',
     newCardsLabel: 'Nouvelles fiches par session',
     bandLabel: 'Niveau des nouvelles fiches',
+    dueShortOne: '1 à revoir',
+    dueShortMany: '{count} à revoir',
+    newShortOne: '1 nouvelle',
+    newShortMany: '{count} nouvelles',
     preparing: 'Préparation de la session…',
     loadFailed: 'La session n’a pas pu être préparée.',
     retry: 'Réessayer',
