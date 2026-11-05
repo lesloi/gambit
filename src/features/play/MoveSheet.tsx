@@ -123,6 +123,59 @@ export function MoveSheet({
   );
 }
 
+/** Skeleton bars, cycled over the rows so the placeholder keeps the sheet's ragged look. */
+const SKELETON_WIDTHS = ['w-2/5', 'w-1/2', 'w-1/3', 'w-3/5', 'w-2/3', 'w-1/4'];
+
+/**
+ * The score sheet's place while the game is being analysed. It keeps the layout from jumping and
+ * gives the rows nothing to pick: the moves only become selectable once the findings are known.
+ */
+export function MoveSheetSkeleton({
+  rowCount,
+  listClassName = 'max-h-40 md:max-h-[40vh]',
+}: {
+  rowCount: number;
+  listClassName?: string;
+}) {
+  return (
+    <div className="border-line bg-paper-raised rounded-sm border" aria-hidden="true">
+      <h2 className="border-line text-ink-muted border-b px-2.5 py-1.5 text-[0.625rem] font-semibold tracking-[0.12em] uppercase">
+        {fr.play.sheet}
+      </h2>
+      <div className={`overflow-hidden py-1 ${listClassName}`}>
+        {Array.from({ length: rowCount }, (_, index) => (
+          <div
+            key={index}
+            className="grid min-h-8 grid-cols-[20px_1fr_1fr] items-center gap-1 px-1.5"
+          >
+            <span className="text-ink-muted px-1 text-xs tabular-nums opacity-70">
+              {index + 1}.
+            </span>
+            <span
+              className={`bg-line mx-1.5 h-2 animate-pulse rounded-xs motion-reduce:animate-none ${
+                SKELETON_WIDTHS[(index * 2) % SKELETON_WIDTHS.length]
+              }`}
+            />
+            <span
+              className={`bg-line mx-1.5 h-2 animate-pulse rounded-xs motion-reduce:animate-none ${
+                SKELETON_WIDTHS[(index * 2 + 1) % SKELETON_WIDTHS.length]
+              }`}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="border-line grid grid-cols-2 gap-1 border-t p-1.5">
+        <span className="border-line text-ink-muted flex min-h-9 items-center justify-center rounded-xs border px-1 text-[0.6875rem] font-semibold opacity-50">
+          {fr.play.review.previous}
+        </span>
+        <span className="border-line text-ink-muted flex min-h-9 items-center justify-center rounded-xs border px-1 text-[0.6875rem] font-semibold opacity-50">
+          {fr.play.review.next}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /**
  * A move in the score sheet. A 32px row stays above the 24px target minimum of WCAG 2.2 while a
  * forty-move game keeps a compact sheet; the whole cell is the button.
