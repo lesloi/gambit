@@ -11,6 +11,7 @@ import { ChessBoard } from '../../ui/ChessBoard';
 import { PromotionDialog, promotionAnchor } from '../../ui/PromotionDialog';
 import { GameReview } from './GameReview';
 import { MoveSheet } from './MoveSheet';
+import { drawColor, PLAY_COLORS, type PlayColor } from './color';
 import { moveLabel, scoreSheet } from './notation';
 import {
   afterMove,
@@ -33,6 +34,7 @@ import {
   type PlayDraft,
 } from './draft';
 import {
+  engineTurnPly,
   flagSide,
   playMove,
   playUci,
@@ -51,7 +53,14 @@ import {
 } from './level';
 import { materialOf, type CapturedPiece, type Material, type MaterialColor } from './material';
 import { gameRecord, saveGame } from './record';
-import { readPlayElo, readPlayTimeControl, savePlayElo, savePlayTimeControl } from './settings';
+import {
+  readPlayColor,
+  readPlayElo,
+  readPlayTimeControl,
+  savePlayColor,
+  savePlayElo,
+  savePlayTimeControl,
+} from './settings';
 import { formatTimeControl, TIME_CONTROLS, type TimeControl } from './timeControl';
 
 type EngineState = 'loading' | 'ready' | 'failed';
@@ -71,6 +80,7 @@ interface PendingPromotion {
 export function PlayScreen({ onExit }: { onExit: () => void }) {
   const [elo, setElo] = useState(readPlayElo);
   const [controlIndex, setControlIndex] = useState(readPlayTimeControl);
+  const [color, setColor] = useState(readPlayColor);
   const levelPosition = levelIndexOf(elo);
   const [gameKey, setGameKey] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -87,6 +97,7 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
   const start = () => {
     savePlayElo(levelAt(levelPosition).elo);
     savePlayTimeControl(controlIndex);
+    savePlayColor(color);
     clearDraft();
     setDraft(null);
     setResume(null);
@@ -139,6 +150,7 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
               key={gameKey}
               level={level}
               control={control}
+              color={color}
               initialDraft={resume}
               onNewGame={newGame}
             />
@@ -148,6 +160,8 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
               onLevelChange={(index) => setElo(LEVELS[index].elo)}
               controlIndex={controlIndex}
               onControlChange={setControlIndex}
+              color={color}
+              onColorChange={setColor}
               draft={draft}
               onStart={start}
               onResume={resumeStoredGame}
@@ -164,6 +178,8 @@ function PlaySetup({
   onLevelChange,
   controlIndex,
   onControlChange,
+  color,
+  onColorChange,
   draft,
   onStart,
   onResume,
@@ -172,6 +188,8 @@ function PlaySetup({
   onLevelChange: (index: number) => void;
   controlIndex: number;
   onControlChange: (index: number) => void;
+  color: PlayColor;
+  onColorChange: (color: PlayColor) => void;
   draft: PlayDraft | null;
   onStart: () => void;
   onResume: () => void;
@@ -195,7 +213,8 @@ function PlaySetup({
                   controlMs: draft.controlMs,
                   incrementMs: draft.incrementMs,
                 }),
-              )}
+              )
+              .replace('{color}', fr.play.colors[draft.userColor])}
           </p>
           <button
             type="button"
@@ -248,6 +267,24 @@ function PlaySetup({
           </select>
         </div>
 
+        <div className="mt-5">
+          <label htmlFor="play-color" className="text-sm font-semibold">
+            {fr.play.color}
+          </label>
+          <select
+            id="play-color"
+            value={color}
+            onChange={(event) => onColorChange(event.target.value as PlayColor)}
+            className="border-line bg-paper text-ink mt-3 min-h-11 w-full rounded-sm border px-3 text-sm"
+          >
+            {PLAY_COLORS.map((option) => (
+              <option key={option} value={option}>
+                {fr.play.colors[option]}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <button
           type="button"
           onClick={onStart}
@@ -288,17 +325,19 @@ const REASON_LABEL: Record<GameReason, string> = {
 function PlayGame({
   level,
   control,
+  color,
   initialDraft,
   onNewGame,
 }: {
   level: Level;
   control: TimeControl;
+  color: PlayColor;
   initialDraft: PlayDraft | null;
   onNewGame: () => void;
 }) {
   const { controlMs, incrementMs } = control;
   const [state, setState] = useState<PlayState>(() =>
-    initialDraft ? resumeGame(initialDraft) : startGame(),
+    initialDraft ? resumeGame(initialDraft) : startGame(drawColor(color)),
   );
   const [clock, setClock] = useState<ClockState>(() =>
     initialDraft ? resumeClock(initialDraft) : createClock(controlMs, incrementMs),
@@ -329,8 +368,8 @@ function PlayGame({
   const clockRef = useRef(clock);
   const stateRef = useRef(state);
   const engineStateRef = useRef<EngineState>('loading');
-  // The ply the resumed game was loaded at, and whether its engine turn was already asked for.
-  const resumePly = initialDraft?.moves.length ?? null;
+  // The ply a resumed game was loaded at, and whether its engine turn was already asked for.
+  const resumedPly = initialDraft?.moves.length ?? null;
   const autoAsked = useRef<number | null>(null);
   const discarding = useRef(false);
 
@@ -392,7 +431,7 @@ function PlayGame({
     let active = true;
     let instance: StockfishEngine;
     let maiaEngine: Engine;
-    // A fresh worker has not been asked for the resumed position yet.
+    // A fresh worker has not been asked for the opening or the resumed position yet.
     autoAsked.current = null;
     engineStateRef.current = 'loading';
     try {
@@ -606,16 +645,16 @@ function PlayGame({
     [applyMove, complete, level.elo, level.movetimeMs],
   );
 
-  // A resumed game may have been left on the engine's turn; ask it once, and again after a retry.
+  // A game the user plays as Black opens on the engine's turn; a resumed game may have been left
+  // there too. Ask it once, and again after a retry.
+  const openingPly = engineTurnPly(state, resumedPly);
   useEffect(() => {
-    if (engineState !== 'ready' || state.outcome !== 'playing') return;
-    if (resumePly === null || state.moves.length !== resumePly) return;
-    if (sideToMove(state.fen) === state.userColor) return;
-    if (autoAsked.current === resumePly) return;
+    if (engineState !== 'ready' || openingPly === null) return;
+    if (autoAsked.current === openingPly) return;
 
-    autoAsked.current = resumePly;
+    autoAsked.current = openingPly;
     askEngine(state, clockRef.current);
-  }, [engineState, state, resumePly, askEngine]);
+  }, [engineState, openingPly, state, askEngine]);
 
   const playUserMove = (from: string, to: string, promotion?: PromotionPiece) => {
     const at = Date.now();
@@ -790,9 +829,12 @@ function PlayGame({
     <>
       <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_190px] md:items-start">
         <div className="min-w-0">
-          <div className="text-ink-muted flex items-center justify-between gap-3 text-xs">
+          <div className="text-ink-muted flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
             <span>
               {fr.play.clock} · {formatTimeControl(control)}
+            </span>
+            <span className="ml-auto">
+              {fr.play.playingAs.replace('{color}', fr.play.colors[state.userColor])}
             </span>
             {state.assisted ? (
               <span className="border-line rounded-xs border px-1.5 py-0.5 text-[0.625rem] tracking-wide uppercase">

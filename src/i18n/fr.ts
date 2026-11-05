@@ -170,6 +170,13 @@ export const fr = {
     level: 'Niveau',
     levelValue: '≈ {elo} Elo',
     clock: 'Pendule',
+    color: 'Couleur',
+    colors: {
+      white: 'Blancs',
+      black: 'Noirs',
+      random: 'Aléatoire',
+    },
+    playingAs: 'Vous jouez les {color}.',
     sheet: 'Coups',
     review: {
       whilePlaying: 'Relecture après {move}. La pendule continue.',
@@ -183,7 +190,7 @@ export const fr = {
     notAssisted: 'Partie non assistée. L’analyse est proposée à la fin, sans indice.',
     start: 'Commencer la partie',
     resumeTitle: 'Partie en cours',
-    resumeDetail: '≈ {elo} Elo · {clock}',
+    resumeDetail: '≈ {elo} Elo · {clock} · {color}',
     resume: 'Reprendre la partie',
     newGame: 'Nouvelle partie',
     hint: 'Indice',

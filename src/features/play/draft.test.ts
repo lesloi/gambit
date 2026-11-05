@@ -112,6 +112,17 @@ describe('the game draft', () => {
     expect(saved.startedAt).toBe(START);
   });
 
+  it('resumes a game the user played as Black', () => {
+    const saved = { ...draft(), userColor: 'black' as const };
+    const storage = memoryStorage();
+    saveDraft(saved, storage);
+
+    const read = readDraft(storage);
+
+    expect(read?.userColor).toBe('black');
+    expect(read === null ? null : resumeGame(read).userColor).toBe('black');
+  });
+
   it('keeps the time left while the app is closed', () => {
     const saved = draft();
 

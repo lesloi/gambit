@@ -1,5 +1,5 @@
 import { Chess } from 'chess.js';
-import type { PromotionPiece } from '../../lib/chess';
+import { sideToMove, type PromotionPiece } from '../../lib/chess';
 import { gameEnd, type GameEnd, type GameResult, type Side } from '../../lib/position';
 
 export const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -28,18 +28,30 @@ export interface PlayState {
   hint: MoveHint | null;
 }
 
-export function startGame(): PlayState {
+export function startGame(userColor: Side = 'white'): PlayState {
   return {
     fen: START_FEN,
     positions: [START_FEN],
     moves: [],
     lastMove: null,
-    userColor: 'white',
+    userColor,
     outcome: 'playing',
     result: null,
     assisted: false,
     hint: null,
   };
+}
+
+/**
+ * The ply whose position the engine must answer on its own: a game the user opens as Black, or
+ * the position a resumed game was left at. Null while it is the user's turn, once the game has
+ * moved past that ply, or when it is over.
+ */
+export function engineTurnPly(state: PlayState, resumedPly: number | null): number | null {
+  if (state.outcome !== 'playing' || sideToMove(state.fen) === state.userColor) return null;
+
+  const ply = resumedPly ?? (state.userColor === 'black' ? 0 : null);
+  return ply !== null && state.moves.length === ply ? ply : null;
 }
 
 function resultOf(end: GameEnd): GameResult {
