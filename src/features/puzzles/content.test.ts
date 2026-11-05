@@ -112,10 +112,8 @@ describe('puzzle content', () => {
       'fork-in-two',
       'fork-in-three',
     ]);
-    expect(ids(selectPuzzles(puzzles, filters({ rating: 'high' })))).toEqual([
-      'pin-long',
-      'pin-longest',
-    ]);
+    expect(ids(selectPuzzles(puzzles, filters({ rating: 'high' })))).toEqual(['pin-long']);
+    expect(ids(selectPuzzles(puzzles, filters({ rating: 'expert' })))).toEqual(['pin-longest']);
   });
 
   it('combines length and rating', () => {
@@ -172,7 +170,9 @@ describe('rating bands', () => {
     expect(ratingBand(1200)).toBe('middle');
     expect(ratingBand(1599)).toBe('middle');
     expect(ratingBand(1600)).toBe('high');
-    expect(ratingBand(2200)).toBe('high');
+    expect(ratingBand(1999)).toBe('high');
+    expect(ratingBand(2000)).toBe('expert');
+    expect(ratingBand(2200)).toBe('expert');
   });
 });
 

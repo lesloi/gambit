@@ -46,6 +46,7 @@ const catalog = sessionCatalog(
     puzzle('e', ['skewer'], 1050),
     puzzle('f', ['discovery'], 1300),
     puzzle('g', ['skewer'], 1100),
+    puzzle('h', ['sacrifice'], 2100),
   ],
   [endgame('kqk', 'Dame contre roi'), endgame('kpk', 'Pion contre roi')],
   [opening('london', 'London'), opening('french', 'Française')],
@@ -195,6 +196,28 @@ describe('planSession', () => {
     const fresh = result.cards[result.dueCount];
 
     expect(fresh).toMatchObject({ kind: 'puzzle', cellId: cellId('mate', 'high') });
+  });
+
+  it('draws new cells from the expert band and stays there', () => {
+    const result = plan({ band: 'expert', newCount: 1 });
+    const fresh = result.cards[result.dueCount];
+
+    expect(fresh).toMatchObject({ kind: 'puzzle', cellId: cellId('sacrifice', 'expert') });
+  });
+
+  it('adds no new puzzle cell below the expert band', () => {
+    const scheduled: JournalReview[] = [
+      ...reviews,
+      { id: 4, cardId: cardId('puzzle', 'h'), rating: Rating.Good, reviewedAt: START - MINUTE },
+    ];
+
+    const result = plan({ reviews: scheduled, lastEntryId: 4, band: 'expert', newCount: 5 });
+    const fresh = result.cards
+      .slice(result.dueCount)
+      .filter((card) => card.kind === 'puzzle')
+      .map((card) => card.cellId);
+
+    expect(fresh).toEqual([]);
   });
 
   it('drops a due card whose content the catalog does not hold', () => {

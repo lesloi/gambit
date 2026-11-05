@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { fr } from '../../i18n/fr';
 import { loadPuzzleArchive, selectPuzzles, type PuzzleFilters } from './content';
 import { readPuzzleFilters, savePuzzleFilters } from './filterStorage';
+import { levelLabel } from './labels';
 import { PuzzlePlayer } from './PuzzlePlayer';
 import { PuzzleSetup } from './PuzzleSetup';
 import type { Puzzle } from './puzzle';
@@ -100,7 +101,7 @@ export function PuzzleScreen({
           <h1 className="text-lg">{phase === 'play' ? fr.puzzle.counter : fr.puzzle.title}</h1>
           {puzzle ? (
             <span className="border-line text-ink-muted ml-auto rounded-xs border px-2.5 py-1 text-xs">
-              {fr.puzzle.difficulty} {puzzle.rating}
+              {levelLabel(puzzle.rating)} · {puzzle.rating}
             </span>
           ) : null}
         </header>

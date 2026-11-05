@@ -32,7 +32,7 @@ export interface SessionPlanOptions {
   band: PuzzleBand;
 }
 
-const BAND_ORDER: readonly PuzzleBand[] = ['low', 'middle', 'high'];
+const BAND_ORDER: readonly PuzzleBand[] = ['low', 'middle', 'high', 'expert'];
 
 type Candidate =
   | { kind: 'puzzle'; cell: PuzzleCell }
