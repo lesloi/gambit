@@ -350,7 +350,7 @@ export function PuzzlePlayer({
       </div>
 
       {/* Full bleed on a phone, where the board is the screen; a framed panel from `sm` up. */}
-      <div className="-mx-4 border-line bg-paper border-y mt-2 sm:mx-0 sm:rounded-sm sm:border sm:bg-paper-raised sm:p-3">
+      <div className="-mx-4 border-line bg-paper border-y mt-3 sm:mx-0 sm:rounded-sm sm:border sm:bg-paper-raised sm:p-3">
         <div ref={boardHost} tabIndex={-1} aria-label={fr.puzzle.board} className="rounded-sm">
           <ChessBoard
             fen={shownFen}

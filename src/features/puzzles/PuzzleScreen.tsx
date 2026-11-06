@@ -106,7 +106,7 @@ export function PuzzleScreen({
           ) : null}
         </header>
 
-        <div className="mt-4 flex-1">
+        <div className={`flex-1 ${phase === 'play' ? 'mt-1' : 'mt-4'}`}>
           {phase === 'setup' ? (
             <PuzzleSetup
               filters={filters}
