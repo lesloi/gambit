@@ -1,4 +1,4 @@
-import { ChevronDown, Clock, Eye, Lightbulb } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Clock, Eye, Lightbulb } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Rating } from 'ts-fsrs';
 import { leavingRating } from '../../db/journal';
@@ -20,7 +20,6 @@ import {
   type PuzzleOutcome,
   type SolutionPly,
   type SolutionRow,
-  type SolutionSheet,
 } from './puzzle';
 import { missedAttemptRating, recordPuzzleReview } from './record';
 import { elapsedMs, pauseClock, resumeClock, startClock } from './solveClock';
@@ -55,6 +54,8 @@ export function PuzzlePlayer({
   const [hint, setHint] = useState<'none' | 'text' | 'piece'>('none');
   /** Whether this attempt asked for help, which costs it the `good` grade. */
   const [assisted, setAssisted] = useState(false);
+  /** The move of the played line the board shows; null keeps it live. */
+  const [historyPly, setHistoryPly] = useState<number | null>(null);
   const [again, setAgain] = useState(false);
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<PendingPromotion | null>(null);
@@ -84,7 +85,17 @@ export function PuzzlePlayer({
   const sheet = state.outcome === 'revealed' ? storedSheet : null;
   const shown = sheet && browsedPly !== null ? (sheet.plies[browsedPly - 1] ?? null) : null;
   const shownPly = sheet ? (browsedPly ?? sheet.plies.length) : 0;
-  const shownFen = shown?.fen ?? state.fen;
+  // A step back in the played line is read-only: the board shows that position until "Suivant"
+  // brings it back to the live one.
+  const viewed =
+    historyPly === null
+      ? null
+      : historyPly === 0
+        ? { fen: puzzle.fen, lastMove: null }
+        : (playedSheet.plies[historyPly - 1] ?? null);
+  const shownFen = viewed?.fen ?? shown?.fen ?? state.fen;
+  const lastMove = viewed ? viewed.lastMove : (shown?.lastMove ?? state.lastMove);
+  const browsing = viewed !== null;
   const turn = useMemo(() => sideToMove(shownFen), [shownFen]);
   const dests = useMemo(
     () => (state.outcome === 'playing' ? legalDests(state.fen) : new Map<string, string[]>()),
@@ -130,6 +141,7 @@ export function PuzzlePlayer({
     setBusy(false);
     setPending(null);
     setBrowsedPly(null);
+    setHistoryPly(null);
     setSheetOpen(null);
     setClock(startClock(Date.now(), document.visibilityState === 'visible'));
     setNow(Date.now());
@@ -215,6 +227,8 @@ export function PuzzlePlayer({
     recordMissed(state.outcome, next.outcome);
     // The ringed piece belongs to the move just played: the next position gets its own hint.
     setHint((value) => (value === 'piece' ? 'text' : value));
+    // A move is made on the live position, never on a step back of the history.
+    setHistoryPly(null);
   };
 
   const move = (from: string, to: string) => {
@@ -247,6 +261,7 @@ export function PuzzlePlayer({
     settle(next.outcome);
     // The line opens on the move the puzzle wanted, not on the position it ends in.
     setBrowsedPly(1);
+    setHistoryPly(null);
     recordMissed(state.outcome, next.outcome);
   };
 
@@ -357,11 +372,11 @@ export function PuzzlePlayer({
             fen={shownFen}
             orientation={orientation}
             turn={turn}
-            lastMove={shown?.lastMove ?? state.lastMove}
-            movable={state.outcome === 'playing'}
+            lastMove={lastMove}
+            movable={state.outcome === 'playing' && viewed === null}
             dests={dests}
             onMove={move}
-            mark={hintSquare}
+            mark={viewed === null ? hintSquare : null}
             resetKey={resetKey}
           />
         </div>
@@ -381,9 +396,9 @@ export function PuzzlePlayer({
                 setHint('piece');
               }
             }}
-            aria-disabled={hint === 'piece'}
+            aria-disabled={hint === 'piece' || browsing}
             className={`${SECONDARY_ACTION} ${
-              hint === 'piece' ? 'cursor-default opacity-50' : 'hover:text-ink'
+              hint === 'piece' || browsing ? 'cursor-default opacity-50' : 'hover:text-ink'
             }`}
           >
             <Lightbulb size={15} aria-hidden="true" />
@@ -391,11 +406,49 @@ export function PuzzlePlayer({
           </button>
           {/* Giving up only opens once the hint has been read: a hint first, the answer after. */}
           {hint !== 'none' ? (
-            <button type="button" onClick={reveal} className={`${SECONDARY_ACTION} hover:text-ink`}>
+            <button
+              type="button"
+              onClick={reveal}
+              aria-disabled={browsing}
+              className={`${SECONDARY_ACTION} ${browsing ? 'cursor-default opacity-50' : 'hover:text-ink'}`}
+            >
               <Eye size={15} aria-hidden="true" />
               {fr.puzzle.showSolution}
             </button>
           ) : null}
+        </div>
+      ) : null}
+
+      {state.outcome === 'playing' && state.moves.length > 0 ? (
+        <div className="mt-2 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setHistoryPly((value) => Math.max(0, (value ?? state.moves.length) - 1))}
+            aria-disabled={historyPly === 0}
+            className={`${SECONDARY_ACTION} ${
+              historyPly === 0 ? 'cursor-default opacity-50' : 'hover:text-ink'
+            }`}
+          >
+            <ChevronLeft size={15} aria-hidden="true" />
+            {fr.puzzle.previous}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setHistoryPly((value) => {
+                if (value === null) return null;
+                const forward = value + 1;
+                return forward >= state.moves.length ? null : forward;
+              })
+            }
+            aria-disabled={historyPly === null}
+            className={`${SECONDARY_ACTION} ${
+              historyPly === null ? 'cursor-default opacity-50' : 'hover:text-ink'
+            }`}
+          >
+            {fr.puzzle.nextMove}
+            <ChevronRight size={15} aria-hidden="true" />
+          </button>
         </div>
       ) : null}
 
@@ -454,12 +507,6 @@ export function PuzzlePlayer({
         </div>
       ) : null}
 
-      {state.moves.length > 0 && (state.outcome === 'playing' || state.outcome === 'solved') ? (
-        <div className="mt-3">
-          <PlayedMoves sheet={playedSheet} />
-        </div>
-      ) : null}
-
       {sheet ? (
         <div className="mt-3">
           <SolutionMoves
@@ -483,36 +530,6 @@ export function PuzzlePlayer({
         />
       ) : null}
     </>
-  );
-}
-
-/**
- * The moves already played, the user's move and the app's reply. A puzzle answers so fast that the
- * highlight always ends on the opponent's move: this is the only way back to your own.
- */
-function PlayedMoves({ sheet }: { sheet: SolutionSheet }) {
-  const last = sheet.plies.length;
-  return (
-    <div className="border-line bg-paper-raised rounded-sm border">
-      <p className="border-line text-accent-ink border-b px-3 py-1.5 text-[0.6875rem] tracking-widest uppercase">
-        {fr.puzzle.playedTitle}
-      </p>
-      <ol className="px-3 py-1.5 text-sm" aria-label={fr.puzzle.playedTitle}>
-        {sheet.rows.map((row) => (
-          <li
-            key={row.number}
-            className="grid grid-cols-[32px_1fr_1fr] items-center gap-1 tabular-nums"
-          >
-            <span className="text-ink-muted opacity-70" aria-hidden="true">
-              {row.number}
-              {row.white ? '.' : '…'}
-            </span>
-            <span className={row.white?.ply === last ? 'font-semibold' : ''}>{row.white?.san}</span>
-            <span className={row.black?.ply === last ? 'font-semibold' : ''}>{row.black?.san}</span>
-          </li>
-        ))}
-      </ol>
-    </div>
   );
 }
 
