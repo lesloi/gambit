@@ -291,6 +291,7 @@ export const fr = {
     failed: 'Raté',
     bestMove: 'Le bon coup était {move}.',
     solutionTitle: 'Solution',
+    playedTitle: 'Coups joués',
     retry: 'Rejouer',
     next: 'Puzzle suivant',
     loading: 'Chargement des puzzles…',

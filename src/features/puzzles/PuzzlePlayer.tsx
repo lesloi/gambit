@@ -20,6 +20,7 @@ import {
   type PuzzleOutcome,
   type SolutionPly,
   type SolutionRow,
+  type SolutionSheet,
 } from './puzzle';
 import { missedAttemptRating, recordPuzzleReview } from './record';
 import { elapsedMs, pauseClock, resumeClock, startClock } from './solveClock';
@@ -78,6 +79,7 @@ export function PuzzlePlayer({
 
   const orientation = useMemo(() => sideToMove(puzzle.fen), [puzzle]);
   const storedSheet = useMemo(() => solutionSheet(puzzle), [puzzle]);
+  const playedSheet = useMemo(() => solutionSheet(puzzle, state.moves), [puzzle, state.moves]);
   // Only a revealed puzzle has a line to read: a solve keeps its motifs in the band, not the moves.
   const sheet = state.outcome === 'revealed' ? storedSheet : null;
   const shown = sheet && browsedPly !== null ? (sheet.plies[browsedPly - 1] ?? null) : null;
@@ -452,6 +454,12 @@ export function PuzzlePlayer({
         </div>
       ) : null}
 
+      {state.moves.length > 0 && (state.outcome === 'playing' || state.outcome === 'solved') ? (
+        <div className="mt-3">
+          <PlayedMoves sheet={playedSheet} />
+        </div>
+      ) : null}
+
       {sheet ? (
         <div className="mt-3">
           <SolutionMoves
@@ -475,6 +483,36 @@ export function PuzzlePlayer({
         />
       ) : null}
     </>
+  );
+}
+
+/**
+ * The moves already played, the user's move and the app's reply. A puzzle answers so fast that the
+ * highlight always ends on the opponent's move: this is the only way back to your own.
+ */
+function PlayedMoves({ sheet }: { sheet: SolutionSheet }) {
+  const last = sheet.plies.length;
+  return (
+    <div className="border-line bg-paper-raised rounded-sm border">
+      <p className="border-line text-accent-ink border-b px-3 py-1.5 text-[0.6875rem] tracking-widest uppercase">
+        {fr.puzzle.playedTitle}
+      </p>
+      <ol className="px-3 py-1.5 text-sm" aria-label={fr.puzzle.playedTitle}>
+        {sheet.rows.map((row) => (
+          <li
+            key={row.number}
+            className="grid grid-cols-[32px_1fr_1fr] items-center gap-1 tabular-nums"
+          >
+            <span className="text-ink-muted opacity-70" aria-hidden="true">
+              {row.number}
+              {row.white ? '.' : '…'}
+            </span>
+            <span className={row.white?.ply === last ? 'font-semibold' : ''}>{row.white?.san}</span>
+            <span className={row.black?.ply === last ? 'font-semibold' : ''}>{row.black?.san}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 
