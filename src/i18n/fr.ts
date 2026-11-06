@@ -132,8 +132,8 @@ export const fr = {
       mate: 'Le roi est maté.',
       stalemate: 'Pat : la position est nulle.',
       insufficient: 'Matériel insuffisant pour mater.',
-      fiftyMove: 'La règle des cinquante coups est atteinte.',
-      threefold: 'La même position s’est répétée trois fois.',
+      seventyFiveMove: 'La règle des soixante-quinze coups est atteinte.',
+      fivefold: 'La même position s’est répétée cinq fois.',
     },
   },
   opening: {
@@ -232,9 +232,10 @@ export const fr = {
       mate: 'Mat.',
       stalemate: 'Pat.',
       insufficient: 'Matériel insuffisant.',
-      fiftyMove: 'Règle des cinquante coups.',
-      threefold: 'Répétition de la position.',
+      seventyFiveMove: 'Règle des soixante-quinze coups.',
+      fivefold: 'Cinquième répétition de la position.',
       flag: 'Temps écoulé.',
+      flagDraw: 'Temps écoulé : mat impossible',
     },
     clocks: {
       white: 'Pendule des Blancs',

@@ -27,6 +27,10 @@ export interface StoredGame {
   incrementMs: number;
   /** Every move from the initial position, in UCI. */
   moves: string[];
+  /**
+   * The result of the game. Rows written before the FIDE draw limits can still hold the former
+   * `'threefold'` and `'fifty-move'` reasons; a reader must map them.
+   */
   result: GameResult;
   /** A hint was shown, so a later blunder list can skip the game. */
   assisted: boolean;

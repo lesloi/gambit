@@ -69,6 +69,15 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   analysis exists to show. A hint is allowed, but the game is marked as assisted and stays out of
   the blunder list. The score sheet reopens any past position read-only, and the clock keeps
   running: reviewing is not a pause.
+- **A game follows FIDE's automatic draw limits, with a material check on the flag.** The game
+  ends at the automatic fivefold repetition and 75-move limits (9.6), not at the claimable
+  threefold and 50-move ones (9.2/9.3), because the app offers no claim. A flag falls drawn when
+  the side that still had time cannot mate (6.9), judged on its own material with the FIDE table:
+  a bare king, a lone bishop or knight, or bishops all on one colour cannot mate on their own,
+  while two knights do count, because the literal rule allows a helpmate against a bare king.
+  This is a table, not a search: a lone bishop or knight may still mate under the literal rule
+  when the opponent's pieces block, so king and knight against king and knight is a draw here
+  where the literal rule would give the win to the side with time.
 - **The app calls no third party at runtime.** No tablebase, no opening explorer, no CDN, no font
   service: every byte it shows comes from the image, and the CSP allows `'self'` only, plus
   `'wasm-unsafe-eval'` so the bundled Stockfish can compile. Reading that image is not a call out:

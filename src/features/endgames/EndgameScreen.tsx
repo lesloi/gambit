@@ -114,10 +114,10 @@ function endgameReason(end: EndgameEnd): string {
       return fr.endgame.reasons.stalemate;
     case 'insufficient':
       return fr.endgame.reasons.insufficient;
-    case 'fifty-move':
-      return fr.endgame.reasons.fiftyMove;
-    case 'threefold':
-      return fr.endgame.reasons.threefold;
+    case 'seventy-five-move':
+      return fr.endgame.reasons.seventyFiveMove;
+    case 'fivefold':
+      return fr.endgame.reasons.fivefold;
   }
 }
 
