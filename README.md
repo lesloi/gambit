@@ -1,7 +1,15 @@
-# Gambit
+<p align="center">
+  <img src="public/favicon.svg" alt="Gambit logo" width="128" height="128">
+</p>
 
-A personal chess training app: puzzles, tactical motifs, endgames, openings and games against
-the engine. Free of accounts and tracking, installable, and usable offline.
+<h1 align="center">Gambit</h1>
+
+<h3 align="center">A personal chess training app. Free, no account, no tracking.</h3>
+
+<p align="center">
+  Puzzles, tactical motifs, endgames, a curated opening repertoire and games against the engine.
+  Installable and usable offline.
+</p>
 
 **Status: foundation.** The deployment pipeline is in place, the three trainers run on the
 committed content and the game mode runs on the bundled engine.
