@@ -7,11 +7,17 @@ import { replayCard, type CardState, type ReviewEntry } from './fsrs';
 export type AttemptOutcome = 'playing' | 'solved' | 'failed' | 'revealed';
 
 /**
- * The review a solved attempt writes when the user leaves it: good, unless the attempt already has
- * its review (a miss, or a line corrected after a miss). A miss writes its again when it happens.
+ * The review a solved attempt writes when the user leaves it: good, or hard when a hint helped, and
+ * nothing when the attempt already has its review (a miss, or a line corrected after a miss). A
+ * miss writes its again when it happens.
  */
-export function leavingRating(outcome: AttemptOutcome, recorded: boolean): Grade | null {
-  return outcome === 'solved' && !recorded ? Rating.Good : null;
+export function leavingRating(
+  outcome: AttemptOutcome,
+  recorded: boolean,
+  assisted = false,
+): Grade | null {
+  if (outcome !== 'solved' || recorded) return null;
+  return assisted ? Rating.Hard : Rating.Good;
 }
 
 export interface NewReview {

@@ -52,6 +52,8 @@ export function PuzzlePlayer({
   const [state, setState] = useState(() => startPuzzle(puzzle));
   /** The hint of the position on the board: none, its sentence, or the piece it points at. */
   const [hint, setHint] = useState<'none' | 'text' | 'piece'>('none');
+  /** Whether this attempt asked for help, which costs it the `good` grade. */
+  const [assisted, setAssisted] = useState(false);
   const [again, setAgain] = useState(false);
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<PendingPromotion | null>(null);
@@ -121,6 +123,7 @@ export function PuzzlePlayer({
   const reset = () => {
     setState(startPuzzle(puzzle));
     setHint('none');
+    setAssisted(false);
     setAgain(false);
     setBusy(false);
     setPending(null);
@@ -169,9 +172,10 @@ export function PuzzlePlayer({
   };
 
   /**
-   * A solved attempt is written `good` when the user leaves it. The button waits for the write so a
-   * second tap cannot skip a card, and a failed write keeps the screen open rather than dropping
-   * the attempt. A miss already wrote its own review, so leaving it writes nothing.
+   * A solved attempt is written `good`, or `hard` when a hint helped, as the user leaves it. The
+   * button waits for the write so a second tap cannot skip a card, and a failed write keeps the
+   * screen open rather than dropping the attempt. A miss already wrote its own review, so leaving
+   * it writes nothing.
    */
   const proceed = async () => {
     if (busy) return;
@@ -181,7 +185,7 @@ export function PuzzlePlayer({
     pendingWrite.current = null;
     if (missed) await missed;
 
-    const grade = leavingRating(state.outcome, attemptRecorded.current);
+    const grade = leavingRating(state.outcome, attemptRecorded.current, assisted);
     if (grade !== null) {
       attemptRecorded.current = true;
       try {
@@ -268,18 +272,22 @@ export function PuzzlePlayer({
         : fr.puzzle.failed;
   const themeList = puzzle.themes.map(themeLabel).join(' · ');
   const detail =
-    state.outcome === 'solved' || state.outcome === 'revealed'
-      ? themeList
-      : state.outcome === 'failed'
-        ? fr.puzzle.bestMove.replace('{move}', state.bestSan ?? '')
-        : hint !== 'none'
-          ? hintNudge(puzzle.themes)
-          : null;
+    state.outcome === 'solved'
+      ? assisted
+        ? `${themeList} · ${fr.puzzle.assisted}`
+        : themeList
+      : state.outcome === 'revealed'
+        ? themeList
+        : state.outcome === 'failed'
+          ? fr.puzzle.bestMove.replace('{move}', state.bestSan ?? '')
+          : hint !== 'none'
+            ? hintNudge(puzzle.themes)
+            : null;
   // What a screen reader hears. The turn and the clock are left out: the first flips on every
   // move and the second ticks, so a live region holding them would talk all the time.
   const announcement =
     state.outcome === 'solved'
-      ? `${fr.puzzle.solved}. ${themeList}`
+      ? `${fr.puzzle.solved}${assisted ? `, ${fr.puzzle.assisted}` : ''}. ${themeList}`
       : state.outcome === 'failed'
         ? `${fr.puzzle.failed}. ${fr.puzzle.bestMove.replace('{move}', state.bestSan ?? '')}`
         : state.outcome === 'revealed'
@@ -363,7 +371,15 @@ export function PuzzlePlayer({
           {/* The used hint keeps its focus: a disabled button would drop it from the tab order. */}
           <button
             type="button"
-            onClick={() => setHint(hint === 'none' ? 'text' : 'piece')}
+            onClick={() => {
+              if (hint === 'none') {
+                setHint('text');
+                // The first sentence is already help: this attempt no longer earns `good`.
+                setAssisted(true);
+              } else {
+                setHint('piece');
+              }
+            }}
             aria-disabled={hint === 'piece'}
             className={`${SECONDARY_ACTION} ${hint === 'piece' ? 'opacity-50' : ''}`}
           >

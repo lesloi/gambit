@@ -29,15 +29,22 @@ afterEach(async () => {
 
 describe('leavingRating', () => {
   it.each([
-    ['solved', false, Rating.Good],
-    ['solved', true, null],
-    ['failed', false, null],
-    ['failed', true, null],
-    ['revealed', false, null],
-    ['playing', false, null],
-  ] as const)('rates a %s attempt (recorded: %s) as %s on leaving', (outcome, recorded, rating) => {
-    expect(leavingRating(outcome, recorded)).toBe(rating);
-  });
+    ['solved', false, false, Rating.Good],
+    ['solved', false, true, Rating.Hard],
+    ['solved', true, false, null],
+    ['solved', true, true, null],
+    ['failed', false, false, null],
+    ['failed', false, true, null],
+    ['failed', true, false, null],
+    ['revealed', false, false, null],
+    ['revealed', false, true, null],
+    ['playing', false, false, null],
+  ] as const)(
+    'rates a %s attempt (recorded: %s, assisted: %s) as %s on leaving',
+    (outcome, recorded, assisted, rating) => {
+      expect(leavingRating(outcome, recorded, assisted)).toBe(rating);
+    },
+  );
 });
 
 describe('appendReview', () => {
