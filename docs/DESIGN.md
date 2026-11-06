@@ -6,8 +6,8 @@ Tailwind classes limited to the tokens of [`src/styles/index.css`](../src/styles
 ## Theme
 
 - The scheme is a choice: **clair**, **sombre** or **système**, and système is the default. The
-  preference lives in `localStorage` under `gambit:theme`, out of the backup like the puzzle
-  filters: losing it only costs the default.
+  preference lives in `localStorage` under `gambit:theme`, like the puzzle filters: losing it only
+  costs the default.
 - `data-theme="light|dark"` on `<html>` carries the resolved scheme; the palette is written twice
   under `:root` and `:root[data-theme='dark']`. `main.tsx` paints the stored choice before React
   renders; a dark device can still show one light frame while the bundle loads, which the strict

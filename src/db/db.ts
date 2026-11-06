@@ -11,7 +11,7 @@ export interface Review extends ReviewEntry {
 
 /**
  * A finished game, kept as its moves from the initial position rather than as a PGN string, so the
- * analysis can replay it and the backup can copy it as JSON. See docs/DECISIONS.md#persistence.
+ * analysis can replay it. See docs/DECISIONS.md#persistence.
  */
 export interface StoredGame {
   id?: number;

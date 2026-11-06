@@ -55,7 +55,7 @@ export function saveSession(
   }
 }
 
-/** Drops the running session; a backup import must call this before replacing the journal. */
+/** Drops the running session, so the next start plans a new one. */
 export function clearSession(storage: SessionStorage | null = browserStorage()): void {
   if (!storage) return;
 

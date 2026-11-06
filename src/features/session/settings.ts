@@ -15,7 +15,7 @@ export const NEW_CARD_CHOICES = [0, 3, 5, 10, 15] as const;
 
 export const SESSION_SETTINGS_STORAGE_KEY = 'gambit:session-settings';
 
-/** A preference, out of the backup like the puzzle filters: losing it only costs the default. */
+/** A preference, like the puzzle filters: losing it only costs the default. */
 export function readSessionSettings(
   storage: SessionStorage | null = browserStorage(),
 ): SessionSettings {

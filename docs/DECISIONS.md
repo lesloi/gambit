@@ -141,29 +141,22 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
 ## Persistence
 
 - **The `reviews` journal is the source of truth; FSRS state is derived from it.** A review is
-  appended and never edited. The statistics, the due dates and an undo are then computations, and
-  a backup would be a dump of a small log. Exporting only card states would freeze a scheduler
-  version and lose the history. The scheduler is therefore pinned with its parameters, fuzzing is
-  off, and the short steps (1 min, 10 min) are kept: replaying the same journal must give the same
-  due date, and the scheduler that produced it is written in the database's `meta` table.
+  appended and never edited. The statistics, the due dates and an undo are then computations. The
+  scheduler is therefore pinned with its parameters, fuzzing is off, and the short steps (1 min,
+  10 min) are kept: replaying the same journal must give the same due date, and the scheduler that
+  produced it is written in the database's `meta` table.
 - **A finished game is stored as its move list, not a PGN.** The analysis will replay it from the
-  initial position, and the backup will copy it as JSON; a PGN string would need parsing and would
-  freeze the notation. An abandoned game is not stored: only a game that reached a result is worth
-  analysing.
+  initial position; a PGN string would need parsing and would freeze the notation. An abandoned
+  game is not stored: only a game that reached a result is worth analysing.
 - **An unfinished game is a draft in localStorage, not a row in `games`.** It is rewritten after
   every move and on the way out, with the time left frozen at that instant, so a reload, a
   navigation or a closed tab resumes the same position without charging the absence; the clock
   starts again once the engine is ready. The finished game is then written once, with the start
   time the draft carried. The draft is small, synchronous to write as the page closes and
-  ephemeral, so it stays out of the backup like the session cursor; two tabs share one draft and
+  ephemeral, so it stays out of IndexedDB like the session cursor; two tabs share one draft and
   the last writer wins.
-- **A backup is a file, not a sync.** Two devices would need an account, a server, conflict
-  resolution and a second image; the owner uses one device. Import will replace the local data
-  after showing what the file holds, so no merge or tombstone is needed. There will be no automatic
-  export, no date and no reminder: the two buttons will live in the settings, and a backup is a
-  deliberate act, not an obligation. Neither the export nor the import is built yet. Storage is not
-  made persistent: `navigator.storage.persist()` would ask for a permission the app does not need
-  on first load.
+- **Storage is not made persistent.** `navigator.storage.persist()` would ask for a permission the
+  app does not need on first load.
 - **IndexedDB, through Dexie.** The data is structured and can exceed the few megabytes of
   `localStorage`; Dexie gives a versioned schema and transactions without a custom layer.
 
