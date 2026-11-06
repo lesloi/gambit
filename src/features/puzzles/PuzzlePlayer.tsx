@@ -193,7 +193,7 @@ export function PuzzlePlayer({
 
   return (
     <>
-      <div className="border-line bg-paper-raised mt-3 rounded-sm border p-2.5 sm:p-3">
+      <div className="border-line bg-paper-raised rounded-sm border p-2.5 sm:p-3">
         <div ref={boardHost} tabIndex={-1} aria-label={fr.puzzle.board} className="rounded-sm">
           <ChessBoard
             fen={shownFen}
@@ -242,7 +242,7 @@ export function PuzzlePlayer({
       <div className="mt-4">
         {state.outcome === 'solved' ? (
           <>
-            <div className="bg-ok-soft text-ok rounded-sm p-4">
+            <div className="bg-ok-soft text-ok rounded-sm px-3 py-2">
               <p className="text-sm font-semibold">{fr.puzzle.solved}</p>
               <p className="mt-1 text-xs opacity-80">{puzzle.themes.map(themeLabel).join(' · ')}</p>
             </div>
@@ -253,18 +253,19 @@ export function PuzzlePlayer({
               </div>
             ) : null}
 
-            <div className="mt-4">
-              <AgainButton recorded={again} disabled={busy} onPress={() => void rateAgain()} />
+            <div className="mt-4 grid grid-cols-5 gap-2">
+              <div className="col-span-2">
+                <AgainButton recorded={again} disabled={busy} onPress={() => void rateAgain()} />
+              </div>
+              <button
+                type="button"
+                onClick={() => void proceed()}
+                disabled={busy}
+                className="bg-accent col-span-3 rounded-sm px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {nextLabel}
+              </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => void proceed()}
-              disabled={busy}
-              className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
-            >
-              {nextLabel}
-            </button>
           </>
         ) : null}
 
@@ -353,32 +354,42 @@ function SolutionMoves({
         {fr.puzzle.solutionTitle}
       </p>
       <ol className="py-1 text-sm" aria-label={fr.puzzle.solutionTitle}>
-        {rows.map((row) => (
-          <li
-            key={row.number}
-            className="grid grid-cols-[24px_1fr_1fr] items-center gap-1 px-1.5 tabular-nums"
-          >
-            <span className="text-ink-muted px-1 opacity-70">{row.number}.</span>
-            {row.white ? (
-              <SolutionMoveButton
-                move={row.white}
-                current={row.white.ply === shownPly}
-                onSelect={onSelect}
-              />
-            ) : (
-              <span />
-            )}
-            {row.black ? (
-              <SolutionMoveButton
-                move={row.black}
-                current={row.black.ply === shownPly}
-                onSelect={onSelect}
-              />
-            ) : (
-              <span />
-            )}
-          </li>
-        ))}
+        {rows.map((row, index) => {
+          // The sheet numbers the puzzle's own line from 1: the move number of the game the
+          // position was taken from means nothing to the solver.
+          const number = index + 1;
+          return (
+            <li
+              key={row.number}
+              className="grid grid-cols-[32px_1fr_1fr] items-center gap-1 px-1.5 tabular-nums"
+            >
+              <span className="text-ink-muted opacity-70" aria-hidden="true">
+                {number}
+                {row.white ? '.' : '…'}
+              </span>
+              {row.white ? (
+                <SolutionMoveButton
+                  number={number}
+                  move={row.white}
+                  current={row.white.ply === shownPly}
+                  onSelect={onSelect}
+                />
+              ) : (
+                <span />
+              )}
+              {row.black ? (
+                <SolutionMoveButton
+                  number={number}
+                  move={row.black}
+                  current={row.black.ply === shownPly}
+                  onSelect={onSelect}
+                />
+              ) : (
+                <span />
+              )}
+            </li>
+          );
+        })}
       </ol>
     </div>
   );
@@ -389,10 +400,12 @@ function SolutionMoves({
  * while a line of several moves keeps the sheet compact; the whole cell is the button.
  */
 function SolutionMoveButton({
+  number,
   move,
   current,
   onSelect,
 }: {
+  number: number;
   move: SolutionPly;
   current: boolean;
   onSelect: (ply: number) => void;
@@ -401,7 +414,7 @@ function SolutionMoveButton({
     <button
       type="button"
       aria-current={current ? 'true' : undefined}
-      aria-label={`${move.number}${move.side === 'white' ? '.' : '…'} ${move.san}`}
+      aria-label={`${number}${move.side === 'white' ? '.' : '…'} ${move.san}`}
       onClick={() => onSelect(move.ply)}
       className={`flex min-h-9 items-center rounded-xs px-1.5 text-left tabular-nums transition-colors ${
         current ? 'bg-accent-soft text-ink font-semibold' : 'hover:bg-paper'
