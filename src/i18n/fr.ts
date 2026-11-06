@@ -144,7 +144,8 @@ export const fr = {
     empty: 'Aucune ligne embarquée.',
     white: 'Blancs',
     black: 'Noirs',
-    review: 'Réviser',
+    lineOne: '{count} ligne',
+    lineMany: '{count} lignes',
     yourMove: 'À toi de jouer',
     restart: 'Recommencer',
     retry: 'Rejouer',
@@ -156,7 +157,6 @@ export const fr = {
     expectedMove: 'Le coup du répertoire était {move}.',
     rewind: 'Revenir au coup précédent',
     status: {
-      new: 'Nouvelle',
       due: 'À revoir',
       scheduled: 'Prévue le {date}',
     },
