@@ -158,7 +158,10 @@ function OpeningList({
                 return (
                   <li key={line.id} className="border-line bg-paper-raised rounded-sm border p-4">
                     <div className="flex items-start justify-between gap-3">
-                      <h3 className="text-sm font-semibold">{line.name}</h3>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-semibold">{line.name}</h3>
+                        <p className="text-ink-muted mt-1 text-sm leading-snug">{line.note}</p>
+                      </div>
                       <span
                         className={`shrink-0 rounded-xs px-2 py-0.5 text-[0.625rem] tracking-wider uppercase ${
                           status.kind === 'due'
@@ -315,6 +318,7 @@ export function OpeningPlayer({
     <>
       <div className="mb-3">
         <h2 className="text-lg">{line.name}</h2>
+        <p className="text-ink-muted mt-1 text-sm">{line.note}</p>
       </div>
 
       <div className="border-line bg-paper-raised rounded-sm border p-2.5 sm:p-3">

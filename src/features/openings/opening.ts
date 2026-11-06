@@ -8,6 +8,8 @@ export interface OpeningLine {
   id: string;
   name: string;
   color: LineColor;
+  /** A short note on what the line is for: the plan, not a move-by-move commentary. */
+  note: string;
   /** UCI from the initial position. The line alternates sides. */
   moves: readonly string[];
 }
