@@ -7,10 +7,11 @@ const UCI = /^[a-h][1-8][a-h][1-8][qrbn]?$/;
 
 function toOpeningLine(entry: unknown): OpeningLine | null {
   if (typeof entry !== 'object' || entry === null) return null;
-  const { id, name, color, moves } = entry as Record<string, unknown>;
+  const { id, name, color, note, moves } = entry as Record<string, unknown>;
   if (typeof id !== 'string' || id === '') return null;
   if (typeof name !== 'string' || name === '') return null;
   if (typeof color !== 'string' || !COLORS.includes(color as LineColor)) return null;
+  if (typeof note !== 'string' || note.trim() === '') return null;
   if (!Array.isArray(moves) || moves.length === 0) return null;
   if (!moves.every((move) => typeof move === 'string' && UCI.test(move))) return null;
 
@@ -34,7 +35,7 @@ function toOpeningLine(entry: unknown): OpeningLine | null {
   }
   if (userMoves === 0) return null;
 
-  return { id, name, color: lineColor, moves };
+  return { id, name, color: lineColor, note, moves };
 }
 
 /** Reads the committed repertoire. An entry the parser cannot trust is skipped, not fatal. */

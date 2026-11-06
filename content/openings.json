@@ -3,6 +3,7 @@
     "id": "london-vs-d5",
     "name": "London contre ...d5",
     "color": "white",
+    "note": "Le London classique : Bf4, e3, Nf3, c3 et Nbd2, puis Bd3 ; le fou replié en g3 vise e5.",
     "moves": [
       "d2d4",
       "d7d5",
@@ -25,6 +26,7 @@
     "id": "london-vs-nf6",
     "name": "London contre ...Nf6",
     "color": "white",
+    "note": "Contre le fianchetto roi, le London garde e3 et Be2 ; h3 retire la case g4 au cavalier noir.",
     "moves": [
       "d2d4",
       "g8f6",
@@ -45,6 +47,7 @@
     "id": "london-vs-c5",
     "name": "London contre ...c5",
     "color": "white",
+    "note": "Contre ...c5, on accepte l'échange en d4 et on transpose dans le London avec c3 et Nbd2.",
     "moves": [
       "d2d4",
       "c7c5",
@@ -69,6 +72,7 @@
     "id": "qgd-vs-e6",
     "name": "Gambit dame contre ...e6",
     "color": "white",
+    "note": "Gambit dame orthodoxe : Bg5, e3 et Nf3 ; après ...h6 et ...b6, l'échange en d5 laisse une structure saine.",
     "moves": [
       "d2d4",
       "d7d5",
@@ -96,6 +100,7 @@
     "id": "qgd-vs-c6",
     "name": "Gambit dame contre ...c6",
     "color": "white",
+    "note": "Contre la Slave, on récupère le pion en c4 et on roque ; les Noirs ont sorti leur fou en f5 avant de fermer avec ...e6.",
     "moves": [
       "d2d4",
       "d7d5",
@@ -115,9 +120,34 @@
     ]
   },
   {
+    "id": "qga",
+    "name": "Gambit dame accepté",
+    "color": "white",
+    "note": "Gambit dame accepté : on récupère c4 et on roque ; le pion c5 est rendu pour ouvrir la colonne d et activer les pièces.",
+    "moves": [
+      "d2d4",
+      "d7d5",
+      "c2c4",
+      "d5c4",
+      "g1f3",
+      "g8f6",
+      "e2e3",
+      "e7e6",
+      "f1c4",
+      "c7c5",
+      "e1g1",
+      "a7a6",
+      "d4c5",
+      "d8d1",
+      "f1d1",
+      "f8c5"
+    ]
+  },
+  {
     "id": "french-classical",
     "name": "Française classique",
     "color": "black",
+    "note": "Française classique : ...Nf6 et ...Nfd7 contre e5 ; on attaque la chaîne par ...c5 et ...Bc5.",
     "moves": [
       "e2e4",
       "e7e6",
@@ -138,9 +168,39 @@
     ]
   },
   {
+    "id": "french-winawer",
+    "name": "Française Winawer",
+    "color": "black",
+    "note": "Winawer : ...Bb4 échange le fou contre le cavalier c3 et désorganise les pions ; ...c5 et ...Qa5 attaquent la chaîne.",
+    "moves": [
+      "e2e4",
+      "e7e6",
+      "d2d4",
+      "d7d5",
+      "b1c3",
+      "f8b4",
+      "e4e5",
+      "c7c5",
+      "a2a3",
+      "b4c3",
+      "b2c3",
+      "g8e7",
+      "g1f3",
+      "b8c6",
+      "f1d3",
+      "d8a5",
+      "c1d2",
+      "c5c4",
+      "d3e2",
+      "c8d7",
+      "e1g1"
+    ]
+  },
+  {
     "id": "french-tarrasch",
     "name": "Française Tarrasch",
     "color": "black",
+    "note": "Tarrasch : contre 3.Nd2, ...c5 ouvre la position ; la dame en d6 et ...Nc6 terminent le développement.",
     "moves": [
       "e2e4",
       "e7e6",
@@ -161,9 +221,59 @@
     ]
   },
   {
+    "id": "french-advance",
+    "name": "Française avance",
+    "color": "black",
+    "note": "Avance : contre 3.e5, ...c5 et ...Qb6 attaquent la chaîne ; ...c4 ferme le centre et ...Na5 vise b3.",
+    "moves": [
+      "e2e4",
+      "e7e6",
+      "d2d4",
+      "d7d5",
+      "e4e5",
+      "c7c5",
+      "c2c3",
+      "b8c6",
+      "g1f3",
+      "d8b6",
+      "a2a3",
+      "c5c4",
+      "b1d2",
+      "c6a5",
+      "f1e2",
+      "c8d7",
+      "e1g1"
+    ]
+  },
+  {
+    "id": "french-exchange",
+    "name": "Française échange",
+    "color": "black",
+    "note": "Échange : contre 3.exd5, le pion e6 reprend en d5 et les fous sortent vers le centre ; la position symétrique ne laisse aucune faiblesse.",
+    "moves": [
+      "e2e4",
+      "e7e6",
+      "d2d4",
+      "d7d5",
+      "e4d5",
+      "e6d5",
+      "g1f3",
+      "g8f6",
+      "f1d3",
+      "f8d6",
+      "e1g1",
+      "e8g8",
+      "c1g5",
+      "c8g4",
+      "b1d2",
+      "b8d7"
+    ]
+  },
+  {
     "id": "slav-main",
     "name": "Slave principale",
     "color": "black",
+    "note": "Slave principale : ...dxc4 et ...Bf5 sortent le fou avant ...e6 ; ...Bb4 et ...Nbd7 terminent le développement.",
     "moves": [
       "d2d4",
       "d7d5",
@@ -187,6 +297,7 @@
     "id": "slav-meran",
     "name": "Slave Meran",
     "color": "black",
+    "note": "Meran : contre 4.e3, ...dxc4 et ...b5 gagnent de l'espace à l'aile dame ; ...a6 prépare ...c5.",
     "moves": [
       "d2d4",
       "d7d5",

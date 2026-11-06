@@ -26,6 +26,7 @@ const endgame: Endgame = {
 const opening: OpeningLine = {
   id: 'london',
   name: 'London',
+  note: 'Une note.',
   color: 'white',
   moves: ['d2d4', 'd7d5'],
 };

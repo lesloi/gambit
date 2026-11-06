@@ -1,4 +1,4 @@
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Rating } from 'ts-fsrs';
 import { cardId } from '../../db/cards';
@@ -38,10 +38,11 @@ function lineStatus(state: CardState | null, now: number): LineStatus {
   return { kind: 'scheduled', due: state.due };
 }
 
-function statusLabel(status: LineStatus): string {
+/** A new line has no badge: the list is already the repertoire to learn, not a queue of news. */
+function statusLabel(status: LineStatus): string | null {
   switch (status.kind) {
     case 'new':
-      return fr.opening.status.new;
+      return null;
     case 'due':
       return fr.opening.status.due;
     case 'scheduled':
@@ -133,57 +134,75 @@ function OpeningList({
     return <p className="text-ink-muted text-sm">{fr.opening.empty}</p>;
   }
 
-  const groups: readonly { color: LineColor; label: string }[] = [
-    { color: 'white', label: fr.opening.white },
-    { color: 'black', label: fr.opening.black },
+  const groups: readonly { color: LineColor; heading: string }[] = [
+    { color: 'white', heading: fr.opening.white },
+    { color: 'black', heading: fr.opening.black },
   ];
 
   return (
     <>
       <p className="text-ink-muted text-sm">{fr.opening.intro}</p>
 
-      {groups.map(({ color, label }) => {
-        const group = lines.filter((line) => line.color === color);
-        if (group.length === 0) return null;
+      <div className="mt-4 grid gap-4">
+        {groups.map(({ color, heading }) => {
+          const group = lines.filter((line) => line.color === color);
+          if (group.length === 0) return null;
+          const count = (group.length === 1 ? fr.opening.lineOne : fr.opening.lineMany).replace(
+            '{count}',
+            String(group.length),
+          );
 
-        return (
-          <section key={color} aria-labelledby={`opening-${color}`} className="mt-6">
-            <h2 id={`opening-${color}`} className="text-lg">
-              {label}
-            </h2>
+          return (
+            <section key={color} aria-labelledby={`opening-${color}`}>
+              <div className="border-line bg-paper-raised overflow-hidden rounded-sm border">
+                <div className="border-line flex items-baseline justify-between border-b px-3.5 py-3">
+                  <h2
+                    id={`opening-${color}`}
+                    className="text-ink-muted text-[0.6875rem] font-semibold tracking-[0.12em] uppercase"
+                  >
+                    {heading}
+                  </h2>
+                  <span className="text-ink-muted text-[0.6875rem]">{count}</span>
+                </div>
 
-            <ul className="mt-3 grid gap-3">
-              {group.map((line) => {
-                const status = lineStatus(states.get(cardId('opening', line.id)) ?? null, now);
-                return (
-                  <li key={line.id} className="border-line bg-paper-raised rounded-sm border p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="text-sm font-semibold">{line.name}</h3>
-                      <span
-                        className={`shrink-0 rounded-xs px-2 py-0.5 text-[0.625rem] tracking-wider uppercase ${
-                          status.kind === 'due'
-                            ? 'bg-accent-soft text-accent-ink'
-                            : 'border-line text-ink-muted border'
-                        }`}
-                      >
-                        {statusLabel(status)}
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => onPlay(line)}
-                      className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
-                    >
-                      {fr.opening.review}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        );
-      })}
+                <ul>
+                  {group.map((line) => {
+                    const status = lineStatus(states.get(cardId('opening', line.id)) ?? null, now);
+                    const statusText = statusLabel(status);
+                    return (
+                      <li key={line.id} className="border-line-soft border-b last:border-b-0">
+                        <button
+                          type="button"
+                          onClick={() => onPlay(line)}
+                          className="flex min-h-12 w-full items-center gap-3 px-3.5 text-left"
+                        >
+                          <span className="min-w-0 flex-1 text-sm font-semibold">{line.name}</span>
+                          {statusText !== null ? (
+                            <span
+                              className={`shrink-0 whitespace-nowrap ${
+                                status.kind === 'due'
+                                  ? 'text-accent-ink text-[0.625rem] font-semibold'
+                                  : 'text-ink-muted text-[0.6875rem]'
+                              }`}
+                            >
+                              {statusText}
+                            </span>
+                          ) : null}
+                          <ChevronRight
+                            size={16}
+                            className="text-ink-muted shrink-0 opacity-60"
+                            aria-hidden="true"
+                          />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </section>
+          );
+        })}
+      </div>
     </>
   );
 }
@@ -315,6 +334,7 @@ export function OpeningPlayer({
     <>
       <div className="mb-3">
         <h2 className="text-lg">{line.name}</h2>
+        <p className="text-ink-muted mt-1 text-sm">{line.note}</p>
       </div>
 
       <div className="border-line bg-paper-raised rounded-sm border p-2.5 sm:p-3">

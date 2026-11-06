@@ -9,8 +9,16 @@ describe('committed opening content', () => {
   const lines = parseOpenings(source);
 
   it('parses the whole set, with one card per line', () => {
-    expect(lines.length).toBeGreaterThan(0);
+    const entries = JSON.parse(source) as unknown[];
+    // A line the parser rejects would leave its card out of the training without a word.
+    expect(lines.length).toBe(entries.length);
     expect(new Set(lines.map((line) => line.id)).size).toBe(lines.length);
+  });
+
+  it('gives every line a short note', () => {
+    for (const line of lines) {
+      expect(line.note.trim().length, line.id).toBeGreaterThan(0);
+    }
   });
 
   it('covers both colours', () => {
@@ -41,13 +49,15 @@ describe('committed opening content', () => {
 });
 
 describe('opening content parsing', () => {
-  it('skips an entry with an unknown colour, an illegal move, no user move or a duplicate id', () => {
+  it('skips an entry with an unknown colour, an illegal move, no user move, no note or a repeated id', () => {
     const good = {
       id: 'good',
       name: 'Bonne ligne',
+      note: 'Une note.',
       color: 'white',
       moves: ['d2d4', 'd7d5', 'c1f4'],
     };
+    const withoutNote = Object.fromEntries(Object.entries(good).filter(([key]) => key !== 'note'));
     const text = JSON.stringify([
       good,
       { ...good, id: 'bad-color', color: 'green' },
@@ -55,6 +65,9 @@ describe('opening content parsing', () => {
       { ...good, id: 'no-user-move', color: 'black', moves: ['e2e4'] },
       { ...good, name: '' },
       { ...good, moves: ['d2d4', 'd7d5'] },
+      { ...good, id: 'empty-note', note: '  ' },
+      { ...withoutNote, id: 'missing-note' },
+      { ...good, name: 'Doublon' },
     ]);
 
     expect(parseOpenings(text).map((line) => line.id)).toEqual(['good']);

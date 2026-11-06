@@ -121,15 +121,16 @@ in [`public/stockfish`](../public/stockfish) and attributed in [CREDITS.md](../C
 ## Opening lines
 
 `openings.json` holds the curated repertoire: one entry per line, with a stable id, a name, the
-colour the user plays (`color`) and the moves in UCI from the initial position. The app answers
-for the other side; a line may stop on either side's move, and it is a card: an attempt is scored
-as a whole, not move by move.
+colour the user plays (`color`), a short note on the plan (`note`) and the moves in UCI from the
+initial position. The app answers for the other side; a line may stop on either side's move, and
+it is a card: an attempt is scored as a whole, not move by move.
 
 ```json
 {
   "id": "london-vs-d5",
   "name": "London contre ...d5",
   "color": "white",
+  "note": "Le London classique : Bf4, e3, Nf3, c3 et Nbd2, puis Bd3.",
   "moves": ["d2d4", "d7d5", "c1f4", "g8f6", "e2e3"]
 }
 ```
@@ -142,4 +143,6 @@ alternatives are strict on purpose. Sibling lines deliberately share their first
 revising one repeats a prefix of another: that redundancy is the training, not a defect.
 
 The parser is strict about the colour: a line must contain at least one move for the user, and
-every move must be legal from the initial position.
+every move must be legal from the initial position. It is strict about the note too: a line
+without one is skipped, and a test asserts that every committed entry survives, so a missing note
+cannot drop a card from the training in silence.

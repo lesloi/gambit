@@ -11,6 +11,7 @@ import {
 const london: OpeningLine = {
   id: 'london-demo',
   name: 'London',
+  note: 'Une note.',
   color: 'white',
   moves: ['d2d4', 'd7d5', 'c1f4', 'g8f6', 'e2e3'],
 };
@@ -18,6 +19,7 @@ const london: OpeningLine = {
 const french: OpeningLine = {
   id: 'french-demo',
   name: 'Française',
+  note: 'Une note.',
   color: 'black',
   moves: ['e2e4', 'e7e6', 'd2d4', 'd7d5'],
 };
@@ -26,6 +28,7 @@ const french: OpeningLine = {
 const replyLast: OpeningLine = {
   id: 'reply-last',
   name: 'Réponse finale',
+  note: 'Une note.',
   color: 'white',
   moves: ['d2d4', 'd7d5'],
 };
@@ -34,6 +37,7 @@ const replyLast: OpeningLine = {
 const promotionLine: OpeningLine = {
   id: 'promotion-demo',
   name: 'Promotion',
+  note: 'Une note.',
   color: 'white',
   moves: ['a2a4', 'b7b5', 'a4b5', 'a7a6', 'b5a6', 'b8c6', 'a6a7', 'c6b8', 'a7b8q'],
 };

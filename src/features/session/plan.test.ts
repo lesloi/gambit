@@ -34,7 +34,7 @@ function endgame(id: string, name: string): Endgame {
 }
 
 function opening(id: string, name: string): OpeningLine {
-  return { id, name, color: 'white', moves: ['d2d4', 'd7d5'] };
+  return { id, name, note: 'Une note.', color: 'white', moves: ['d2d4', 'd7d5'] };
 }
 
 const catalog = sessionCatalog(
