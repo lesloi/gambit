@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, Clock } from 'lucide-react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Rating } from 'ts-fsrs';
 import { leavingRating } from '../../db/journal';
 import { fr } from '../../i18n/fr';
@@ -22,6 +23,7 @@ import {
   type SolutionRow,
 } from './puzzle';
 import { missedAttemptRating, recordPuzzleReview } from './record';
+import { formatSolveTime } from './solveTime';
 
 interface PendingPromotion {
   from: string;
@@ -51,6 +53,13 @@ export function PuzzlePlayer({
   const [resetKey, setResetKey] = useState(0);
   /** The ply the revealed line is showing; null means its final position. */
   const [browsedPly, setBrowsedPly] = useState<number | null>(null);
+  /** Whether the solution sheet is open; null follows the outcome, open once it was revealed. */
+  const [sheetOpen, setSheetOpen] = useState<boolean | null>(null);
+  const [startedAt, setStartedAt] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
+  /** When the attempt ended, freezing the clock; null while it is still being solved. */
+  const [endedAt, setEndedAt] = useState<number | null>(null);
+  const sheetId = useId();
   const boardHost = useRef<HTMLDivElement>(null);
   const attemptRecorded = useRef(false);
   /** This attempt's journal write, so a tap on "next" cannot read the journal before it lands. */
@@ -76,6 +85,17 @@ export function PuzzlePlayer({
     [state.fen, state.outcome],
   );
 
+  // The clock measures the attempt: it runs while the puzzle is open and freezes at the verdict.
+  useEffect(() => {
+    if (state.outcome !== 'playing') return;
+    const interval = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [state.outcome]);
+
+  const elapsed = Math.max(0, (endedAt ?? now) - startedAt);
+  const timeLabel = formatSolveTime(elapsed);
+  const sheetVisible = sheetOpen ?? state.outcome === 'revealed';
+
   const reset = () => {
     setState(startPuzzle(puzzle));
     setHint(false);
@@ -83,7 +103,18 @@ export function PuzzlePlayer({
     setBusy(false);
     setPending(null);
     setBrowsedPly(null);
+    setSheetOpen(null);
+    setStartedAt(Date.now());
+    setNow(Date.now());
+    setEndedAt(null);
     attemptRecorded.current = false;
+  };
+
+  const toggleSheet = () => {
+    const next = !sheetVisible;
+    setSheetOpen(next);
+    // Closing the sheet puts the board back on the final position, the one the verdict speaks for.
+    if (!next) setBrowsedPly(null);
   };
 
   // The "again" review is appended once and never edited. A write that fails is not surfaced: the
@@ -145,9 +176,15 @@ export function PuzzlePlayer({
     onNext();
   };
 
+  // The first outcome freezes the clock; revealing after a miss keeps the time of the miss.
+  const settle = (outcome: PuzzleOutcome) => {
+    if (outcome !== 'playing') setEndedAt((value) => value ?? Date.now());
+  };
+
   const applyMove = (from: string, to: string, promotion?: PromotionPiece) => {
     const next = playMove(state, from, to, promotion);
     setState(next);
+    settle(next.outcome);
     recordMissed(state.outcome, next.outcome);
   };
 
@@ -178,6 +215,7 @@ export function PuzzlePlayer({
   const reveal = () => {
     const next = revealSolution(state);
     setState(next);
+    settle(next.outcome);
     setBrowsedPly(null);
     recordMissed(state.outcome, next.outcome);
   };
@@ -208,10 +246,17 @@ export function PuzzlePlayer({
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <p className="text-sm font-medium">
-          {turn === 'white' ? fr.puzzle.whiteToMove : fr.puzzle.blackToMove}
-        </p>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium">
+            {turn === 'white' ? fr.puzzle.whiteToMove : fr.puzzle.blackToMove}
+          </p>
+          <span className="text-ink-muted flex items-center gap-1 text-xs tabular-nums">
+            <Clock size={13} aria-hidden="true" />
+            <span className="sr-only">{fr.puzzle.solveTime} : </span>
+            {timeLabel}
+          </span>
+        </div>
         {state.outcome === 'playing' ? (
           <div className="flex items-center gap-1">
             <button
@@ -249,7 +294,14 @@ export function PuzzlePlayer({
 
             {sheet ? (
               <div className="mt-3">
-                <SolutionMoves rows={sheet.rows} shownPly={shownPly} onSelect={browse} />
+                <SolutionMoves
+                  rows={sheet.rows}
+                  shownPly={shownPly}
+                  onSelect={browse}
+                  open={sheetVisible}
+                  onToggle={toggleSheet}
+                  listId={sheetId}
+                />
               </div>
             ) : null}
 
@@ -299,7 +351,14 @@ export function PuzzlePlayer({
 
         {state.outcome === 'revealed' ? (
           <>
-            <SolutionMoves rows={storedSheet.rows} shownPly={shownPly} onSelect={browse} />
+            <SolutionMoves
+              rows={storedSheet.rows}
+              shownPly={shownPly}
+              onSelect={browse}
+              open={sheetVisible}
+              onToggle={toggleSheet}
+              listId={sheetId}
+            />
 
             <div className="mt-3 flex gap-2">
               <button
@@ -336,24 +395,48 @@ export function PuzzlePlayer({
 }
 
 /**
- * The line as a score sheet, two moves per row. Every move is a button so the board can show the
- * position it reached.
+ * The line as a score sheet, two moves per row, opened with the button that titles it. Every move is
+ * a button so the board can show the position it reached; the rows stay mounted when closed so the
+ * button keeps the list it controls.
  */
 function SolutionMoves({
   rows,
   shownPly,
   onSelect,
+  open,
+  onToggle,
+  listId,
 }: {
   rows: readonly SolutionRow[];
   shownPly: number;
   onSelect: (ply: number) => void;
+  open: boolean;
+  onToggle: () => void;
+  listId: string;
 }) {
   return (
     <div className="border-line bg-paper-raised rounded-sm border">
-      <p className="border-line text-accent-ink border-b px-3 py-2 text-[0.6875rem] tracking-widest uppercase">
-        {fr.puzzle.solutionTitle}
-      </p>
-      <ol className="py-1 text-sm" aria-label={fr.puzzle.solutionTitle}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={listId}
+        onClick={onToggle}
+        className={`hover:bg-paper flex min-h-11 w-full items-center justify-between gap-2 px-3 transition-colors ${
+          open ? 'border-line rounded-t-sm border-b' : 'rounded-sm'
+        }`}
+      >
+        <span className="text-accent-ink text-[0.6875rem] tracking-widest uppercase">
+          {fr.puzzle.solutionTitle}
+        </span>
+        <ChevronDown
+          size={16}
+          aria-hidden="true"
+          className={`text-ink-muted transition-transform motion-reduce:transition-none ${
+            open ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+      <ol id={listId} hidden={!open} className="py-1 text-sm" aria-label={fr.puzzle.solutionTitle}>
         {rows.map((row, index) => {
           // The sheet numbers the puzzle's own line from 1: the move number of the game the
           // position was taken from means nothing to the solver.
