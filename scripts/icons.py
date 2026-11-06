@@ -8,8 +8,8 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-INK = "#1c1a18"
-CREAM = "#f7f3ea"
+INK = "#1c1a18"  # the `ink` of the light theme
+CREAM = "#fbfaf8"  # its `paper`: the icon is the app, background and text swapped
 SUPERSAMPLE = 4
 ROOT = Path(__file__).resolve().parent.parent
 PUBLIC = ROOT / "public"
