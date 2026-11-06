@@ -52,12 +52,30 @@
   background-size: 25% 25%;
 }
 
+/*
+ * Chessground floors the board to a multiple of eight device pixels, so a full-bleed board on a
+ * 390 px screen comes out 384 px wide. Centre what is left instead of leaving it all on one side.
+ */
+.cg-wrap cg-container {
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+}
+
 /* The brown theme's green highlights belong to Lichess; the app uses its accent. */
 .cg-wrap cg-board square.last-move {
   background-color: rgb(86 150 220 / 0.4);
 }
 .cg-wrap cg-board square.selected {
   background-color: rgb(86 150 220 / 0.5);
+}
+/*
+ * A hint rings the piece the puzzle expects you to move. A ring rather than a fill keeps it
+ * distinct from the blue of a destination or a last move, and leaves the piece visible inside it.
+ */
+.cg-wrap cg-board square.hint {
+  background-color: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  box-shadow: inset 0 0 0 3px var(--color-accent);
 }
 .cg-wrap cg-board square.move-dest {
   background: radial-gradient(

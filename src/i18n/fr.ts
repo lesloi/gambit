@@ -265,17 +265,34 @@ export const fr = {
     whiteToMove: 'Aux blancs',
     blackToMove: 'Aux noirs',
     hint: 'Indice',
+    hintPiece: 'Montrer la pièce',
+    hintShown: 'Indice affiché',
+    /** Announced to a screen reader: the ring itself says nothing on its own. */
+    hintSquare: 'La pièce à jouer est en {square}.',
+    /**
+     * A hint nudges the family of the motif, never names it: the theme labels are shown once the
+     * puzzle is over, when they teach something.
+     */
+    hints: {
+      mate: 'Cherche le mat : chaque pièce peut y contribuer.',
+      sacrifice: 'Il faut peut-être donner du matériel pour gagner du temps.',
+      fork: 'Une pièce peut en menacer deux d’un seul coup.',
+      line: 'Deux pièces sont sur la même ligne : la première peut être forcée de bouger.',
+      pin: 'Une pièce ne peut pas bouger sans en laisser une autre.',
+      defence: 'Aucun échec, aucune capture : cherche un coup calme.',
+      promotion: 'Pense au pion qui peut aller au bout.',
+      endgame: 'Les rois et les pions comptent autant que les pièces.',
+      attack: 'Le roi est mal défendu : regarde les cases autour de lui.',
+      loose: 'Regarde les pièces qui ne sont pas défendues.',
+    },
     showSolution: 'Voir la solution',
     solveTime: 'Temps de résolution',
-    hintPrefix: 'Motif :',
     solved: 'Bien joué',
     failed: 'Raté',
     bestMove: 'Le bon coup était {move}.',
     solutionTitle: 'Solution',
     retry: 'Rejouer',
     next: 'Puzzle suivant',
-    lengthOne: '1 coup',
-    lengthMany: '{count} coups',
     loading: 'Chargement des puzzles…',
     loadFailed: 'Les puzzles n’ont pas pu être chargés.',
     reload: 'Réessayer',

@@ -1,4 +1,4 @@
-import { ChevronDown, Clock } from 'lucide-react';
+import { ChevronDown, Clock, Eye, Lightbulb } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Rating } from 'ts-fsrs';
 import { leavingRating } from '../../db/journal';
@@ -7,8 +7,7 @@ import { sideToMove } from '../../lib/chess';
 import { AgainButton } from '../../ui/AgainButton';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { PromotionDialog, promotionAnchor } from '../../ui/PromotionDialog';
-import { puzzleLength } from './content';
-import { lengthLabel, themeLabel } from './labels';
+import { hintNudge, themeLabel } from './labels';
 import {
   legalDests,
   playMove,
@@ -32,6 +31,10 @@ interface PendingPromotion {
   options: PromotionPiece[];
 }
 
+/** A secondary action of the puzzle screen: the pair of buttons under the board. */
+const SECONDARY_ACTION =
+  'border-line text-ink-muted hover:text-ink inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-sm border px-3 text-xs transition-colors';
+
 /**
  * One puzzle from its start position to its verdict. Both the puzzle screen and the mistakes list
  * play through this component, so a replay behaves exactly like a fresh attempt. The caller keys
@@ -47,7 +50,8 @@ export function PuzzlePlayer({
   nextLabel?: string;
 }) {
   const [state, setState] = useState(() => startPuzzle(puzzle));
-  const [hint, setHint] = useState(false);
+  /** The hint of the position on the board: none, its sentence, or the piece it points at. */
+  const [hint, setHint] = useState<'none' | 'text' | 'piece'>('none');
   const [again, setAgain] = useState(false);
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<PendingPromotion | null>(null);
@@ -116,7 +120,7 @@ export function PuzzlePlayer({
 
   const reset = () => {
     setState(startPuzzle(puzzle));
-    setHint(false);
+    setHint('none');
     setAgain(false);
     setBusy(false);
     setPending(null);
@@ -203,6 +207,8 @@ export function PuzzlePlayer({
     setState(next);
     settle(next.outcome);
     recordMissed(state.outcome, next.outcome);
+    // The ringed piece belongs to the move just played: the next position gets its own hint.
+    setHint((value) => (value === 'piece' ? 'text' : value));
   };
 
   const move = (from: string, to: string) => {
@@ -233,7 +239,8 @@ export function PuzzlePlayer({
     const next = revealSolution(state);
     setState(next);
     settle(next.outcome);
-    setBrowsedPly(null);
+    // The line opens on the move the puzzle wanted, not on the position it ends in.
+    setBrowsedPly(1);
     recordMissed(state.outcome, next.outcome);
   };
 
@@ -246,9 +253,96 @@ export function PuzzlePlayer({
     }
   };
 
+  // The band is the one place the attempt speaks: whose move it is, then a nudge or a verdict.
+  const hintSquare =
+    hint === 'piece' && state.outcome === 'playing' ? (state.expected?.slice(0, 2) ?? null) : null;
+  const hintLabel =
+    hint === 'piece' ? fr.puzzle.hintShown : hint === 'text' ? fr.puzzle.hintPiece : fr.puzzle.hint;
+  const stateLabel =
+    state.outcome === 'solved'
+      ? fr.puzzle.solved
+      : state.outcome === 'playing'
+        ? turn === 'white'
+          ? fr.puzzle.whiteToMove
+          : fr.puzzle.blackToMove
+        : fr.puzzle.failed;
+  const themeList = puzzle.themes.map(themeLabel).join(' · ');
+  const detail =
+    state.outcome === 'solved' || state.outcome === 'revealed'
+      ? themeList
+      : state.outcome === 'failed'
+        ? fr.puzzle.bestMove.replace('{move}', state.bestSan ?? '')
+        : hint !== 'none'
+          ? hintNudge(puzzle.themes)
+          : null;
+  // What a screen reader hears. The turn and the clock are left out: the first flips on every
+  // move and the second ticks, so a live region holding them would talk all the time.
+  const announcement =
+    state.outcome === 'solved'
+      ? `${fr.puzzle.solved}. ${themeList}`
+      : state.outcome === 'failed'
+        ? `${fr.puzzle.failed}. ${fr.puzzle.bestMove.replace('{move}', state.bestSan ?? '')}`
+        : state.outcome === 'revealed'
+          ? `${fr.puzzle.failed}. ${themeList}`
+          : hint === 'piece' && hintSquare
+            ? fr.puzzle.hintSquare.replace('{square}', hintSquare)
+            : hint === 'text'
+              ? hintNudge(puzzle.themes)
+              : '';
+  const tone =
+    state.outcome === 'solved'
+      ? 'border-ok-soft bg-ok-soft text-ok'
+      : state.outcome === 'failed' || state.outcome === 'revealed'
+        ? 'border-bad-soft bg-bad-soft text-bad'
+        : 'border-line bg-paper-raised text-ink';
+
   return (
     <>
-      <div className="border-line bg-paper-raised rounded-sm border p-2.5 sm:p-3">
+      <div className={`mt-3 flex items-start gap-3 rounded-sm border px-3 py-2.5 ${tone}`}>
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-2 text-sm font-medium">
+            {state.outcome === 'playing' ? (
+              <span
+                aria-hidden="true"
+                className={`rounded-xs size-2.5 shrink-0 border ${
+                  turn === 'black'
+                    ? 'border-board-label bg-board-label'
+                    : 'border-board-dark bg-board-light'
+                }`}
+              />
+            ) : null}
+            {stateLabel}
+          </p>
+          {detail ? (
+            <p
+              className={`mt-1 flex items-start gap-1.5 text-xs ${
+                state.outcome === 'playing' ? 'text-ink-muted' : 'opacity-80'
+              }`}
+            >
+              {hint !== 'none' && state.outcome === 'playing' ? (
+                <Lightbulb
+                  size={13}
+                  aria-hidden="true"
+                  className="text-accent-ink mt-px shrink-0"
+                />
+              ) : null}
+              <span>{detail}</span>
+            </p>
+          ) : null}
+        </div>
+        <p className="text-ink-muted flex shrink-0 items-center gap-1 text-xs tabular-nums">
+          <Clock size={13} aria-hidden="true" />
+          <span className="sr-only">{fr.puzzle.solveTime} : </span>
+          {timeLabel}
+        </p>
+        {/* A verdict or a nudge is announced once; the turn and the clock stay out of it. */}
+        <p role="status" className="sr-only">
+          {announcement}
+        </p>
+      </div>
+
+      {/* Full bleed on a phone, where the board is the screen; a framed panel from `sm` up. */}
+      <div className="-mx-4 border-line bg-paper border-y mt-2 sm:mx-0 sm:rounded-sm sm:border sm:bg-paper-raised sm:p-3">
         <div ref={boardHost} tabIndex={-1} aria-label={fr.puzzle.board} className="rounded-sm">
           <ChessBoard
             fen={shownFen}
@@ -258,145 +352,98 @@ export function PuzzlePlayer({
             movable={state.outcome === 'playing'}
             dests={dests}
             onMove={move}
+            mark={hintSquare}
             resetKey={resetKey}
           />
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-medium">
-            {turn === 'white' ? fr.puzzle.whiteToMove : fr.puzzle.blackToMove}
-          </p>
-          <span className="text-ink-muted flex items-center gap-1 text-xs tabular-nums">
-            <Clock size={13} aria-hidden="true" />
-            <span className="sr-only">{fr.puzzle.solveTime} : </span>
-            {timeLabel}
-          </span>
+      {state.outcome === 'playing' ? (
+        <div className="mt-3 flex gap-2">
+          {/* The used hint keeps its focus: a disabled button would drop it from the tab order. */}
+          <button
+            type="button"
+            onClick={() => setHint(hint === 'none' ? 'text' : 'piece')}
+            aria-disabled={hint === 'piece'}
+            className={`${SECONDARY_ACTION} ${hint === 'piece' ? 'opacity-50' : ''}`}
+          >
+            <Lightbulb size={15} aria-hidden="true" />
+            {hintLabel}
+          </button>
+          <button type="button" onClick={reveal} className={SECONDARY_ACTION}>
+            <Eye size={15} aria-hidden="true" />
+            {fr.puzzle.showSolution}
+          </button>
         </div>
-        {state.outcome === 'playing' ? (
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setHint(true)}
-              className="text-ink-muted hover:text-ink min-h-11 rounded-sm px-3 text-xs"
-            >
-              {fr.puzzle.hint}
-            </button>
-            <button
-              type="button"
-              onClick={reveal}
-              className="text-ink-muted hover:text-ink min-h-11 rounded-sm px-3 text-xs"
-            >
-              {fr.puzzle.showSolution}
-            </button>
-          </div>
-        ) : null}
-      </div>
-
-      {hint && state.outcome === 'playing' ? (
-        <p className="text-ink-muted mt-1 text-xs">
-          {fr.puzzle.hintPrefix} {puzzle.themes.map(themeLabel).join(' · ')} ·{' '}
-          {lengthLabel(puzzleLength(puzzle))}
-        </p>
       ) : null}
 
-      <div className="mt-4">
-        {state.outcome === 'solved' ? (
-          <>
-            <div className="bg-ok-soft text-ok rounded-sm px-3 py-2">
-              <p className="text-sm font-semibold">{fr.puzzle.solved}</p>
-              <p className="mt-1 text-xs opacity-80">{puzzle.themes.map(themeLabel).join(' · ')}</p>
-            </div>
+      {state.outcome === 'solved' ? (
+        <div className="mt-3 grid grid-cols-5 gap-2">
+          <div className="col-span-2">
+            <AgainButton recorded={again} disabled={busy} onPress={() => void rateAgain()} />
+          </div>
+          <button
+            type="button"
+            onClick={() => void proceed()}
+            disabled={busy}
+            className="bg-accent col-span-3 rounded-sm px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {nextLabel}
+          </button>
+        </div>
+      ) : null}
 
-            {sheet ? (
-              <div className="mt-3">
-                <SolutionMoves
-                  rows={sheet.rows}
-                  shownPly={shownPly}
-                  onSelect={browse}
-                  open={sheetVisible}
-                  onToggle={toggleSheet}
-                  listId={sheetId}
-                />
-              </div>
-            ) : null}
+      {state.outcome === 'failed' ? (
+        <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            onClick={reset}
+            className="bg-accent flex-1 rounded-sm px-4 py-3 text-sm font-semibold text-white"
+          >
+            {fr.puzzle.retry}
+          </button>
+          <button
+            type="button"
+            onClick={reveal}
+            className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm"
+          >
+            {fr.puzzle.showSolution}
+          </button>
+        </div>
+      ) : null}
 
-            <div className="mt-4 grid grid-cols-5 gap-2">
-              <div className="col-span-2">
-                <AgainButton recorded={again} disabled={busy} onPress={() => void rateAgain()} />
-              </div>
-              <button
-                type="button"
-                onClick={() => void proceed()}
-                disabled={busy}
-                className="bg-accent col-span-3 rounded-sm px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
-              >
-                {nextLabel}
-              </button>
-            </div>
-          </>
-        ) : null}
+      {state.outcome === 'revealed' ? (
+        <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            onClick={reset}
+            className="bg-accent flex-1 rounded-sm px-4 py-3 text-sm font-semibold text-white"
+          >
+            {fr.puzzle.retry}
+          </button>
+          <button
+            type="button"
+            onClick={() => void proceed()}
+            disabled={busy}
+            className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm disabled:opacity-60"
+          >
+            {nextLabel}
+          </button>
+        </div>
+      ) : null}
 
-        {state.outcome === 'failed' ? (
-          <>
-            <div className="bg-bad-soft text-bad rounded-sm p-4">
-              <p className="text-sm font-semibold">{fr.puzzle.failed}</p>
-              <p className="mt-1 text-xs opacity-80">
-                {fr.puzzle.bestMove.replace('{move}', state.bestSan ?? '')}
-              </p>
-            </div>
-
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={reset}
-                className="bg-accent flex-1 rounded-sm px-4 py-3 text-sm font-semibold text-white"
-              >
-                {fr.puzzle.retry}
-              </button>
-              <button
-                type="button"
-                onClick={reveal}
-                className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm"
-              >
-                {fr.puzzle.showSolution}
-              </button>
-            </div>
-          </>
-        ) : null}
-
-        {state.outcome === 'revealed' ? (
-          <>
-            <SolutionMoves
-              rows={storedSheet.rows}
-              shownPly={shownPly}
-              onSelect={browse}
-              open={sheetVisible}
-              onToggle={toggleSheet}
-              listId={sheetId}
-            />
-
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={reset}
-                className="bg-accent flex-1 rounded-sm px-4 py-3 text-sm font-semibold text-white"
-              >
-                {fr.puzzle.retry}
-              </button>
-              <button
-                type="button"
-                onClick={() => void proceed()}
-                disabled={busy}
-                className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm disabled:opacity-60"
-              >
-                {nextLabel}
-              </button>
-            </div>
-          </>
-        ) : null}
-      </div>
+      {sheet ? (
+        <div className="mt-3">
+          <SolutionMoves
+            rows={sheet.rows}
+            shownPly={shownPly}
+            onSelect={browse}
+            open={sheetVisible}
+            onToggle={toggleSheet}
+            listId={sheetId}
+          />
+        </div>
+      ) : null}
 
       {pending ? (
         <PromotionDialog

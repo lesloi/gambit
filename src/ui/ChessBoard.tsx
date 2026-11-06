@@ -15,6 +15,8 @@ export interface ChessBoardProps {
   onMove: (from: string, to: string, premove: boolean) => void;
   /** A suggested move drawn as an arrow, or null to clear it. */
   hint?: { from: string; to: string } | null;
+  /** The square a puzzle's hint points at, ringed, or null to clear it. */
+  mark?: string | null;
   /** Bumped to apply `fen` again after the board moved a piece without a state change. */
   resetKey?: number;
 }
@@ -33,6 +35,11 @@ function asShapes(
   return hint ? [{ orig: hint.from as Key, dest: hint.to as Key, brush: 'paleBlue' }] : [];
 }
 
+/** Chessground paints a custom highlight as a class on the square it names. */
+function asHighlight(mark: string | null | undefined): Map<Key, string> {
+  return mark ? new Map([[mark as Key, 'hint']]) : new Map();
+}
+
 function other(color: 'white' | 'black'): 'white' | 'black' {
   return color === 'white' ? 'black' : 'white';
 }
@@ -47,6 +54,7 @@ export function ChessBoard({
   dests,
   onMove,
   hint = null,
+  mark = null,
   resetKey = 0,
 }: ChessBoardProps) {
   const host = useRef<HTMLDivElement>(null);
@@ -64,7 +72,7 @@ export function ChessBoard({
       orientation,
       coordinates: true,
       animation: { enabled: true, duration: 180 },
-      highlight: { lastMove: true, check: true },
+      highlight: { lastMove: true, check: true, custom: asHighlight(mark) },
       lastMove: asMove(lastMove),
       drawable: { autoShapes: asShapes(hint) },
       movable: {
@@ -96,6 +104,7 @@ export function ChessBoard({
       turnColor: turn,
       lastMove: asMove(lastMove),
       drawable: { autoShapes: asShapes(hint) },
+      highlight: { custom: asHighlight(mark) },
       movable: {
         color: movable ? turn : premovable ? other(turn) : undefined,
         dests: asKeys(dests),
@@ -106,7 +115,7 @@ export function ChessBoard({
     // A new fen leaves chessground's premove in place, so a game that ends has to cancel it.
     if (movable) api.current?.playPremove();
     else if (!premovable) api.current?.cancelPremove();
-  }, [fen, orientation, turn, lastMove, movable, premovable, dests, hint, resetKey]);
+  }, [fen, orientation, turn, lastMove, movable, premovable, dests, hint, mark, resetKey]);
 
   return <div ref={host} className="aspect-square w-full touch-none overflow-hidden rounded-sm" />;
 }
