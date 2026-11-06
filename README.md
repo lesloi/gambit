@@ -4,7 +4,7 @@
 
 <h1 align="center">Gambit</h1>
 
-<h3 align="center">A personal chess training app. Free, no account, no tracking.</h3>
+<h3 align="center">A personal chess training app. No account, no tracking.</h3>
 
 <p align="center">
   Puzzles, tactical motifs, endgames, a curated opening repertoire and games against the engine.
@@ -21,18 +21,21 @@ committed content and the game mode runs on the bundled engine.
 | Puzzles  | Real positions from the Lichess puzzle set, by length and difficulty  | Ready |
 | Endgames | Classic positions, playable against the engine                        | Ready |
 | Openings | A curated repertoire for both colours, revised with spaced repetition | Ready |
-| Games    | Play Stockfish at a chosen level, on the clock                        | Ready |
+| Games    | Play Maia at a chosen level, on the clock                             | Ready |
 
 The home screen, the installable app, the offline shell and the four modes are available now. A
-finished game is stored; the review of its blunders is the next step.
+finished game is stored and can be reviewed: Stockfish replays every move and marks the blunders
+and the missed wins.
 
 ## How it works
 
 - A **static PWA**: Vite, React and TypeScript, no server and no account.
-- The **progression lives in IndexedDB**; a backup is a JSON file you export.
+- The **progression lives in IndexedDB**, on the device.
 - **Content ships with the app**: a filtered subset of the public Lichess puzzle database, the
   opening lines and the endgame positions.
-- **Stockfish runs in the browser**, as a WebAssembly worker, so no move leaves the device.
+- **The engines run in the browser**: Stockfish, a WebAssembly worker, gives the hints, plays the
+  other side in the endgames and reviews the games; Maia, an ONNX model, is the opponent. No move
+  leaves the device.
 - **No request to a third party at runtime**: the content is baked into the build, read from the
   app's own origin, and the Content-Security-Policy allows no external host.
 
@@ -76,9 +79,9 @@ deploy it.
 ## Privacy
 
 No account, no analytics, no tracking, no cookie, and no request at all. Your progression, your
-games and your settings stay in the browser, and only a backup you export takes them out.
+games and your settings stay in the browser.
 
 ## Licence
 
-[AGPL-3.0-or-later](./LICENSE). The Chessnut piece set keeps its own licence, Apache 2.0; see
-[CREDITS.md](./CREDITS.md).
+[AGPL-3.0-or-later](./LICENSE). The Chessnut pieces, Stockfish, Maia and ONNX Runtime keep their
+own licences; see [CREDITS.md](./CREDITS.md).
