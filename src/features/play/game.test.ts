@@ -183,37 +183,37 @@ describe('play game', () => {
   });
 });
 
-describe('the engine turn the screen does not wait for', () => {
+describe('the engine turn the screen asks for on its own', () => {
   it('asks the engine to open when the user plays Black', () => {
-    expect(engineTurnPly(startGame('black'), null)).toBe(0);
+    expect(engineTurnPly(startGame('black'))).toBe(0);
   });
 
   it('leaves the opening to the user when they play White', () => {
-    expect(engineTurnPly(startGame('white'), null)).toBeNull();
+    expect(engineTurnPly(startGame('white'))).toBeNull();
   });
 
-  it('asks the engine for the position a resumed game was left at', () => {
+  it('asks the engine for the position a user move left it', () => {
     const state = playUci(startGame('white'), 'e2e4');
 
-    expect(engineTurnPly(state, 1)).toBe(1);
+    expect(engineTurnPly(state)).toBe(1);
   });
 
-  it('asks nothing for a position the resumed game has moved past', () => {
-    const state = playUci(playUci(startGame('black'), 'e2e4'), 'e7e5');
+  it('asks again for the current position after a mid-game failure', () => {
+    const state = playUci(playUci(playUci(startGame('white'), 'e2e4'), 'e7e5'), 'g1f3');
 
-    expect(engineTurnPly(state, 1)).toBeNull();
+    expect(engineTurnPly(state)).toBe(3);
   });
 
-  it('waits for the user when the resumed position is theirs', () => {
+  it('waits for the user when the position is theirs', () => {
     const state = playUci(startGame('black'), 'e2e4');
 
-    expect(engineTurnPly(state, 1)).toBeNull();
+    expect(engineTurnPly(state)).toBeNull();
   });
 
   it('asks nothing once the game is over', () => {
     const state = flagSide(startGame('black'), 'white');
 
-    expect(engineTurnPly(state, null)).toBeNull();
+    expect(engineTurnPly(state)).toBeNull();
   });
 });
 

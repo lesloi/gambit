@@ -43,15 +43,14 @@ export function startGame(userColor: Side = 'white'): PlayState {
 }
 
 /**
- * The ply whose position the engine must answer on its own: a game the user opens as Black, or
- * the position a resumed game was left at. Null while it is the user's turn, once the game has
- * moved past that ply, or when it is over.
+ * The ply whose position the engine must answer on its own: the opening of a game the user plays
+ * as Black, the position a resumed game was left at, and the position a failed engine has to take
+ * over again. Null while it is the user's turn or once the game is over.
  */
-export function engineTurnPly(state: PlayState, resumedPly: number | null): number | null {
+export function engineTurnPly(state: PlayState): number | null {
   if (state.outcome !== 'playing' || sideToMove(state.fen) === state.userColor) return null;
 
-  const ply = resumedPly ?? (state.userColor === 'black' ? 0 : null);
-  return ply !== null && state.moves.length === ply ? ply : null;
+  return state.moves.length;
 }
 
 function resultOf(end: GameEnd): GameResult {
