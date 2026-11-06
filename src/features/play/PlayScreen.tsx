@@ -13,6 +13,7 @@ import { GameReview } from './GameReview';
 import { MoveSheet } from './MoveSheet';
 import { drawColor, PLAY_COLORS, type PlayColor } from './color';
 import { moveLabel, scoreSheet } from './notation';
+import { consumePremove, enqueuePremove, type Premove } from './premoves';
 import {
   afterMove,
   createClock,
@@ -353,6 +354,12 @@ function PlayGame({
   const [resetKey, setResetKey] = useState(0);
   const [reviewing, setReviewing] = useState(false);
   const [browsedPly, setBrowsedPly] = useState<number | null>(null);
+  const [premoves, setPremoves] = useState<readonly Premove[]>([]);
+  const premovesRef = useRef<readonly Premove[]>([]);
+  const updatePremoves = useCallback((next: readonly Premove[]) => {
+    premovesRef.current = next;
+    setPremoves(next);
+  }, []);
   const engine = useRef<StockfishEngine | null>(null);
   // Maia moves; Stockfish keeps the hints and the review. Two workers, one per job.
   const maia = useRef<Engine | null>(null);
@@ -373,6 +380,7 @@ function PlayGame({
   const resumedPly = initialDraft?.moves.length ?? null;
   const autoAsked = useRef<number | null>(null);
   const discarding = useRef(false);
+  const consumedPly = useRef<number | null>(null);
 
   useEffect(() => {
     startedAt.current ??= Date.now();
@@ -441,7 +449,9 @@ function PlayGame({
     } catch {
       engineStateRef.current = 'failed';
       queueMicrotask(() => {
-        if (active) setEngineState('failed');
+        if (!active) return;
+        updatePremoves([]);
+        setEngineState('failed');
       });
       return;
     }
@@ -460,7 +470,9 @@ function PlayGame({
       },
       () => {
         engineStateRef.current = 'failed';
-        if (active) setEngineState('failed');
+        if (!active) return;
+        updatePremoves([]);
+        setEngineState('failed');
       },
     );
 
@@ -472,7 +484,7 @@ function PlayGame({
       if (engine.current === instance) engine.current = null;
       if (maia.current === maiaEngine) maia.current = null;
     };
-  }, [engineAttempt, startResumedClock]);
+  }, [engineAttempt, startResumedClock, updatePremoves]);
 
   // Hidden means the clock stops paying: the page may be closed, frozen or put away for a while.
   useEffect(() => {
@@ -524,7 +536,7 @@ function PlayGame({
     pending === null &&
     engineState === 'ready' &&
     !browsing;
-  // The engine's turn is when the user can queue a premove, which then plays on its reply.
+  // The engine's turn is when the user can queue premoves, which then play one by one on its replies.
   const premovable =
     state.outcome === 'playing' && !userTurn && engineState === 'ready' && !browsing;
   const dests = useMemo(() => (movable ? legalDests(state.fen) : NO_DESTS), [movable, state.fen]);
@@ -543,6 +555,7 @@ function PlayGame({
       setBrowsedPly(null);
       // The game can end while the promotion chooser waits, for instance at the flag.
       setPending(null);
+      updatePremoves([]);
       // A finished game must not be resumable, even if the tab closes before the effect below.
       if (after.outcome === 'over') clearDraft();
       if (after.outcome !== 'over' || after.result === null || recorded.current) return;
@@ -561,7 +574,7 @@ function PlayGame({
         () => setSaved('failed'),
       );
     },
-    [controlMs, incrementMs, level.elo],
+    [controlMs, incrementMs, level.elo, updatePremoves],
   );
 
   const applyMove = useCallback(
@@ -614,6 +627,7 @@ function PlayGame({
           setThinking(false);
           if (uci === null) {
             engineStateRef.current = 'failed';
+            updatePremoves([]);
             setEngineState('failed');
             return;
           }
@@ -630,6 +644,7 @@ function PlayGame({
           if (after === game) {
             // The engine named a move the board refuses; it can no longer be trusted for this game.
             engineStateRef.current = 'failed';
+            updatePremoves([]);
             setEngineState('failed');
             return;
           }
@@ -639,12 +654,39 @@ function PlayGame({
           if (request !== generation.current) return;
           setThinking(false);
           engineStateRef.current = 'failed';
+          updatePremoves([]);
           setEngineState('failed');
         },
       );
     },
-    [applyMove, complete, level.elo, level.movetimeMs],
+    [applyMove, complete, level.elo, level.movetimeMs, updatePremoves],
   );
+
+  // The engine's reply is the moment the queued premoves can play, one per turn. A premove the new
+  // position refuses takes the rest of the queue with it.
+  useEffect(() => {
+    if (browsing || state.outcome !== 'playing' || sideToMove(state.fen) !== state.userColor) {
+      return;
+    }
+    if (premoves.length === 0 || consumedPly.current === state.moves.length) return;
+    consumedPly.current = state.moves.length;
+
+    const at = Date.now();
+    const late = flagged(clockRef.current, at);
+    if (late !== null) {
+      // The engine is not running on the user's turn, so there is nothing to cancel here.
+      complete(flagSide(state, late));
+      updatePremoves([]);
+      return;
+    }
+
+    const result = consumePremove(state, premoves);
+    updatePremoves(result.queue);
+    if (!result.played) return;
+
+    const clock = applyMove(result.state, sideToMove(state.fen), at);
+    if (clock && result.state.outcome === 'playing') askEngine(result.state, clock);
+  }, [state, premoves, browsing, applyMove, askEngine, complete, updatePremoves]);
 
   // A game the user plays as Black opens on the engine's turn; a resumed game may have been left
   // there too. Ask it once, and again after a retry.
@@ -674,20 +716,24 @@ function PlayGame({
     if (next && after.outcome === 'playing') askEngine(after, next);
   };
 
-  const move = (from: string, to: string, premove = false) => {
+  const move = (from: string, to: string) => {
     const options = promotionPieces(state.fen, from, to);
     if (options.length > 0) {
-      // A premove is played before the user sees it, so its promotion is settled up front; asking
-      // would leave the clock running behind a dialog they may not expect.
-      if (premove) {
-        playUserMove(from, to, 'q');
-        return;
-      }
       setPending({ from, to, options });
       return;
     }
     playUserMove(from, to);
   };
+
+  const addPremove = useCallback(
+    (from: string, to: string) => {
+      const before = premovesRef.current;
+      const next = enqueuePremove(before, { from, to });
+      updatePremoves(next);
+      return next.length > before.length;
+    },
+    [updatePremoves],
+  );
 
   const promote = (piece: PromotionPiece) => {
     if (!pending) return;
@@ -765,6 +811,7 @@ function PlayGame({
 
   const browse = (ply: number) => {
     const at = Math.min(Math.max(ply, 0), livePly);
+    if (at < livePly) updatePremoves([]);
     setBrowsedPly(at >= livePly ? null : at);
   };
 
@@ -865,6 +912,8 @@ function PlayGame({
                 lastMove={shown.lastMove}
                 movable={movable}
                 premovable={premovable}
+                premoves={premoves}
+                onPremove={addPremove}
                 dests={dests}
                 hint={browsing ? null : state.hint}
                 onMove={move}

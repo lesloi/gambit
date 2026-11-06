@@ -32,3 +32,30 @@ export function legalDests(fen: string): Map<string, string[]> {
   }
   return dests;
 }
+
+export interface Premove {
+  from: string;
+  to: string;
+}
+
+export interface PremovePiece {
+  role: string;
+  color: string;
+}
+
+export type PieceAt = (square: string) => PremovePiece | undefined;
+
+/** Chessground lets a king premove onto its rook; chess.js only knows the two-square castle. */
+export function normalizePremove(from: string, to: string, pieceAt: PieceAt): Premove {
+  const moving = pieceAt(from);
+  const target = pieceAt(to);
+  if (moving?.role !== 'king' || target?.role !== 'rook' || target.color !== moving.color) {
+    return { from, to };
+  }
+
+  const rank = moving.color === 'white' ? '1' : '8';
+  if (from !== `e${rank}`) return { from, to };
+  if (to === `h${rank}`) return { from, to: `g${rank}` };
+  if (to === `a${rank}`) return { from, to: `c${rank}` };
+  return { from, to };
+}
