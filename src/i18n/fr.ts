@@ -266,6 +266,7 @@ export const fr = {
     blackToMove: 'Aux noirs',
     hint: 'Indice',
     showSolution: 'Voir la solution',
+    solveTime: 'Temps de résolution',
     hintPrefix: 'Motif :',
     solved: 'Bien joué',
     failed: 'Raté',
