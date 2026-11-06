@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Rating } from 'ts-fsrs';
+import { leavingRating } from '../../db/journal';
 import { fr } from '../../i18n/fr';
 import { sideToMove } from '../../lib/chess';
+import { AgainButton } from '../../ui/AgainButton';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { PromotionDialog, promotionAnchor } from '../../ui/PromotionDialog';
-import { GRADE, RatingButtons, type Rating } from '../../ui/RatingButtons';
 import { puzzleLength } from './content';
 import { lengthLabel, themeLabel } from './labels';
 import {
@@ -43,7 +45,8 @@ export function PuzzlePlayer({
 }) {
   const [state, setState] = useState(() => startPuzzle(puzzle));
   const [hint, setHint] = useState(false);
-  const [rating, setRating] = useState<Rating | null>(null);
+  const [again, setAgain] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<PendingPromotion | null>(null);
   const [resetKey, setResetKey] = useState(0);
   /** The ply the revealed line is showing; null means its final position. */
@@ -76,26 +79,26 @@ export function PuzzlePlayer({
   const reset = () => {
     setState(startPuzzle(puzzle));
     setHint(false);
-    setRating(null);
+    setAgain(false);
+    setBusy(false);
     setPending(null);
     setBrowsedPly(null);
     attemptRecorded.current = false;
   };
 
-  // A review is appended once and never edited, so the first rating is the review. A write that
-  // fails is not surfaced: the buttons unlock so the user can rate again, and nothing else is said.
-  const rate = async (value: Rating) => {
-    if (rating) return;
-    setRating(value);
-    const write = recordPuzzleReview(puzzle.id, GRADE[value]);
-    pendingWrite.current = write.then(
-      () => undefined,
-      () => undefined,
-    );
+  // The "again" review is appended once and never edited. A write that fails is not surfaced: the
+  // button stays available, and nothing else is said.
+  const rateAgain = async () => {
+    if (attemptRecorded.current || busy) return;
+    attemptRecorded.current = true;
+    setBusy(true);
     try {
-      await write;
+      await recordPuzzleReview(puzzle.id, Rating.Again);
+      setAgain(true);
     } catch {
-      setRating(null);
+      attemptRecorded.current = false;
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -113,11 +116,33 @@ export function PuzzlePlayer({
     );
   };
 
-  const proceed = () => {
-    const write = pendingWrite.current;
+  /**
+   * A solved attempt is written `good` when the user leaves it. The button waits for the write so a
+   * second tap cannot skip a card, and a failed write keeps the screen open rather than dropping
+   * the attempt. A miss already wrote its own review, so leaving it writes nothing.
+   */
+  const proceed = async () => {
+    if (busy) return;
+    setBusy(true);
+
+    const missed = pendingWrite.current;
     pendingWrite.current = null;
-    if (write) void write.then(onNext);
-    else onNext();
+    if (missed) await missed;
+
+    const grade = leavingRating(state.outcome, attemptRecorded.current);
+    if (grade !== null) {
+      attemptRecorded.current = true;
+      try {
+        await recordPuzzleReview(puzzle.id, grade);
+      } catch {
+        attemptRecorded.current = false;
+        setBusy(false);
+        return;
+      }
+    }
+
+    setBusy(false);
+    onNext();
   };
 
   const applyMove = (from: string, to: string, promotion?: PromotionPiece) => {
@@ -229,13 +254,14 @@ export function PuzzlePlayer({
             ) : null}
 
             <div className="mt-4">
-              <RatingButtons rating={rating} onRate={(value) => void rate(value)} />
+              <AgainButton recorded={again} disabled={busy} onPress={() => void rateAgain()} />
             </div>
 
             <button
               type="button"
-              onClick={proceed}
-              className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
+              onClick={() => void proceed()}
+              disabled={busy}
+              className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
             >
               {nextLabel}
             </button>
@@ -284,8 +310,9 @@ export function PuzzlePlayer({
               </button>
               <button
                 type="button"
-                onClick={proceed}
-                className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm"
+                onClick={() => void proceed()}
+                disabled={busy}
+                className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm disabled:opacity-60"
               >
                 {nextLabel}
               </button>

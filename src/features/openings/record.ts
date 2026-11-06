@@ -10,8 +10,8 @@ export function openingReview(lineId: string, rating: Grade, reviewedAt: number)
 }
 
 /**
- * A move outside the repertoire is a miss, recorded without asking. A completed line waits for the
- * user's rating, like a puzzle: the outcome says what happened, not how hard it felt.
+ * A move outside the repertoire is a miss, recorded without asking. A completed line is written
+ * good when the user leaves it, like a puzzle: the outcome says what happened, not how hard it felt.
  */
 export function missedOpeningRating(before: OpeningOutcome, after: OpeningOutcome): Grade | null {
   if (before !== 'playing') return null;

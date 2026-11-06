@@ -1,14 +1,15 @@
 import { ChevronLeft } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Rating } from 'ts-fsrs';
 import { cardId } from '../../db/cards';
 import { database } from '../../db/db';
 import type { CardState } from '../../db/fsrs';
-import { cardStates } from '../../db/journal';
+import { cardStates, leavingRating } from '../../db/journal';
 import { fr } from '../../i18n/fr';
 import { legalDests, promotionPieces, sideToMove, type PromotionPiece } from '../../lib/chess';
+import { AgainButton } from '../../ui/AgainButton';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { PromotionDialog, promotionAnchor } from '../../ui/PromotionDialog';
-import { GRADE, RatingButtons, type Rating } from '../../ui/RatingButtons';
 import { loadOpenings } from './content';
 import {
   playOpeningMove,
@@ -199,7 +200,8 @@ export function OpeningPlayer({
   nextLabel?: string;
 }) {
   const [state, setState] = useState(() => startOpening(line));
-  const [rating, setRating] = useState<Rating | null>(null);
+  const [again, setAgain] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<PendingPromotion | null>(null);
   const [resetKey, setResetKey] = useState(0);
   const boardHost = useRef<HTMLDivElement>(null);
@@ -214,7 +216,8 @@ export function OpeningPlayer({
 
   const restart = () => {
     setState(restartOpening(state));
-    setRating(null);
+    setAgain(false);
+    setBusy(false);
     setPending(null);
     recorded.current = false;
     setResetKey((key) => key + 1);
@@ -265,16 +268,47 @@ export function OpeningPlayer({
     boardHost.current?.focus();
   };
 
-  const rate = async (value: Rating) => {
-    if (rating) return;
-    setRating(value);
+  // The "again" review is appended once and never edited, and the list is refreshed afterwards so
+  // its due date is the one just written. A write that fails is not surfaced: the button stays.
+  const rateAgain = async () => {
+    if (recorded.current || busy) return;
+    recorded.current = true;
+    setBusy(true);
     try {
-      await recordOpeningReview(line.id, GRADE[value]);
-      recorded.current = true;
+      await recordOpeningReview(line.id, Rating.Again);
+      setAgain(true);
       onReviewed();
     } catch {
-      setRating(null);
+      recorded.current = false;
+    } finally {
+      setBusy(false);
     }
+  };
+
+  /**
+   * A solved line is written `good` when the user leaves it, after the list may have read the
+   * journal. The button waits for the write so a second tap cannot skip a line, and a failed write
+   * keeps the screen open rather than dropping the attempt.
+   */
+  const leave = async () => {
+    if (busy) return;
+    setBusy(true);
+
+    const grade = leavingRating(state.outcome, recorded.current);
+    if (grade !== null) {
+      recorded.current = true;
+      try {
+        await recordOpeningReview(line.id, grade);
+      } catch {
+        recorded.current = false;
+        setBusy(false);
+        return;
+      }
+      onReviewed();
+    }
+
+    setBusy(false);
+    onOther();
   };
 
   return (
@@ -332,7 +366,7 @@ export function OpeningPlayer({
                 </button>
                 <button
                   type="button"
-                  onClick={onOther}
+                  onClick={() => void leave()}
                   className="bg-accent flex-1 rounded-sm px-4 py-3 text-sm font-semibold text-white"
                 >
                   {nextLabel}
@@ -346,13 +380,14 @@ export function OpeningPlayer({
               </div>
 
               <div className="mt-4">
-                <RatingButtons rating={rating} onRate={(value) => void rate(value)} />
+                <AgainButton recorded={again} disabled={busy} onPress={() => void rateAgain()} />
               </div>
 
               <button
                 type="button"
-                onClick={onOther}
-                className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
+                onClick={() => void leave()}
+                disabled={busy}
+                className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
               >
                 {nextLabel}
               </button>
@@ -386,7 +421,7 @@ export function OpeningPlayer({
               </button>
               <button
                 type="button"
-                onClick={onOther}
+                onClick={() => void leave()}
                 className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm"
               >
                 {nextLabel}
