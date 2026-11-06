@@ -375,25 +375,26 @@ export function EndgamePlayer({
       <div className="mt-4">
         {state.outcome === 'solved' ? (
           <>
-            <div role="status" className="bg-ok-soft text-ok rounded-sm p-4">
+            <div role="status" className="bg-ok-soft text-ok rounded-sm px-3 py-2">
               <p className="text-sm font-semibold">{fr.endgame.solved}</p>
               {state.end ? (
                 <p className="mt-1 text-xs opacity-80">{endgameReason(state.end)}</p>
               ) : null}
             </div>
 
-            <div className="mt-4">
-              <AgainButton recorded={again} disabled={busy} onPress={() => void rateAgain()} />
+            <div className="mt-4 grid grid-cols-5 gap-2">
+              <div className="col-span-2">
+                <AgainButton recorded={again} disabled={busy} onPress={() => void rateAgain()} />
+              </div>
+              <button
+                type="button"
+                onClick={() => void leave()}
+                disabled={busy}
+                className="bg-accent col-span-3 rounded-sm px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {nextLabel}
+              </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => void leave()}
-              disabled={busy}
-              className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
-            >
-              {nextLabel}
-            </button>
           </>
         ) : null}
 
