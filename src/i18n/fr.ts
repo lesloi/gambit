@@ -266,7 +266,6 @@ export const fr = {
     blackToMove: 'Aux noirs',
     hint: 'Indice',
     hintPiece: 'Montrer la pièce',
-    hintShown: 'Indice affiché',
     /** Announced to a screen reader: the ring itself says nothing on its own. */
     hintSquare: 'La pièce à jouer est en {square}.',
     /**

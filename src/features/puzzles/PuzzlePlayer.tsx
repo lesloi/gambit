@@ -33,7 +33,7 @@ interface PendingPromotion {
 
 /** A secondary action of the puzzle screen: the pair of buttons under the board. */
 const SECONDARY_ACTION =
-  'border-line text-ink-muted hover:text-ink inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-sm border px-3 text-xs transition-colors';
+  'border-line text-ink-muted inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-sm border px-3 text-xs transition-colors';
 
 /**
  * One puzzle from its start position to its verdict. Both the puzzle screen and the mistakes list
@@ -260,8 +260,7 @@ export function PuzzlePlayer({
   // The band is the one place the attempt speaks: whose move it is, then a nudge or a verdict.
   const hintSquare =
     hint === 'piece' && state.outcome === 'playing' ? (state.expected?.slice(0, 2) ?? null) : null;
-  const hintLabel =
-    hint === 'piece' ? fr.puzzle.hintShown : hint === 'text' ? fr.puzzle.hintPiece : fr.puzzle.hint;
+  const hintLabel = hint === 'text' ? fr.puzzle.hintPiece : fr.puzzle.hint;
   const stateLabel =
     state.outcome === 'solved'
       ? fr.puzzle.solved
@@ -381,15 +380,20 @@ export function PuzzlePlayer({
               }
             }}
             aria-disabled={hint === 'piece'}
-            className={`${SECONDARY_ACTION} ${hint === 'piece' ? 'opacity-50' : ''}`}
+            className={`${SECONDARY_ACTION} ${
+              hint === 'piece' ? 'cursor-default opacity-50' : 'hover:text-ink'
+            }`}
           >
             <Lightbulb size={15} aria-hidden="true" />
             {hintLabel}
           </button>
-          <button type="button" onClick={reveal} className={SECONDARY_ACTION}>
-            <Eye size={15} aria-hidden="true" />
-            {fr.puzzle.showSolution}
-          </button>
+          {/* Giving up only opens once the hint has been read: a hint first, the answer after. */}
+          {hint !== 'none' ? (
+            <button type="button" onClick={reveal} className={`${SECONDARY_ACTION} hover:text-ink`}>
+              <Eye size={15} aria-hidden="true" />
+              {fr.puzzle.showSolution}
+            </button>
+          ) : null}
         </div>
       ) : null}
 
