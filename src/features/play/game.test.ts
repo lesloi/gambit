@@ -10,6 +10,7 @@ import {
 } from './game';
 
 const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const KNIGHT_SHUFFLE = ['g1f3', 'g8f6', 'f3g1', 'f6g8'] as const;
 
 describe('play game', () => {
   it('starts from the initial position with White to move', () => {
@@ -69,14 +70,28 @@ describe('play game', () => {
     expect(state.result).toEqual({ winner: 'black', reason: 'mate' });
   });
 
-  it('ends on a threefold repetition', () => {
+  it('ends on a fivefold repetition, counting the start', () => {
     let state = startGame();
-    for (const uci of ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1', 'f6g8']) {
-      state = playUci(state, uci);
+    for (let round = 0; round < 4; round += 1) {
+      for (const uci of KNIGHT_SHUFFLE) {
+        state = playUci(state, uci);
+      }
     }
 
     expect(state.outcome).toBe('over');
-    expect(state.result).toEqual({ winner: null, reason: 'threefold' });
+    expect(state.result).toEqual({ winner: null, reason: 'fivefold' });
+  });
+
+  it('keeps playing while a position has only appeared four times', () => {
+    let state = startGame();
+    for (let round = 0; round < 3; round += 1) {
+      for (const uci of KNIGHT_SHUFFLE) {
+        state = playUci(state, uci);
+      }
+    }
+
+    expect(state.outcome).toBe('playing');
+    expect(state.result).toBeNull();
   });
 
   it('ends on a stalemate', () => {
@@ -113,6 +128,29 @@ describe('play game', () => {
     const state = flagSide(playMove(startGame(), 'e2', 'e4'), 'white');
 
     expect(state.outcome).toBe('over');
+    expect(state.result).toEqual({ winner: 'black', reason: 'flag' });
+  });
+
+  const bareKing = '4k3/8/8/8/8/8/8/Q6K w - - 0 1';
+  const stateAt = (fen: string) => ({ ...startGame(), fen, positions: [fen] });
+
+  it('draws on a flag when the side with time cannot mate', () => {
+    const state = flagSide(stateAt(bareKing), 'white');
+
+    expect(state.outcome).toBe('over');
+    expect(state.result).toEqual({ winner: null, reason: 'flag-draw' });
+  });
+
+  it('still wins on a flag when the side with time can mate', () => {
+    const state = flagSide(stateAt(bareKing), 'black');
+
+    expect(state.result).toEqual({ winner: 'white', reason: 'flag' });
+  });
+
+  it('counts two knights as mating material on a flag', () => {
+    const fen = '1n4n1/8/8/8/8/8/4k3/Q6K w - - 0 1';
+    const state = flagSide(stateAt(fen), 'white');
+
     expect(state.result).toEqual({ winner: 'black', reason: 'flag' });
   });
 

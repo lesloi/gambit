@@ -62,36 +62,36 @@ describe('endgame play', () => {
     expect(playEndgameMove(before, 'a1', 'a8')).toBe(before);
   });
 
-  it('keeps the move counters out of the repetition test', () => {
+  it('counts the starting position in the fivefold repetition', () => {
     let state = startEndgame({ ...kqk, id: 'shuffle', fen: 'r3k3/8/8/8/8/8/8/R3K3 w - - 0 1' });
 
-    for (const [from, to] of [
-      ['a1', 'a2'],
-      ['e8', 'd8'],
-      ['a2', 'a1'],
-      ['d8', 'e8'],
-      ['a1', 'a2'],
-      ['e8', 'd8'],
-      ['a2', 'a1'],
-      ['d8', 'e8'],
-    ] as const) {
-      state = playEndgameMove(state, from, to);
+    for (let round = 0; round < 4; round += 1) {
+      for (const [from, to] of [
+        ['a1', 'a2'],
+        ['e8', 'd8'],
+        ['a2', 'a1'],
+        ['d8', 'e8'],
+      ] as const) {
+        state = playEndgameMove(state, from, to);
+      }
     }
 
     expect(state.outcome).toBe('failed');
-    expect(state.end).toEqual({ kind: 'threefold' });
+    expect(state.end).toEqual({ kind: 'fivefold' });
   });
 
-  it('keeps playing while a position has only appeared twice', () => {
-    let state = startEndgame({ ...kqk, id: 'twice', fen: 'r3k3/8/8/8/8/8/8/R3K3 w - - 0 1' });
+  it('keeps playing while a position has only appeared four times', () => {
+    let state = startEndgame({ ...kqk, id: 'four', fen: 'r3k3/8/8/8/8/8/8/R3K3 w - - 0 1' });
 
-    for (const [from, to] of [
-      ['a1', 'a2'],
-      ['e8', 'd8'],
-      ['a2', 'a1'],
-      ['d8', 'e8'],
-    ] as const) {
-      state = playEndgameMove(state, from, to);
+    for (let round = 0; round < 3; round += 1) {
+      for (const [from, to] of [
+        ['a1', 'a2'],
+        ['e8', 'd8'],
+        ['a2', 'a1'],
+        ['d8', 'e8'],
+      ] as const) {
+        state = playEndgameMove(state, from, to);
+      }
     }
 
     expect(state.outcome).toBe('playing');
@@ -104,10 +104,12 @@ describe('endgame play', () => {
     expect(endgameEnd(fen, [fen])).toEqual({ kind: 'insufficient' });
   });
 
-  it('detects the fifty-move rule from the halfmove clock', () => {
-    const fen = '8/8/8/4k3/8/8/5K2/6Q1 w - - 100 80';
+  it('detects the seventy-five-move rule, not before', () => {
+    const before = '8/8/8/4k3/8/8/5K2/6Q1 w - - 149 80';
+    const reached = '8/8/8/4k3/8/8/5K2/6Q1 w - - 150 80';
 
-    expect(endgameEnd(fen, [fen])).toEqual({ kind: 'fifty-move' });
+    expect(endgameEnd(before, [before])).toBeNull();
+    expect(endgameEnd(reached, [reached])).toEqual({ kind: 'seventy-five-move' });
   });
 
   it('restarts from the initial position after a wrong move', () => {

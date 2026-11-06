@@ -317,9 +317,10 @@ const REASON_LABEL: Record<GameReason, string> = {
   mate: fr.play.reasons.mate,
   stalemate: fr.play.reasons.stalemate,
   insufficient: fr.play.reasons.insufficient,
-  'fifty-move': fr.play.reasons.fiftyMove,
-  threefold: fr.play.reasons.threefold,
+  'seventy-five-move': fr.play.reasons.seventyFiveMove,
+  fivefold: fr.play.reasons.fivefold,
   flag: fr.play.reasons.flag,
+  'flag-draw': fr.play.reasons.flagDraw,
 };
 
 function PlayGame({

@@ -1,6 +1,6 @@
 import { Chess } from 'chess.js';
 import { sideToMove, type PromotionPiece } from '../../lib/chess';
-import { gameEnd, type GameEnd, type GameResult, type Side } from '../../lib/position';
+import { canMate, gameEnd, type GameEnd, type GameResult, type Side } from '../../lib/position';
 
 export const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -119,14 +119,17 @@ export function playUci(state: PlayState, uci: string): PlayState {
   return playMove(state, from, to, promotion);
 }
 
-/** A clock event, not a position end: the flagged side loses. */
+/** A clock event, not a position end: the flagged side loses unless the other side cannot mate. */
 export function flagSide(state: PlayState, side: Side): PlayState {
   if (state.outcome !== 'playing') return state;
+
+  const other = side === 'white' ? 'black' : 'white';
+  const drawn = !canMate(state.fen, other);
 
   return {
     ...state,
     outcome: 'over',
-    result: { winner: side === 'white' ? 'black' : 'white', reason: 'flag' },
+    result: drawn ? { winner: null, reason: 'flag-draw' } : { winner: other, reason: 'flag' },
     hint: null,
   };
 }
