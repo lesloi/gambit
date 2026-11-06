@@ -94,8 +94,8 @@
 }
 
 /*
- * A premove is a guess: it is drawn dimmer than a legal destination, and the squares it spans stay
- * tinted while the engine thinks.
+ * A premove is a guess: its destinations are drawn dimmer than a legal move while the piece is
+ * chosen. Once queued, the board shows the position the premove would lead to.
  */
 .cg-wrap cg-board square.premove-dest {
   background: radial-gradient(
@@ -111,9 +111,6 @@
 .cg-wrap cg-board square.premove-dest:hover,
 .cg-wrap cg-board square.premove-dest.hover {
   background: rgb(86 150 220 / 0.25);
-}
-.cg-wrap cg-board square.current-premove {
-  background-color: rgb(86 150 220 / 0.3);
 }
 
 /* Coordinates are drawn over the squares; keep them readable but discreet. */
