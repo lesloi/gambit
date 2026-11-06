@@ -13,6 +13,14 @@ describe('committed endgame content', () => {
     expect(new Set(endgames.map((endgame) => endgame.id)).size).toBe(endgames.length);
   });
 
+  it('keeps every committed entry', () => {
+    const entries = JSON.parse(source) as unknown[];
+
+    const endgames = parseEndgames(source);
+
+    expect(endgames).toHaveLength(entries.length);
+  });
+
   it('gives every endgame a legal position, a result and a goal', () => {
     for (const endgame of parseEndgames(source)) {
       expect(() => new Chess(endgame.fen), endgame.id).not.toThrow();
