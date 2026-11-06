@@ -23,7 +23,7 @@ development, so a reload always shows the current code.
 | `pnpm coverage` | Unit tests with coverage         |
 | `pnpm format`   | Rewrite every file with Prettier |
 
-The icons of the PWA are committed. To regenerate them after a change to the pawn:
+The icons of the PWA are committed. To regenerate them after a change to the rook:
 
 ```sh
 python3 scripts/icons.py   # needs Pillow

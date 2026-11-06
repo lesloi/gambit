@@ -21,8 +21,11 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        background_color: '#f7f3ea',
-        theme_color: '#f7f3ea',
+        // Both are the light `paper` of the app: the splash then melts into the
+        // first frame instead of flashing a warmer cream, and the status bar
+        // tints the same before and after the app paints itself.
+        background_color: '#fbfaf8',
+        theme_color: '#fbfaf8',
         icons: [
           { src: '/pwa-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/pwa-512.png', sizes: '512x512', type: 'image/png' },
