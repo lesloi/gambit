@@ -36,6 +36,15 @@
   background-image: url('/pieces/chessnut/bK.svg');
 }
 
+/*
+ * The Chessnut art fills nearly the whole square, so a piece's base reached the coordinate
+ * labels pinned in the corners. Draw it a little smaller, which keeps the corners free.
+ */
+.cg-wrap piece {
+  background-size: 85% 85%;
+  background-position: center;
+}
+
 /* The board uses the app's wood, not a chessground theme. */
 .cg-wrap cg-board {
   background-color: #f0d9b5;
@@ -100,9 +109,9 @@
 
 /*
  * Chessground's own offsets push the file letters a quarter square to the right and lift the
- * ranks off the board, so the two labels of a square never meet. Pin each row to its edge of
- * the board: rank numbers centred on their rank, file letters in the bottom-left corner of
- * their file, where a piece leaves room for them.
+ * ranks off the board. Pin every label to the corner of its outer square instead: rank numbers at
+ * the top-left of each square of the leftmost file, file letters at the bottom-right of each
+ * square of the bottom rank, flush with the edge so the smaller piece beside them stays clear.
  */
 .cg-wrap coords.files {
   left: 0;
@@ -112,18 +121,18 @@
 }
 .cg-wrap coords.files coord {
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-end;
   line-height: 1.2;
-  padding-left: 0.125rem;
 }
+/* `ranksPosition` defaults to right, so chessground's `.ranks.left` rule never applies here. */
 .cg-wrap coords.ranks {
   top: 0;
   left: 0;
-  width: 0.75rem;
+  width: 12.5%;
 }
 .cg-wrap coords.ranks coord {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
   transform: none;
+  padding: 0.125rem;
 }
