@@ -97,10 +97,3 @@ _Avoid_: Difficulty, strength
 The review of a finished game: the engine's best moves, the blunders and the moves it would have
 played.
 _Avoid_: Review (reserved for a card), report
-
-### Data
-
-**Backup** _(sauvegarde)_:
-A JSON file the user exports and imports, holding the journal, the cards, the games and the
-settings. It replaces the local data on import; there is no merge and no server copy.
-_Avoid_: Sync, cloud, account, export (as a noun for the whole)

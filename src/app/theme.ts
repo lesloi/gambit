@@ -22,7 +22,7 @@ export function isThemeChoice(value: unknown): value is ThemeChoice {
   return typeof value === 'string' && CHOICES.includes(value);
 }
 
-/** A preference, out of the backup like the puzzle filters: losing it only costs the default. */
+/** A preference, like the puzzle filters: losing it only costs the default. */
 export function readTheme(storage: StorageLike | null = browserStorage()): ThemeChoice {
   if (!storage) return DEFAULT_THEME;
 

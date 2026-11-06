@@ -45,7 +45,7 @@ function isMilliseconds(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }
 
-/** The chosen time control, out of the backup like the level: losing it costs a default. */
+/** The chosen time control, like the level: losing it costs a default. */
 export function readPlayTimeControl(storage: StorageLike | null = browserStorage()): number {
   if (!storage) return DEFAULT_TIME_CONTROL_INDEX;
 

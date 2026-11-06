@@ -17,8 +17,8 @@ export interface FilterStorage {
 }
 
 /**
- * The choices are a UI preference, not progression: two enum values, out of the backup, and losing
- * them only costs the defaults. The backup stays a dump of the review journal.
+ * The choices are a UI preference, not progression: two enum values, and losing them only costs the
+ * defaults.
  */
 export function readPuzzleFilters(storage: FilterStorage | null = browserStorage()): PuzzleFilters {
   if (!storage) return DEFAULT_PUZZLE_FILTERS;

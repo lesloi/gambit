@@ -40,7 +40,7 @@ open an issue before implementing it.
 
 Prettier, ESLint and TypeScript enforce the style; follow the neighbouring code for the rest.
 
-- TypeScript strict. Data from outside (`IndexedDB`, a backup file, a content file) is `unknown`
+- TypeScript strict. Data from outside (`IndexedDB`, a content file) is `unknown`
   until a small type guard has parsed it, field by field, each with its default.
 - Every user-facing string lives in `src/i18n/fr.ts`; no literal text in a component.
 - Units: an Elo is an Elo, a duration is in milliseconds in the data and formatted in the

@@ -8,7 +8,7 @@ repertoire and games against the engine. Vocabulary: [GLOSSARY.md](./GLOSSARY.md
 - `src/app`: the shell. `src/features/*`: one folder per mode. `src/ui`: shared components.
 - Vite + React + TypeScript, styled with Tailwind from the tokens in `src/styles/index.css`.
 - **No backend and no account.** The app is a static build; `nginx.conf` serves it and the image
-  holds nothing else. Never add a runtime server: the backup is an exported file
+  holds nothing else. Never add a runtime server: the progression stays on the device
   ([DECISIONS.md](./docs/DECISIONS.md#persistence)).
 - Progression lives in IndexedDB. `src/db` holds the schema; the `reviews` journal is the source
   of truth and FSRS state is derived from it.
