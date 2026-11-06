@@ -95,7 +95,7 @@ export function OpeningScreen({ onExit }: { onExit: () => void }) {
           </button>
           <h1 className="text-lg">{fr.opening.title}</h1>
           {selected ? (
-            <span className="border-line text-ink-muted ml-auto rounded-xs border px-2.5 py-1 text-xs">
+            <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
               {selected.color === 'white' ? fr.opening.white : fr.opening.black}
             </span>
           ) : null}

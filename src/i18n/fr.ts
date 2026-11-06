@@ -288,7 +288,7 @@ export const fr = {
     showSolution: 'Voir la solution',
     solveTime: 'Temps de résolution',
     solved: 'Bien joué',
-    assisted: 'avec indice',
+    assisted: 'avec aide',
     failed: 'Raté',
     bestMove: 'Le bon coup était {move}.',
     solutionTitle: 'Solution',

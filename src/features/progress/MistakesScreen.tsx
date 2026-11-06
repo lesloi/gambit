@@ -131,7 +131,7 @@ export function MistakesScreen({ onExit }: { onExit: () => void }) {
           </button>
           <h1 className="text-lg">{fr.progress.title}</h1>
           {current >= 0 ? (
-            <span className="border-line text-ink-muted ml-auto rounded-xs border px-2.5 py-1 text-xs">
+            <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
               {fr.progress.counter
                 .replace('{index}', String(current + 1))
                 .replace('{count}', String(rows.length))}
@@ -185,7 +185,7 @@ export function MistakesScreen({ onExit }: { onExit: () => void }) {
                           {row.puzzle.themes.slice(0, 3).map(themeLabel).join(' · ')}
                         </span>
                       </span>
-                      <span className="border-line text-ink-muted shrink-0 rounded-xs border px-2.5 py-1 text-xs">
+                      <span className="border-line text-ink-muted shrink-0 rounded-full border px-2.5 py-1 text-xs">
                         {levelLabel(row.puzzle.rating)} · {row.puzzle.rating}
                       </span>
                       <ChevronRight

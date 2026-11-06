@@ -230,12 +230,4 @@ describe('solution sheet', () => {
 
     expect(plies[0]?.san).toBe('g8=N');
   });
-
-  it('writes a played line from the puzzle position', () => {
-    const { rows } = solutionSheet(puzzle, ['d5d8']);
-
-    expect(rows.map((row) => [row.number, row.white?.san, row.black?.san])).toEqual([
-      [1, 'Qd8+', undefined],
-    ]);
-  });
 });

@@ -78,11 +78,8 @@ export function PuzzlePlayer({
 
   const orientation = useMemo(() => sideToMove(puzzle.fen), [puzzle]);
   const storedSheet = useMemo(() => solutionSheet(puzzle), [puzzle]);
-  const playedSheet = useMemo(() => solutionSheet(puzzle, state.moves), [puzzle, state.moves]);
-  // A solved puzzle reviews the line the user actually played; a revealed one shows the stored
-  // answer, which may start from the puzzle position after a wrong move.
-  const sheet =
-    state.outcome === 'revealed' ? storedSheet : state.outcome === 'solved' ? playedSheet : null;
+  // Only a revealed puzzle has a line to read: a solve keeps its motifs in the band, not the moves.
+  const sheet = state.outcome === 'revealed' ? storedSheet : null;
   const shown = sheet && browsedPly !== null ? (sheet.plies[browsedPly - 1] ?? null) : null;
   const shownPly = sheet ? (browsedPly ?? sheet.plies.length) : 0;
   const shownFen = shown?.fen ?? state.fen;
@@ -123,7 +120,10 @@ export function PuzzlePlayer({
   const reset = () => {
     setState(startPuzzle(puzzle));
     setHint('none');
-    setAssisted(false);
+    // Replaying from a verdict follows the answer the band or the line just showed: the retry is
+    // assisted even when no hint was asked. `reset` is only reachable from `failed` and
+    // `revealed`, the two outcomes that show it.
+    setAssisted((value) => value || state.outcome !== 'playing');
     setAgain(false);
     setBusy(false);
     setPending(null);
@@ -306,13 +306,13 @@ export function PuzzlePlayer({
 
   return (
     <>
-      <div className={`mt-3 flex items-start gap-3 rounded-sm border px-3 py-2.5 ${tone}`}>
+      <div className={`flex items-start gap-3 rounded-sm border px-3 py-2.5 ${tone}`}>
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-2 text-sm font-medium">
             {state.outcome === 'playing' ? (
               <span
                 aria-hidden="true"
-                className={`rounded-xs size-2.5 shrink-0 border ${
+                className={`size-2.5 shrink-0 rounded-full border ${
                   turn === 'black'
                     ? 'border-board-label bg-board-label'
                     : 'border-board-dark bg-board-light'

@@ -64,7 +64,8 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   after every solve. A solve is written `good` when the attempt is left, and one button writes
   `again` instead; a miss writes `again` when it happens. A puzzle attempt that asked for a hint —
   its sentence or its piece — writes `hard`: the solve still happened, and a lapse would say the
-  position was forgotten. The other trainers have no hint and keep writing `good`. A refused
+  position was forgotten. So does a replay after a failure or a revealed line, whose answer the
+  band or the sheet just showed. The other trainers have no hint and keep writing `good`. A refused
   `good` keeps the screen open for another tap, but a refused miss is not retried, so a back, a
   tab close or an abandonment after a refusal loses the review — the alternative, writing `good`
   at once, would append a second entry when the user demoted it.

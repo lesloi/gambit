@@ -78,18 +78,15 @@ function givesMate(fen: string, uci: string): boolean {
 }
 
 /**
- * A line from the puzzle position as a score sheet, numbered and positioned from its own FEN.
- * It defaults to the stored solution; the user's own line is passed once they have solved it.
+ * The stored line from the puzzle position as a score sheet, numbered and positioned from its own
+ * FEN.
  */
-export function solutionSheet(
-  puzzle: Puzzle,
-  history: readonly string[] = puzzle.solution,
-): SolutionSheet {
+export function solutionSheet(puzzle: Puzzle): SolutionSheet {
   const chess = new Chess(puzzle.fen);
   const plies: SolutionPly[] = [];
   const rows: SolutionRow[] = [];
 
-  for (const uci of history) {
+  for (const uci of puzzle.solution) {
     const side = chess.turn() === 'w' ? 'white' : 'black';
     const number = chess.moveNumber();
     let move: Move;

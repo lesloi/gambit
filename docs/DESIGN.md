@@ -61,8 +61,9 @@ no network.
 - The session card's button is the home screen's only filled action; the play and mistakes rows are
   outlined or text. A game in progress has none: the board is the action, and a filled hint button
   would push people to use it. Once the game is over, the analysis button takes that role.
-- Corners are `rounded-sm` (4 px), badges are `rounded-xs`, separators are hairlines, and nothing
-  casts a shadow.
+- Corners are `rounded-sm` (4 px), badges are `rounded-xs`, the small bordered chips (a counter, a
+  rating), in a header or in a row, are pills, separators are hairlines, and nothing casts a
+  shadow.
 
 ## Board
 

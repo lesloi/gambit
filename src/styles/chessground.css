@@ -126,10 +126,21 @@
 }
 
 /*
+ * The theme alternates its label inks with the square, but the app reverses the rank order and
+ * pins every label to a corner, so the alternation lands on the wrong squares — the top rank's
+ * label came out white on a light square. One ink, on the wood, whichever the orientation.
+ */
+.cg-wrap coords.ranks coord:nth-child(n),
+.cg-wrap coords.files coord:nth-child(n) {
+  color: var(--color-board-label);
+}
+
+/*
  * Chessground's own offsets push the file letters a quarter square to the right and lift the
  * ranks off the board. Pin every label to the corner of its outer square instead: rank numbers at
  * the top-left of each square of the leftmost file, file letters at the bottom-right of each
- * square of the bottom rank, flush with the edge so the smaller piece beside them stays clear.
+ * square of the bottom rank, set in from the edge so the label never touches it and the smaller
+ * piece beside it stays clear.
  */
 .cg-wrap coords.files {
   left: 0;
@@ -141,6 +152,7 @@
   display: flex;
   justify-content: flex-end;
   line-height: 1.2;
+  padding-right: 0.375rem;
 }
 /* `ranksPosition` defaults to right, so chessground's `.ranks.left` rule never applies here. */
 .cg-wrap coords.ranks {
@@ -152,5 +164,5 @@
   display: flex;
   align-items: flex-start;
   transform: none;
-  padding: 0.125rem;
+  padding: 0.375rem;
 }
