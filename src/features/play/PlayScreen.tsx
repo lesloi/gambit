@@ -376,8 +376,7 @@ function PlayGame({
   const clockRef = useRef(clock);
   const stateRef = useRef(state);
   const engineStateRef = useRef<EngineState>('loading');
-  // The ply a resumed game was loaded at, and whether its engine turn was already asked for.
-  const resumedPly = initialDraft?.moves.length ?? null;
+  // The engine turn already asked for, so a render never asks for the same position twice.
   const autoAsked = useRef<number | null>(null);
   const discarding = useRef(false);
   const consumedPly = useRef<number | null>(null);
@@ -607,6 +606,9 @@ function PlayGame({
       }
 
       const request = generation.current;
+      // Record the turn here, after a user move as well as from the effect below, so the effect
+      // never asks a second time for a position already on its way to the engine.
+      autoAsked.current = game.moves.length;
       setThinking(true);
       const engineMove = maia.current
         ? Promise.all([
@@ -688,16 +690,16 @@ function PlayGame({
     if (clock && result.state.outcome === 'playing') askEngine(result.state, clock);
   }, [state, premoves, browsing, applyMove, askEngine, complete, updatePremoves]);
 
-  // A game the user plays as Black opens on the engine's turn; a resumed game may have been left
-  // there too. Ask it once, and again after a retry.
-  const openingPly = engineTurnPly(state, resumedPly);
+  // The engine owes a move at the opening of a game the user plays as Black, after a resumed game,
+  // and after a retry: a failed engine left the position unanswered, so it is asked again once the
+  // fresh worker is ready.
+  const engineTurn = engineTurnPly(state);
   useEffect(() => {
-    if (engineState !== 'ready' || openingPly === null) return;
-    if (autoAsked.current === openingPly) return;
+    if (engineState !== 'ready' || engineTurn === null) return;
+    if (autoAsked.current === engineTurn) return;
 
-    autoAsked.current = openingPly;
     askEngine(state, clockRef.current);
-  }, [engineState, openingPly, state, askEngine]);
+  }, [engineState, engineTurn, state, askEngine]);
 
   const playUserMove = (from: string, to: string, promotion?: PromotionPiece) => {
     const at = Date.now();
