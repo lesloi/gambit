@@ -78,8 +78,8 @@ function givesMate(fen: string, uci: string): boolean {
 }
 
 /**
- * A line from the puzzle position as a score sheet, numbered and positioned from its own FEN.
- * It defaults to the stored solution; the user's own line is passed once they have solved it.
+ * A line from the puzzle position as a score sheet, numbered and positioned from its own FEN. It
+ * defaults to the stored solution; the moves the user played are passed while they play.
  */
 export function solutionSheet(
   puzzle: Puzzle,

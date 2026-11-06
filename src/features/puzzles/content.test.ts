@@ -3,7 +3,6 @@ import {
   DEFAULT_PUZZLE_FILTERS,
   loadPuzzles,
   parsePuzzles,
-  puzzleLength,
   ratingBand,
   selectPuzzles,
   type PuzzleFilters,
@@ -66,11 +65,6 @@ async function gzippedUrl(text: string): Promise<string> {
 }
 
 describe('puzzle content', () => {
-  it('measures a puzzle by the plies of its stored solution', () => {
-    expect(puzzleLength(puzzles[0]!)).toBe(1);
-    expect(puzzleLength(puzzles[2]!)).toBe(5);
-  });
-
   it('reads one puzzle per line and keeps their order', () => {
     const text = `${JSON.stringify(puzzles[0])}\n${JSON.stringify(puzzles[1])}\n`;
 

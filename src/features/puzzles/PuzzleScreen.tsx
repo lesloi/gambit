@@ -100,13 +100,13 @@ export function PuzzleScreen({
           </button>
           <h1 className="text-lg">{phase === 'play' ? fr.puzzle.counter : fr.puzzle.title}</h1>
           {puzzle ? (
-            <span className="border-line text-ink-muted ml-auto rounded-xs border px-2.5 py-1 text-xs">
+            <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
               {levelLabel(puzzle.rating)} · {puzzle.rating}
             </span>
           ) : null}
         </header>
 
-        <div className="mt-4 flex-1">
+        <div className={`flex-1 ${phase === 'play' ? 'mt-1' : 'mt-4'}`}>
           {phase === 'setup' ? (
             <PuzzleSetup
               filters={filters}

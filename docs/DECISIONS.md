@@ -58,13 +58,17 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   and a smaller expert band. The journal takes over as soon as a cell holds the reviews the
   statistics already wait for: the session then follows the user's own record by motif and by
   depth. Folding the length into the same name would lose what it says, so the two stay apart.
-- **A solved attempt is good; the only rating left to the user is "again".** FSRS wants a grade,
-  and the outcome already says whether a puzzle, an endgame or a line was solved: the four Anki
-  buttons mostly collect the same "good" for a second decision after every solve. A solve is
-  written `good` when the attempt is left, and one button writes `again` instead; a miss writes
-  `again` when it happens. A refused `good` keeps the screen open for another tap, but a refused
-  miss is not retried, so a back, a tab close or an abandonment after a refusal loses the review —
-  the alternative, writing `good` at once, would append a second entry when the user demoted it.
+- **A solved attempt is good, hard when a hint helped; the only rating left to the user is
+  "again".** FSRS wants a grade, and the outcome already says whether a puzzle, an endgame or a
+  line was solved: the four Anki buttons mostly collect the same "good" for a second decision
+  after every solve. A solve is written `good` when the attempt is left, and one button writes
+  `again` instead; a miss writes `again` when it happens. A puzzle attempt that asked for a hint —
+  its sentence or its piece — writes `hard`: the solve still happened, and a lapse would say the
+  position was forgotten. So does a replay after a failure or a revealed line, whose answer the
+  band or the sheet just showed. The other trainers have no hint and keep writing `good`. A refused
+  `good` keeps the screen open for another tap, but a refused miss is not retried, so a back, a
+  tab close or an abandonment after a refusal loses the review — the alternative, writing `good`
+  at once, would append a second entry when the user demoted it.
 - **A game has no takeback; a hint marks it as assisted.** Takeback erases the blunder the
   analysis exists to show. A hint is allowed, but the game is marked as assisted and stays out of
   the blunder list. The score sheet reopens any past position read-only, and the clock keeps

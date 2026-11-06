@@ -46,7 +46,7 @@ export function EndgameScreen({ onExit }: { onExit: () => void }) {
           </button>
           <h1 className="text-lg">{fr.endgame.title}</h1>
           {selected ? (
-            <span className="border-line text-ink-muted ml-auto rounded-xs border px-2.5 py-1 text-xs">
+            <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
               {selected.result === 'win' ? fr.endgame.win : fr.endgame.draw}
             </span>
           ) : null}

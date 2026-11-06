@@ -40,11 +40,6 @@ const LENGTH_RANGE: Record<PuzzleLength, readonly [number, number]> = {
   long: [7, Infinity],
 };
 
-/** The number of plies of the solution: what the exercise costs, before the first move. */
-export function puzzleLength(puzzle: Puzzle): number {
-  return puzzle.solution.length;
-}
-
 function matchesRating(rating: number, band: PuzzleRating): boolean {
   return band === 'any' || ratingBand(rating) === band;
 }

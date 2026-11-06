@@ -61,18 +61,24 @@ no network.
 - The session card's button is the home screen's only filled action; the play and mistakes rows are
   outlined or text. A game in progress has none: the board is the action, and a filled hint button
   would push people to use it. Once the game is over, the analysis button takes that role.
-- Corners are `rounded-sm` (4 px), badges are `rounded-xs`, separators are hairlines, and nothing
-  casts a shadow.
+- Corners are `rounded-sm` (4 px), badges are `rounded-xs`, the small bordered chips (a counter, a
+  rating), in a header or in a row, are pills, separators are hairlines, and nothing casts a
+  shadow.
 
 ## Board
 
 - `chessground` fills a square container; its size comes from the container, never from a fixed
   pixel value.
+- In the puzzle player the board runs to the edges of the phone, above the column's padding; from
+  `sm` up it sits in the framed panel the other boards use. The board is the exercise, and a
+  phone has no width to spare.
 - Coordinates are shown on the edges of the board at 0.55 rem, muted.
 - A piece is dragged or moved by two taps, as chessground does by default. A promotion opens a
   chooser, never a native prompt.
 - The last move is highlighted with a soft accent; the legal destinations are a dot on an empty
   square and a ring on an occupied one.
+- A puzzle's hint rings the piece to move — the accent, heavier than a destination — and never the
+  square it should reach.
 - The board never scrolls the page while a piece is dragged: `touch-action: none` on the board.
 
 ## Calculation

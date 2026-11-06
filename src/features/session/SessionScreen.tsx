@@ -152,7 +152,7 @@ export function SessionScreen({ onExit }: { onExit: () => void }) {
           </button>
           <h1 className="text-lg">{fr.session.title}</h1>
           {state.status === 'ready' ? (
-            <span className="border-line text-ink-muted ml-auto rounded-xs border px-2.5 py-1 text-xs">
+            <span className="border-line text-ink-muted ml-auto rounded-full border px-2.5 py-1 text-xs">
               {state.cursor.position} / {state.cursor.total}
             </span>
           ) : null}
