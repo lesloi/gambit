@@ -23,6 +23,7 @@ import {
   type SolutionRow,
 } from './puzzle';
 import { missedAttemptRating, recordPuzzleReview } from './record';
+import { elapsedMs, pauseClock, resumeClock, startClock } from './solveClock';
 import { formatSolveTime } from './solveTime';
 
 interface PendingPromotion {
@@ -55,10 +56,10 @@ export function PuzzlePlayer({
   const [browsedPly, setBrowsedPly] = useState<number | null>(null);
   /** Whether the solution sheet is open; null follows the outcome, open once it was revealed. */
   const [sheetOpen, setSheetOpen] = useState<boolean | null>(null);
-  const [startedAt, setStartedAt] = useState(() => Date.now());
+  const [clock, setClock] = useState(() =>
+    startClock(Date.now(), document.visibilityState === 'visible'),
+  );
   const [now, setNow] = useState(() => Date.now());
-  /** When the attempt ended, freezing the clock; null while it is still being solved. */
-  const [endedAt, setEndedAt] = useState<number | null>(null);
   const sheetId = useId();
   const boardHost = useRef<HTMLDivElement>(null);
   const attemptRecorded = useRef(false);
@@ -85,15 +86,32 @@ export function PuzzlePlayer({
     [state.fen, state.outcome],
   );
 
-  // The clock measures the attempt: it runs while the puzzle is open and freezes at the verdict.
+  // The clock measures the attempt, not the time the tab spent in the background: it runs while the
+  // puzzle is open and visible, and freezes at the verdict. The listener is removed once the attempt
+  // is over, so hiding a solved puzzle cannot restart the frozen clock.
   useEffect(() => {
     if (state.outcome !== 'playing') return;
-    const interval = window.setInterval(() => setNow(Date.now()), 1000);
+    const onChange = () => {
+      if (document.visibilityState === 'hidden') {
+        setClock((value) => pauseClock(value, Date.now()));
+        return;
+      }
+      setClock((value) => resumeClock(value, Date.now()));
+      setNow(Date.now());
+    };
+    document.addEventListener('visibilitychange', onChange);
+    return () => document.removeEventListener('visibilitychange', onChange);
+  }, [state.outcome]);
+
+  useEffect(() => {
+    if (state.outcome !== 'playing') return;
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') setNow(Date.now());
+    }, 1000);
     return () => window.clearInterval(interval);
   }, [state.outcome]);
 
-  const elapsed = Math.max(0, (endedAt ?? now) - startedAt);
-  const timeLabel = formatSolveTime(elapsed);
+  const timeLabel = formatSolveTime(elapsedMs(clock, now));
   const sheetVisible = sheetOpen ?? state.outcome === 'revealed';
 
   const reset = () => {
@@ -104,9 +122,8 @@ export function PuzzlePlayer({
     setPending(null);
     setBrowsedPly(null);
     setSheetOpen(null);
-    setStartedAt(Date.now());
+    setClock(startClock(Date.now(), document.visibilityState === 'visible'));
     setNow(Date.now());
-    setEndedAt(null);
     attemptRecorded.current = false;
   };
 
@@ -178,7 +195,7 @@ export function PuzzlePlayer({
 
   // The first outcome freezes the clock; revealing after a miss keeps the time of the miss.
   const settle = (outcome: PuzzleOutcome) => {
-    if (outcome !== 'playing') setEndedAt((value) => value ?? Date.now());
+    if (outcome !== 'playing') setClock((value) => pauseClock(value, Date.now()));
   };
 
   const applyMove = (from: string, to: string, promotion?: PromotionPiece) => {
