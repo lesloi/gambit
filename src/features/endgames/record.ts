@@ -10,8 +10,8 @@ export function endgameReview(endgameId: string, rating: Grade, reviewedAt: numb
 }
 
 /**
- * A failed conversion is a miss, recorded without asking. A successful one waits for the user's
- * rating, like a puzzle: the outcome says what happened, not how hard it felt.
+ * A failed conversion is a miss, recorded without asking. A successful one is written good when
+ * the user leaves it, like a puzzle: the outcome says what happened, not how hard it felt.
  */
 export function missedEndgameRating(before: EndgameOutcome, after: EndgameOutcome): Grade | null {
   if (before !== 'playing') return null;

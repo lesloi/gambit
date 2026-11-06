@@ -247,9 +247,7 @@ export const fr = {
   },
   rating: {
     again: 'À revoir',
-    hard: 'Difficile',
-    good: 'Bien',
-    easy: 'Facile',
+    againRecorded: 'Noté « à revoir »',
   },
   promotion: {
     title: 'Promotion',

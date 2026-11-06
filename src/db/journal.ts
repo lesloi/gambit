@@ -1,6 +1,18 @@
-import { Grades, type Grade } from 'ts-fsrs';
+import { Grades, Rating, type Grade } from 'ts-fsrs';
 import type { GambitDatabase } from './db';
 import { replayCard, type CardState, type ReviewEntry } from './fsrs';
+
+/** What an attempt can be when the user leaves it, across the modes. Each mode's own outcome union
+ * is assignable here; one that grows beyond it fails at the `leavingRating` call, not in the type. */
+export type AttemptOutcome = 'playing' | 'solved' | 'failed' | 'revealed';
+
+/**
+ * The review a solved attempt writes when the user leaves it: good, unless the attempt already has
+ * its review (a miss, or a line corrected after a miss). A miss writes its again when it happens.
+ */
+export function leavingRating(outcome: AttemptOutcome, recorded: boolean): Grade | null {
+  return outcome === 'solved' && !recorded ? Rating.Good : null;
+}
 
 export interface NewReview {
   cardId: string;

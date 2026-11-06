@@ -4,7 +4,14 @@ import { Rating, type Grade } from 'ts-fsrs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { GambitDatabase } from './db';
 import { SCHEDULER, replayCard } from './fsrs';
-import { appendReview, cardState, cardStates, dueCards, journalMark } from './journal';
+import {
+  appendReview,
+  cardState,
+  cardStates,
+  dueCards,
+  journalMark,
+  leavingRating,
+} from './journal';
 
 const MINUTE = 60_000;
 const DAY = 86_400_000;
@@ -18,6 +25,19 @@ beforeEach(() => {
 
 afterEach(async () => {
   await database.delete();
+});
+
+describe('leavingRating', () => {
+  it.each([
+    ['solved', false, Rating.Good],
+    ['solved', true, null],
+    ['failed', false, null],
+    ['failed', true, null],
+    ['revealed', false, null],
+    ['playing', false, null],
+  ] as const)('rates a %s attempt (recorded: %s) as %s on leaving', (outcome, recorded, rating) => {
+    expect(leavingRating(outcome, recorded)).toBe(rating);
+  });
 });
 
 describe('appendReview', () => {

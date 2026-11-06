@@ -1,12 +1,14 @@
 import { ChevronLeft } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Rating } from 'ts-fsrs';
+import { leavingRating } from '../../db/journal';
 import type { Engine } from '../../engine/uci';
 import { createStockfishEngine } from '../../engine/stockfish';
 import { fr } from '../../i18n/fr';
 import { legalDests, promotionPieces, sideToMove, type PromotionPiece } from '../../lib/chess';
+import { AgainButton } from '../../ui/AgainButton';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { PromotionDialog, promotionAnchor } from '../../ui/PromotionDialog';
-import { GRADE, RatingButtons, type Rating } from '../../ui/RatingButtons';
 import { loadEndgames } from './content';
 import {
   playEndgameMove,
@@ -132,7 +134,8 @@ export function EndgamePlayer({
   const [engineState, setEngineState] = useState<EngineState>('loading');
   const [engineAttempt, setEngineAttempt] = useState(0);
   const [thinking, setThinking] = useState(false);
-  const [rating, setRating] = useState<Rating | null>(null);
+  const [again, setAgain] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<PendingPromotion | null>(null);
   const [resetKey, setResetKey] = useState(0);
   const engine = useRef<Engine | null>(null);
@@ -181,7 +184,8 @@ export function EndgamePlayer({
     engine.current?.cancel();
     setState(restartEndgame(state));
     setThinking(false);
-    setRating(null);
+    setAgain(false);
+    setBusy(false);
     setPending(null);
     recorded.current = false;
     setResetKey((key) => key + 1);
@@ -261,15 +265,45 @@ export function EndgamePlayer({
     boardHost.current?.focus();
   };
 
-  const rate = async (value: Rating) => {
-    if (rating) return;
-    setRating(value);
+  // The "again" review is appended once and never edited. A write that fails is not surfaced: the
+  // button stays available, and nothing else is said.
+  const rateAgain = async () => {
+    if (recorded.current || busy) return;
+    recorded.current = true;
+    setBusy(true);
     try {
-      await recordEndgameReview(endgame.id, GRADE[value]);
-      recorded.current = true;
+      await recordEndgameReview(endgame.id, Rating.Again);
+      setAgain(true);
     } catch {
-      setRating(null);
+      recorded.current = false;
+    } finally {
+      setBusy(false);
     }
+  };
+
+  /**
+   * A solved endgame is written `good` when the user leaves it. The button waits for the write so a
+   * second tap cannot skip a game, and a failed write keeps the screen open rather than dropping
+   * the attempt. A failed conversion already wrote its own review, so leaving it writes nothing.
+   */
+  const leave = async () => {
+    if (busy) return;
+    setBusy(true);
+
+    const grade = leavingRating(state.outcome, recorded.current);
+    if (grade !== null) {
+      recorded.current = true;
+      try {
+        await recordEndgameReview(endgame.id, grade);
+      } catch {
+        recorded.current = false;
+        setBusy(false);
+        return;
+      }
+    }
+
+    setBusy(false);
+    onOther();
   };
 
   const retryEngine = () => {
@@ -349,13 +383,14 @@ export function EndgamePlayer({
             </div>
 
             <div className="mt-4">
-              <RatingButtons rating={rating} onRate={(value) => void rate(value)} />
+              <AgainButton recorded={again} disabled={busy} onPress={() => void rateAgain()} />
             </div>
 
             <button
               type="button"
-              onClick={onOther}
-              className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
+              onClick={() => void leave()}
+              disabled={busy}
+              className="bg-accent mt-3 w-full rounded-sm px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
             >
               {nextLabel}
             </button>
@@ -381,7 +416,7 @@ export function EndgamePlayer({
               </button>
               <button
                 type="button"
-                onClick={onOther}
+                onClick={() => void leave()}
                 className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm"
               >
                 {nextLabel}

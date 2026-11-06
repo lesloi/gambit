@@ -12,7 +12,7 @@ export function puzzleReview(puzzleId: string, rating: Grade, reviewedAt: number
 /**
  * The rating of an attempt the user did not solve: failing and giving up are two ways of missing
  * it. It is null for an attempt that already left `playing` or that ended solved, so a failed
- * attempt followed by its solution counts once, and a solve waits for the user's own rating.
+ * attempt followed by its solution counts once, and a solve writes its review when it is left.
  */
 export function missedAttemptRating(before: PuzzleOutcome, after: PuzzleOutcome): Grade | null {
   if (before !== 'playing') return null;
