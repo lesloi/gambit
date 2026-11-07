@@ -286,9 +286,11 @@ export function PuzzlePlayer({
     }
   };
 
-  // The band is the one place the attempt speaks: whose move it is, then a nudge or a verdict.
+  // The band speaks for the attempt: whose move it is, then a verdict. The nudge of a hint sits
+  // under the board instead, where a line appearing cannot push the board under the user's finger.
   const hintSquare =
     hint === 'piece' && state.outcome === 'playing' ? (state.expected?.slice(0, 2) ?? null) : null;
+  const nudge = state.outcome === 'playing' && hint !== 'none' ? hintNudge(puzzle.themes) : null;
   const hintLabel = hint === 'text' ? fr.puzzle.hintPiece : fr.puzzle.hint;
   const stateLabel =
     state.outcome === 'solved'
@@ -308,9 +310,7 @@ export function PuzzlePlayer({
         ? themeList
         : state.outcome === 'failed'
           ? fr.puzzle.bestMove.replace('{move}', state.bestSan ?? '')
-          : hint !== 'none'
-            ? hintNudge(puzzle.themes)
-            : null;
+          : null;
   // What a screen reader hears. The turn and the clock are left out: the first flips on every
   // move and the second ticks, so a live region holding them would talk all the time.
   const announcement =
@@ -350,18 +350,7 @@ export function PuzzlePlayer({
             {stateLabel}
           </p>
           {detail ? (
-            <p
-              className={`mt-1 flex items-start gap-1.5 text-xs ${
-                state.outcome === 'playing' ? 'text-ink-muted' : 'opacity-80'
-              }`}
-            >
-              {hint !== 'none' && state.outcome === 'playing' ? (
-                <Lightbulb
-                  size={13}
-                  aria-hidden="true"
-                  className="text-accent-ink mt-px shrink-0"
-                />
-              ) : null}
+            <p className="mt-1 flex items-start gap-1.5 text-xs opacity-80">
               <span>{detail}</span>
             </p>
           ) : null}
@@ -393,6 +382,15 @@ export function PuzzlePlayer({
           />
         </div>
       </div>
+
+      {/* Under the board, so the line appearing never moves the board the fingers are aiming at.
+          It carries no live region: the band's `role="status"` is the one that speaks. */}
+      {nudge ? (
+        <p className="text-ink-muted mt-3 flex items-start gap-1.5 text-xs">
+          <Lightbulb size={13} aria-hidden="true" className="text-accent-ink mt-px shrink-0" />
+          <span>{nudge}</span>
+        </p>
+      ) : null}
 
       {state.outcome === 'playing' ? (
         <div className="mt-3 flex gap-2">
