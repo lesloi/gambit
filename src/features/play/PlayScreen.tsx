@@ -1008,15 +1008,14 @@ function PlayGame({
             {state.outcome === 'over' && state.result ? resultLabel(state.result) : status}
           </p>
 
-          <p className="text-ink-muted min-h-4 text-xs" role="status">
-            {browsing
-              ? ''
-              : hintPending
+          {/* Nothing to say takes no room: a reserved line would push the sheet down for good. */}
+          {browsing || (!hintPending && state.hint === null) ? null : (
+            <p className="text-ink-muted text-xs" role="status">
+              {hintPending
                 ? fr.play.hintPending
-                : state.hint
-                  ? fr.play.hintShown.replace('{move}', state.hint.san)
-                  : ''}
-          </p>
+                : fr.play.hintShown.replace('{move}', state.hint?.san ?? '')}
+            </p>
+          )}
 
           {engineState === 'failed' && state.outcome === 'playing' ? (
             <div
@@ -1189,24 +1188,22 @@ function MaterialRow({
 
   return (
     <div
-      className={`flex items-center justify-between gap-3 py-0.5 text-xs ${
+      className={`flex items-center gap-1.5 py-0.5 text-xs ${
         active ? 'text-ink' : 'text-ink-muted'
       }`}
     >
-      <span className="flex min-w-0 items-center gap-1.5">
-        <span className="shrink-0">{side === 'white' ? fr.opening.white : fr.opening.black}</span>
-        <CapturedPieces side={side} pieces={material.captured[side]} />
-      </span>
+      <span className="shrink-0">{side === 'white' ? fr.opening.white : fr.opening.black}</span>
+      <CapturedPieces side={side} pieces={material.captured[side]} />
       {advantage > 0 ? (
-        <span className="text-ink shrink-0 text-[0.6875rem] font-semibold tabular-nums">
-          +{advantage}
-        </span>
-      ) : null}
-      {/* The advantage is read once, on the side that holds it. */}
-      {advantage > 0 ? (
-        <span className="sr-only" role="status">
-          {spoken}
-        </span>
+        <>
+          <span className="text-ink shrink-0 text-[0.6875rem] font-semibold tabular-nums">
+            +{advantage}
+          </span>
+          {/* The advantage is read once, on the side that holds it. */}
+          <span className="sr-only" role="status">
+            {spoken}
+          </span>
+        </>
       ) : null}
     </div>
   );
