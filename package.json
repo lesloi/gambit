@@ -29,7 +29,7 @@
     "onnxruntime-web": "^1.31.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "ts-fsrs": "5.4.2",
+    "ts-fsrs": "6.0.0",
     "workbox-window": "7.4.1"
   },
   "devDependencies": {
