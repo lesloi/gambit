@@ -24,10 +24,12 @@ export interface CardState {
 /**
  * Pinned with its parameters, because replaying the journal under another model would move every
  * due date. Fuzzing is off for the same reason; the short steps keep a missed card in the session.
+ * A bump of ts-fsrs must change the line on purpose: fsrs.test.ts fails until the pin moves and
+ * the golden literals in it are re-derived against the new build.
  * See docs/DECISIONS.md#persistence.
  */
 export const SCHEDULER = {
-  library: 'ts-fsrs@5.4.2',
+  library: 'ts-fsrs@6.0.0',
   model: 'FSRS-6',
   parameters: {
     request_retention: 0.9,

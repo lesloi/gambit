@@ -18,6 +18,21 @@ const MINUTE = 60_000;
 const DAY = 86_400_000;
 const START = Date.UTC(2026, 0, 1, 9, 0, 0);
 
+// The record a 5.4.2 install wrote, transcribed rather than spread from SCHEDULER.
+const V1_SCHEDULER = {
+  key: 'scheduler' as const,
+  library: 'ts-fsrs@5.4.2',
+  model: 'FSRS-6',
+  parameters: {
+    request_retention: 0.9,
+    maximum_interval: 36500,
+    enable_fuzz: false,
+    enable_short_term: true,
+    learning_steps: ['1m', '10m'],
+    relearning_steps: ['10m'],
+  },
+};
+
 let database: GambitDatabase;
 
 beforeEach(() => {
@@ -240,11 +255,13 @@ describe('the database', () => {
 
   it('inherits a v1 journal when the schema gains the games table', async () => {
     // What the app was before v2: no games table, the journal and the scheduler record as they
-    // are. Reopening as GambitDatabase must upgrade, keep both and never repopulate.
+    // are. Reopening as GambitDatabase must upgrade, keep both and never repopulate. The record is
+    // written out rather than spread from SCHEDULER: a database written by 5.4.2 must keep saying
+    // so, and must not inherit the parameters of a later pin.
     const name = `gambit-test-${crypto.randomUUID()}`;
     const legacy = new Dexie(name);
     legacy.version(1).stores({ reviews: '++id, cardId, reviewedAt', meta: 'key' });
-    legacy.on('populate', () => legacy.table('meta').add({ key: 'scheduler', ...SCHEDULER }));
+    legacy.on('populate', () => legacy.table('meta').add(V1_SCHEDULER));
     await legacy.open();
     await legacy
       .table('reviews')
@@ -255,7 +272,7 @@ describe('the database', () => {
     try {
       expect(await reopened.reviews.count()).toBe(1);
       expect(await reopened.meta.count()).toBe(1);
-      expect(await reopened.meta.get('scheduler')).toEqual({ key: 'scheduler', ...SCHEDULER });
+      expect(await reopened.meta.get('scheduler')).toEqual(V1_SCHEDULER);
       expect(await reopened.games.count()).toBe(0);
     } finally {
       reopened.close();
