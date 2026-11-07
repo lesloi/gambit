@@ -1,6 +1,7 @@
 import { ChevronLeft, Lightbulb, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { database } from '../../db/db';
+import { HINT_MOVETIME_MS, HINT_SKILL } from '../../engine/hint';
 import { createMaiaEngine } from '../../engine/maiaEngine';
 import { createStockfishEngine, type StockfishEngine } from '../../engine/stockfish';
 import type { Engine, PositionEval } from '../../engine/uci';
@@ -44,14 +45,7 @@ import {
   startGame,
   type PlayState,
 } from './game';
-import {
-  HINT_MOVETIME_MS,
-  HINT_SKILL,
-  LEVELS,
-  levelAt,
-  levelIndex as levelIndexOf,
-  type Level,
-} from './level';
+import { LEVELS, levelAt, levelIndex as levelIndexOf, type Level } from './level';
 import { materialOf, type CapturedPiece, type Material, type MaterialColor } from './material';
 import { gameRecord, saveGame } from './record';
 import {

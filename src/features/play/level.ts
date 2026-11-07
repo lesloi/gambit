@@ -17,10 +17,6 @@ export const LEVELS: readonly Level[] = Array.from({ length: 21 }, (_, index) =>
 
 export const DEFAULT_ELO = 1350;
 
-/** A hint always comes from the full-strength engine, whatever level the game is played at. */
-export const HINT_SKILL = 20;
-export const HINT_MOVETIME_MS = 1200;
-
 export function levelAt(index: number): Level {
   const clamped = Math.min(Math.max(Math.round(index), 0), LEVELS.length - 1);
   return LEVELS[clamped];

@@ -14,6 +14,7 @@ const kqk: Endgame = {
   fen: '8/8/8/4k3/8/8/5K2/6Q1 w - - 0 1',
   result: 'win',
   goal: 'Mater le roi noir.',
+  hint: 'Rapproche le roi avant de mater.',
 };
 
 const mateInOne: Endgame = {
@@ -28,6 +29,7 @@ const drawn: Endgame = {
   fen: '8/8/8/4k3/8/8/4K3/8 w - - 0 1',
   result: 'draw',
   goal: 'Tenir la nulle.',
+  hint: 'Garder l’opposition.',
 };
 
 describe('endgame play', () => {

@@ -94,6 +94,15 @@ no network.
   as a mistake.
 - No timer. The exercise is about holding the line, not speed; a clock would push towards guessing.
 
+## Endgame
+
+- The board is the exercise: the status line says whose move it is, then the plan and the move the
+  engine would play once the user asked for them.
+- The plan comes first, from the content: a technique is not one move. The engine's move is second,
+  drawn as the board's hint arrow, at full strength whatever the opponent plays.
+- Either step marks the card assisted, and the result says "avec aide"; restarting keeps the mark,
+  because the plan has been read.
+
 ## Play
 
 - The setup screen holds the level slider and the time control, then the primary action starts the

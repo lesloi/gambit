@@ -12,6 +12,8 @@ export interface Endgame {
   /** What the user has to achieve from this side: win the game, or hold the draw. */
   result: EndgameResult;
   goal: string;
+  /** The technique, revealed by the first hint: a plan, never the exact move. */
+  hint: string;
 }
 
 export type EndgameOutcome = 'playing' | 'solved' | 'failed';

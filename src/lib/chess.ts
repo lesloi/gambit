@@ -7,6 +7,29 @@ export function sideToMove(fen: string): 'white' | 'black' {
   return new Chess(fen).turn() === 'w' ? 'white' : 'black';
 }
 
+export interface MoveHint {
+  from: string;
+  to: string;
+  uci: string;
+  /** The move in standard notation, for the live region that announces the hint. */
+  san: string;
+}
+
+/** The move a UCI string names in a position, or null when the position does not allow it. */
+export function moveHint(fen: string, uci: string): MoveHint | null {
+  const chess = new Chess(fen);
+  try {
+    const move = chess.move({
+      from: uci.slice(0, 2),
+      to: uci.slice(2, 4),
+      promotion: uci.slice(4, 5) || undefined,
+    });
+    return { from: move.from, to: move.to, uci, san: move.san };
+  } catch {
+    return null;
+  }
+}
+
 const PROMOTION_ORDER: readonly PromotionPiece[] = ['q', 'r', 'b', 'n'];
 
 /** The pieces the move can promote to, in the order the chooser shows them. Empty otherwise. */
