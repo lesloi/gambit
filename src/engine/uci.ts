@@ -72,7 +72,7 @@ export interface UciEngineOptions {
 const DEFAULT_MOVETIME_MS = 400;
 const DEFAULT_TIMEOUT_MS = 10_000;
 /** Skill Level 20 is Stockfish's full strength, the only setting an analysis accepts. */
-const FULL_SKILL = 20;
+export const FULL_SKILL = 20;
 
 const SCORE_PATTERN = /\bscore (cp|mate) (-?\d+)(?: (lowerbound|upperbound))?\b/;
 

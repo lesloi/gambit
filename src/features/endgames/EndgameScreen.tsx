@@ -1,11 +1,19 @@
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Lightbulb } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Rating } from 'ts-fsrs';
 import { leavingRating } from '../../db/journal';
-import type { Engine } from '../../engine/uci';
+import { HINT_MOVETIME_MS, HINT_SKILL } from '../../engine/hint';
+import { FULL_SKILL, type Engine } from '../../engine/uci';
 import { createStockfishEngine } from '../../engine/stockfish';
 import { fr } from '../../i18n/fr';
-import { legalDests, promotionPieces, sideToMove, type PromotionPiece } from '../../lib/chess';
+import {
+  legalDests,
+  moveHint,
+  promotionPieces,
+  sideToMove,
+  type MoveHint,
+  type PromotionPiece,
+} from '../../lib/chess';
 import { AgainButton } from '../../ui/AgainButton';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { PromotionDialog, promotionAnchor } from '../../ui/PromotionDialog';
@@ -138,6 +146,13 @@ export function EndgamePlayer({
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<PendingPromotion | null>(null);
   const [resetKey, setResetKey] = useState(0);
+  /** The hint step reached: none, the plan alone, or the plan and the engine's move. */
+  const [hint, setHint] = useState<'none' | 'text' | 'move'>('none');
+  /** Whether this attempt asked for help, which costs it the `good` grade. */
+  const [assisted, setAssisted] = useState(false);
+  const [hintPending, setHintPending] = useState(false);
+  /** The engine's move and the position it answered for; a later position does not show it. */
+  const [hintMove, setHintMove] = useState<{ fen: string; move: MoveHint } | null>(null);
   const engine = useRef<Engine | null>(null);
   const boardHost = useRef<HTMLDivElement>(null);
   const recorded = useRef(false);
@@ -173,11 +188,14 @@ export function EndgamePlayer({
   }, [engineAttempt]);
 
   const userTurn = sideToMove(state.fen) === state.userColor;
-  const movable = state.outcome === 'playing' && userTurn && !thinking && engineState === 'ready';
+  const movable =
+    state.outcome === 'playing' && userTurn && !thinking && !hintPending && engineState === 'ready';
   const dests = useMemo(
     () => (movable ? legalDests(state.fen) : new Map<string, string[]>()),
     [movable, state.fen],
   );
+  // The engine answers for the position it was asked about; a hint that outlived its move is dropped.
+  const hintShown = hintMove && hintMove.fen === state.fen ? hintMove.move : null;
 
   const restart = () => {
     generation.current += 1;
@@ -187,6 +205,10 @@ export function EndgamePlayer({
     setAgain(false);
     setBusy(false);
     setPending(null);
+    // The plan has been read, so the attempt stays assisted; only the move of the old position goes.
+    setHint((current) => (current === 'none' ? 'none' : 'text'));
+    setHintMove(null);
+    setHintPending(false);
     recorded.current = false;
     setResetKey((key) => key + 1);
     boardHost.current?.focus();
@@ -207,7 +229,8 @@ export function EndgamePlayer({
 
     const request = generation.current;
     setThinking(true);
-    instance.bestMove(base.fen).then(
+    // The opponent always plays at full strength; naming it keeps a hint from ever moving the level.
+    instance.bestMove(base.fen, { skill: FULL_SKILL }).then(
       (uci) => {
         if (request !== generation.current) return;
         setThinking(false);
@@ -238,6 +261,9 @@ export function EndgamePlayer({
   const playUserMove = (from: string, to: string, promotion?: PromotionPiece) => {
     const after = playEndgameMove(state, from, to, promotion);
     if (after === state) return;
+    // The move just shown belongs to the position before this one; the plan stays.
+    setHintMove(null);
+    setHint((current) => (current === 'move' ? 'text' : current));
     applyTransition(state, after);
     if (after.outcome === 'playing') askEngine(after);
   };
@@ -282,15 +308,59 @@ export function EndgamePlayer({
   };
 
   /**
-   * A solved endgame is written `good` when the user leaves it. The button waits for the write so a
-   * second tap cannot skip a game, and a failed write keeps the screen open rather than dropping
-   * the attempt. A failed conversion already wrote its own review, so leaving it writes nothing.
+   * The hint has two steps: the plan of the endgame, then the move the engine would play. Reading
+   * only the plan already marks the attempt assisted, because the plan is the answer.
+   */
+  const hintDisabled =
+    !userTurn ||
+    hint === 'move' ||
+    hintPending ||
+    thinking ||
+    pending !== null ||
+    (hint === 'text' && engineState !== 'ready');
+
+  const askHint = () => {
+    if (state.outcome !== 'playing' || hintDisabled) return;
+    if (hint === 'none') {
+      setHint('text');
+      setAssisted(true);
+      return;
+    }
+
+    const instance = engine.current;
+    if (!instance) return;
+
+    const request = generation.current;
+    const fen = state.fen;
+    setHintPending(true);
+    instance.bestMove(fen, { skill: HINT_SKILL, movetimeMs: HINT_MOVETIME_MS }).then(
+      (uci) => {
+        if (request !== generation.current) return;
+        setHintPending(false);
+        if (uci === null) return;
+        const move = moveHint(fen, uci);
+        if (move === null) return;
+        setHintMove({ fen, move });
+        setHint('move');
+      },
+      () => {
+        // A failed hint leaves the game playable; the engine's next move decides whether it is gone.
+        if (request === generation.current) setHintPending(false);
+      },
+    );
+  };
+
+  /**
+   * A solved endgame is written `good`, or `hard` when a hint helped, as the user leaves it. The
+   * button waits for the write so a second tap cannot skip a game, and a failed write keeps the
+   * screen open rather than dropping the attempt. A failed conversion already wrote its own review,
+   * so leaving it writes nothing.
    */
   const leave = async () => {
     if (busy) return;
     setBusy(true);
 
-    const grade = leavingRating(state.outcome, recorded.current);
+    const grade = leavingRating(state.outcome, recorded.current, assisted);
     if (grade !== null) {
       recorded.current = true;
       try {
@@ -328,23 +398,37 @@ export function EndgamePlayer({
             movable={movable}
             dests={dests}
             onMove={move}
+            hint={hintShown}
             resetKey={resetKey}
           />
         </div>
       </div>
 
-      <div className="mt-4 flex min-h-11 items-center justify-between gap-3">
-        <p className="text-sm font-medium" role="status">
-          {engineState === 'loading'
-            ? fr.endgame.engineLoading
-            : engineState === 'failed'
-              ? fr.endgame.engineFailed
-              : thinking
-                ? fr.endgame.thinking
-                : userTurn
-                  ? fr.endgame.yourMove
-                  : fr.endgame.thinking}
-        </p>
+      <div className="mt-4 flex items-start justify-between gap-3">
+        <div role="status" className="min-w-0 flex-1 py-3">
+          <p className="text-sm font-medium">
+            {engineState === 'loading'
+              ? fr.endgame.engineLoading
+              : engineState === 'failed'
+                ? fr.endgame.engineFailed
+                : hintPending
+                  ? fr.endgame.hintPending
+                  : thinking
+                    ? fr.endgame.thinking
+                    : userTurn
+                      ? fr.endgame.yourMove
+                      : fr.endgame.thinking}
+          </p>
+          {hint !== 'none' ? (
+            <p className="text-ink-muted mt-1 flex items-start gap-1.5 text-xs leading-snug">
+              <Lightbulb size={13} aria-hidden="true" className="text-accent-ink mt-px shrink-0" />
+              <span>
+                {endgame.hint}
+                {hintShown ? ` ${fr.endgame.hintShown.replace('{move}', hintShown.san)}` : ''}
+              </span>
+            </p>
+          ) : null}
+        </div>
         {state.outcome === 'playing' ? (
           <button
             type="button"
@@ -355,6 +439,26 @@ export function EndgamePlayer({
           </button>
         ) : null}
       </div>
+
+      {state.outcome === 'playing' ? (
+        <button
+          type="button"
+          onClick={askHint}
+          aria-disabled={hintDisabled}
+          className={`border-line text-ink-muted mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-sm border px-3 text-xs transition-colors ${
+            hintDisabled ? 'cursor-default opacity-50' : 'hover:text-ink'
+          }`}
+        >
+          <Lightbulb size={15} aria-hidden="true" />
+          {hintPending
+            ? fr.endgame.hintPending
+            : hint === 'none'
+              ? fr.endgame.hint
+              : hint === 'text'
+                ? fr.endgame.hintMove
+                : fr.endgame.hintDone}
+        </button>
+      ) : null}
 
       {engineState === 'failed' && state.outcome === 'playing' ? (
         <div
@@ -378,7 +482,10 @@ export function EndgamePlayer({
             <div role="status" className="bg-ok-soft text-ok rounded-sm px-3 py-2">
               <p className="text-sm font-semibold">{fr.endgame.solved}</p>
               {state.end ? (
-                <p className="mt-1 text-xs opacity-80">{endgameReason(state.end)}</p>
+                <p className="mt-1 text-xs opacity-80">
+                  {endgameReason(state.end)}
+                  {assisted ? ` · ${fr.endgame.assisted}` : ''}
+                </p>
               ) : null}
             </div>
 

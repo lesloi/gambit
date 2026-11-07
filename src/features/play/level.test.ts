@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_ELO, HINT_SKILL, LEVELS, levelAt, levelIndex } from './level';
+import { DEFAULT_ELO, LEVELS, levelAt, levelIndex } from './level';
 
 describe('play levels', () => {
   it('covers the range Maia was trained on, one bucket wide', () => {
@@ -32,9 +32,5 @@ describe('play levels', () => {
   it('clamps an index outside the slider', () => {
     expect(levelAt(-3)).toBe(LEVELS[0]);
     expect(levelAt(99)).toBe(LEVELS[20]);
-  });
-
-  it('asks the hint at full strength', () => {
-    expect(HINT_SKILL).toBe(20);
   });
 });

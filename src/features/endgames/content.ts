@@ -6,11 +6,12 @@ const RESULTS: readonly EndgameResult[] = ['win', 'draw'];
 
 function toEndgame(entry: unknown): Endgame | null {
   if (typeof entry !== 'object' || entry === null) return null;
-  const { id, name, fen, result, goal } = entry as Record<string, unknown>;
+  const { id, name, fen, result, goal, hint } = entry as Record<string, unknown>;
   if (typeof id !== 'string' || id === '') return null;
   if (typeof name !== 'string' || name === '') return null;
   if (typeof fen !== 'string' || fen === '') return null;
   if (typeof goal !== 'string' || goal === '') return null;
+  if (typeof hint !== 'string' || hint === '') return null;
   if (typeof result !== 'string' || !RESULTS.includes(result as EndgameResult)) return null;
 
   // A bad FEN would leave the board empty or throw on the first move; skip it as a bad entry.
@@ -22,7 +23,7 @@ function toEndgame(entry: unknown): Endgame | null {
   // A position that is already over would judge itself before the user moves, with no way to retry.
   if (endgameEnd(fen, [fen]) !== null) return null;
 
-  return { id, name, fen, result: result as EndgameResult, goal };
+  return { id, name, fen, result: result as EndgameResult, goal, hint };
 }
 
 /** Reads the committed endgame set. An entry the parser cannot trust is skipped, not fatal. */

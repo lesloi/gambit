@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizePremove, type PremovePiece } from './chess';
+import { moveHint, normalizePremove, type PremovePiece } from './chess';
 
 function piecesAt(pieces: Record<string, PremovePiece>) {
   return (square: string) => pieces[square];
@@ -9,6 +9,26 @@ const whiteKing: PremovePiece = { role: 'king', color: 'white' };
 const whiteRook: PremovePiece = { role: 'rook', color: 'white' };
 const blackKing: PremovePiece = { role: 'king', color: 'black' };
 const blackRook: PremovePiece = { role: 'rook', color: 'black' };
+
+describe('move hint', () => {
+  const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+  it('names a legal move in standard notation', () => {
+    const hint = moveHint(START, 'g1f3');
+
+    expect(hint).toEqual({ from: 'g1', to: 'f3', uci: 'g1f3', san: 'Nf3' });
+  });
+
+  it('reads the piece of a promotion from the UCI suffix', () => {
+    const hint = moveHint('7k/P7/8/8/8/8/8/7K w - - 0 1', 'a7a8q');
+
+    expect(hint).toEqual({ from: 'a7', to: 'a8', uci: 'a7a8q', san: 'a8=Q+' });
+  });
+
+  it('shows nothing for a move the position does not allow', () => {
+    expect(moveHint(START, 'e2e5')).toBeNull();
+  });
+});
 
 describe('premove normalization', () => {
   it('turns a white king-on-rook premove into a king-side castle', () => {

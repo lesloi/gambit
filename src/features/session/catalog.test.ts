@@ -21,6 +21,7 @@ const endgame: Endgame = {
   fen: '8/8/8/4k3/8/8/5K2/6Q1 w - - 0 1',
   result: 'win',
   goal: 'Mater.',
+  hint: 'Rapproche le roi avant de mater.',
 };
 
 const opening: OpeningLine = {

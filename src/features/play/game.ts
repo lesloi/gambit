@@ -1,16 +1,8 @@
 import { Chess } from 'chess.js';
-import { sideToMove, type PromotionPiece } from '../../lib/chess';
+import { moveHint, sideToMove, type MoveHint, type PromotionPiece } from '../../lib/chess';
 import { canMate, gameEnd, type GameEnd, type GameResult, type Side } from '../../lib/position';
 
 export const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-
-export interface MoveHint {
-  from: string;
-  to: string;
-  uci: string;
-  /** The move in standard notation, for the live region that announces the hint. */
-  san: string;
-}
 
 export interface PlayState {
   fen: string;
@@ -136,21 +128,8 @@ export function flagSide(state: PlayState, side: Side): PlayState {
 export function showHint(state: PlayState, uci: string): PlayState {
   if (state.outcome !== 'playing') return state;
 
-  const chess = new Chess(state.fen);
-  let move;
-  try {
-    move = chess.move({
-      from: uci.slice(0, 2),
-      to: uci.slice(2, 4),
-      promotion: uci.slice(4, 5) || undefined,
-    });
-  } catch {
-    return state;
-  }
+  const hint = moveHint(state.fen, uci);
+  if (hint === null) return state;
 
-  return {
-    ...state,
-    assisted: true,
-    hint: { from: move.from, to: move.to, uci, san: move.san },
-  };
+  return { ...state, assisted: true, hint };
 }

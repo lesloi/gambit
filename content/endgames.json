@@ -4,55 +4,63 @@
     "name": "Dame contre roi",
     "fen": "8/8/8/4k3/8/8/5K2/6Q1 w - - 0 1",
     "result": "win",
-    "goal": "Mater le roi noir sans perdre la dame."
+    "goal": "Mater le roi noir sans perdre la dame.",
+    "hint": "Sers-toi de la dame pour barrer la route au roi noir, puis rapproche ton roi et mate sur le bord. Chaque échec inutile risque le pat."
   },
   {
     "id": "krk",
     "name": "Tour contre roi",
     "fen": "8/8/8/4k3/8/8/5K2/6R1 w - - 0 1",
     "result": "win",
-    "goal": "Mater le roi noir avec le roi et la tour."
+    "goal": "Mater le roi noir avec le roi et la tour.",
+    "hint": "Coupe la route au roi noir avec la tour, amène ton roi à deux cases, puis mate sur le bord du plateau."
   },
   {
     "id": "kbbk",
     "name": "Deux fous contre roi",
     "fen": "8/8/8/4k3/8/8/5K2/6BB w - - 0 1",
     "result": "win",
-    "goal": "Refouler le roi dans un coin et mater."
+    "goal": "Refouler le roi dans un coin et mater.",
+    "hint": "Avance les deux fous côte à côte pour réduire l’espace du roi noir, puis pousse-le dans un coin : le mat n’y tient qu’à cette condition."
   },
   {
     "id": "kbnk",
     "name": "Fou et cavalier contre roi",
     "fen": "8/8/8/4k3/8/8/5K2/6BN w - - 0 1",
     "result": "win",
-    "goal": "Mater dans le coin de la couleur du fou."
+    "goal": "Mater dans le coin de la couleur du fou.",
+    "hint": "Le mat ne se donne que dans le coin de la couleur du fou : chasse d’abord le roi noir vers ce coin, sans séparer tes pièces."
   },
   {
     "id": "kpk-win",
     "name": "Roi et pion contre roi",
     "fen": "4k3/8/4K3/4P3/8/8/8/8 w - - 0 1",
     "result": "win",
-    "goal": "Promouvoir le pion puis mater."
+    "goal": "Promouvoir le pion puis mater.",
+    "hint": "Ton roi est déjà devant le pion : écarte le roi noir d’un côté, puis avance le roi et le pion ensemble. Ne pousse le pion qu’une fois la route libre."
   },
   {
     "id": "kpk-draw",
     "name": "Roi devant le pion",
     "fen": "8/8/4k3/4p3/4K3/8/8/8 w - - 0 1",
     "result": "draw",
-    "goal": "Rester devant le pion et bloquer la promotion."
+    "goal": "Rester devant le pion et bloquer la promotion.",
+    "hint": "Reste sur la colonne du pion noir, directement devant lui. Chaque fois qu’il avance, replace ton roi devant, et ne cède jamais cette colonne."
   },
   {
     "id": "lucena",
     "name": "Position de Lucena",
     "fen": "1K1k4/1P6/8/8/8/8/r7/2R5 w - - 0 1",
     "result": "win",
-    "goal": "Construire le pont et promouvoir le pion."
+    "goal": "Construire le pont et promouvoir le pion.",
+    "hint": "Rapproche ton roi, puis place la tour au quatrième rang : elle fera le pont et arrêtera les échecs quand le roi noir approchera. Promeus ensuite le pion."
   },
   {
     "id": "philidor",
     "name": "Position de Philidor",
     "fen": "8/8/8/8/3pk3/R7/7r/4K3 w - - 0 1",
     "result": "draw",
-    "goal": "Garder la tour sur la troisième rangée et tenir la nulle."
+    "goal": "Garder la tour sur la troisième rangée et tenir la nulle.",
+    "hint": "Garde la tour sur la troisième rangée : elle empêche le roi noir d’avancer. Dès que le pion quitte la quatrième rangée, envoie la tour sur la huitième pour donner des échecs par derrière."
   }
 ]

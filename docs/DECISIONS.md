@@ -63,12 +63,18 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   line was solved: the four Anki buttons mostly collect the same "good" for a second decision
   after every solve. A solve is written `good` when the attempt is left, and one button writes
   `again` instead; a miss writes `again` when it happens. A puzzle attempt that asked for a hint —
-  its sentence or its piece — writes `hard`: the solve still happened, and a lapse would say the
-  position was forgotten. So does a replay after a failure or a revealed line, whose answer the
-  band or the sheet just showed. The other trainers have no hint and keep writing `good`. A refused
+  its sentence or its piece — writes `hard`, and so does an endgame attempt that revealed its plan
+  or the engine's move: the solve still happened, and a lapse would say the position was
+  forgotten. So does a replay after a failure or a revealed line, whose answer the band or the
+  sheet just showed. The opening trainer has no hint and keeps writing `good`. A refused
   `good` keeps the screen open for another tap, but a refused miss is not retried, so a back, a
   tab close or an abandonment after a refusal loses the review — the alternative, writing `good`
   at once, would append a second entry when the user demoted it.
+- **An endgame's hint is its plan before the engine's move.** The technique is the lesson, and a
+  best move alone does not teach it: the first press shows the plan written for that position, the
+  second the engine's move at full strength. Reading only the plan already costs the `good` grade,
+  because the plan is the answer. The plan is content, required for every entry like an opening's
+  note, so a missing one cannot silently drop the teaching from a card.
 - **A game has no takeback; a hint marks it as assisted.** Takeback erases the blunder the
   analysis exists to show. A hint is allowed, but the game is marked as assisted and stays out of
   the blunder list. The score sheet reopens any past position read-only, and the clock keeps
