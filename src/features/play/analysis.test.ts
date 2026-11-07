@@ -29,16 +29,44 @@ async function reviewOneMove(beforeCp: number, afterBlackCp: number) {
 }
 
 const WHITE_GAME = ['e2e4', 'e7e5', 'g1f3', 'b8c6'];
+const AFTER_E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+const MID_GAME = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 32';
 
 describe('replayMoves', () => {
   it('starts at the initial position and keeps the SAN, the mover and the last move', () => {
     const positions = replayMoves(['e2e4', 'e7e5']);
 
     expect(positions).toHaveLength(3);
-    expect(positions[0]).toMatchObject({ san: null, lastMove: null, turn: 'white' });
-    expect(positions[1]).toMatchObject({ san: 'e4', lastMove: ['e2', 'e4'], turn: 'black' });
-    expect(positions[2]).toMatchObject({ san: 'e5', lastMove: ['e7', 'e5'], turn: 'white' });
+    expect(positions[0]).toMatchObject({ san: null, lastMove: null, turn: 'white', moveNumber: 1 });
+    expect(positions[1]).toMatchObject({
+      san: 'e4',
+      lastMove: ['e2', 'e4'],
+      turn: 'black',
+      moveNumber: 1,
+    });
+    expect(positions[2]).toMatchObject({
+      san: 'e5',
+      lastMove: ['e7', 'e5'],
+      turn: 'white',
+      moveNumber: 2,
+    });
     expect(positions[2].fen).toBe('rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2');
+  });
+
+  it('starts from a position and keeps its side to move and move number', () => {
+    const positions = replayMoves(['e7e5', 'g1f3'], AFTER_E4);
+
+    expect(positions).toHaveLength(3);
+    expect(positions[0]).toMatchObject({ san: null, turn: 'black', moveNumber: 1 });
+    expect(positions[1]).toMatchObject({ san: 'e5', turn: 'white', moveNumber: 2 });
+    expect(positions[2]).toMatchObject({ san: 'Nf3', turn: 'black', moveNumber: 2 });
+  });
+
+  it('keeps the fullmove number of a mid-game start', () => {
+    const positions = replayMoves(['e2e4'], MID_GAME);
+
+    expect(positions[0].moveNumber).toBe(32);
+    expect(positions[1].moveNumber).toBe(32);
   });
 });
 
@@ -82,6 +110,32 @@ describe('reviewGame', () => {
       fen: positions[0].fen,
       playedSan: 'e4',
       bestSan: 'd4',
+      kind: 'blunder',
+    });
+  });
+
+  it('judges a line from a start position and keeps its move number', async () => {
+    const moves = ['e7e5', 'g1f3', 'b8c6'];
+    const positions = replayMoves(moves, AFTER_E4);
+    const { evaluate } = mockEngine(positions, {
+      0: { bestMove: 'g8f6', score: CP(20) },
+      1: { bestMove: 'g1f3', score: CP(500) },
+      2: { bestMove: 'b8c6', score: CP(10) },
+      3: { bestMove: 'f1b5', score: CP(20) },
+    });
+
+    const findings = await reviewGame(evaluate, {
+      moves,
+      userColor: 'black',
+      startFen: AFTER_E4,
+    });
+
+    expect(findings?.[0]).toMatchObject({
+      ply: 0,
+      moveNumber: 1,
+      side: 'black',
+      playedSan: 'e5',
+      bestSan: 'Nf6',
       kind: 'blunder',
     });
   });

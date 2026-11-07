@@ -21,7 +21,7 @@ const NO_MARKS: ReadonlyMap<number, MoveMark> = new Map();
 function lastPly(rows: readonly MovePair[]): number {
   const last = rows[rows.length - 1];
   if (!last) return 0;
-  return last.black?.ply ?? last.white.ply;
+  return last.black?.ply ?? last.white?.ply ?? 0;
 }
 
 /**
@@ -79,13 +79,20 @@ export function MoveSheet({
             key={pair.number}
             className="grid grid-cols-[20px_1fr_1fr] items-center gap-1 px-1.5 tabular-nums"
           >
-            <span className="text-ink-muted px-1 opacity-70">{pair.number}.</span>
-            <SheetMoveButton
-              move={pair.white}
-              mark={marks.get(pair.white.ply)}
-              current={pair.white.ply === currentPly}
-              onSelect={onSelect}
-            />
+            <span className="text-ink-muted px-1 opacity-70">
+              {pair.number}
+              {pair.white ? '.' : '…'}
+            </span>
+            {pair.white ? (
+              <SheetMoveButton
+                move={pair.white}
+                mark={marks.get(pair.white.ply)}
+                current={pair.white.ply === currentPly}
+                onSelect={onSelect}
+              />
+            ) : (
+              <span />
+            )}
             {pair.black ? (
               <SheetMoveButton
                 move={pair.black}
@@ -132,9 +139,12 @@ const SKELETON_WIDTHS = ['w-2/5', 'w-1/2', 'w-1/3', 'w-3/5', 'w-2/3', 'w-1/4'];
  */
 export function MoveSheetSkeleton({
   rowCount,
+  startNumber = 1,
   listClassName = 'max-h-40 md:max-h-[40vh]',
 }: {
   rowCount: number;
+  /** The full-move number of the first row, so a mid-game sheet keeps its numbering. */
+  startNumber?: number;
   listClassName?: string;
 }) {
   return (
@@ -149,7 +159,7 @@ export function MoveSheetSkeleton({
             className="grid min-h-8 grid-cols-[20px_1fr_1fr] items-center gap-1 px-1.5"
           >
             <span className="text-ink-muted px-1 text-xs tabular-nums opacity-70">
-              {index + 1}.
+              {startNumber + index}.
             </span>
             <span
               className={`bg-line mx-1.5 h-2 animate-pulse rounded-xs motion-reduce:animate-none ${

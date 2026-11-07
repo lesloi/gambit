@@ -22,6 +22,15 @@ describe('materialOf', () => {
     });
   });
 
+  it('replays the captures from the start position', () => {
+    const afterE4D5 = 'rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2';
+
+    expect(materialOf(AFTER_EXD5, ['e4d5'], afterE4D5)).toEqual({
+      captured: { white: ['p'], black: [] },
+      advantage: 1,
+    });
+  });
+
   it('counts an en passant capture like any other', () => {
     const material = materialOf('rnbqkbnr/1pp1pppp/p2P4/8/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 3', [
       'e2e4',

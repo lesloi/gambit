@@ -1,8 +1,8 @@
 import { Chess } from 'chess.js';
-import type { Side } from '../../lib/position';
+import { START_FEN, type Side } from '../../lib/position';
 
 export interface SheetMove {
-  /** The full-move number, starting at 1. */
+  /** The full-move number from the position's FEN. */
   number: number;
   side: Side;
   /** The position reached after this move, the start being zero. */
@@ -11,9 +11,10 @@ export interface SheetMove {
 }
 
 export interface MovePair {
-  /** The full-move number, starting at 1. */
+  /** The full-move number from the position's FEN. */
   number: number;
-  white: SheetMove;
+  /** Null when the line starts with a Black move. */
+  white: SheetMove | null;
   /** Null while White's move is the last one played. */
   black: SheetMove | null;
 }
@@ -23,13 +24,19 @@ export interface ScoreSheet {
   rows: MovePair[];
 }
 
-/** The score sheet: every move replayed into standard notation, two per row. */
-export function scoreSheet(history: readonly string[]): ScoreSheet {
-  const chess = new Chess();
+/**
+ * The score sheet: every move replayed into standard notation from `startFen`, two per row. A line
+ * that starts with Black keeps a row whose White cell is empty.
+ */
+export function scoreSheet(history: readonly string[], startFen: string = START_FEN): ScoreSheet {
+  const chess = new Chess(startFen);
   const moves: SheetMove[] = [];
   const rows: MovePair[] = [];
 
   for (const uci of history) {
+    // Read both before the move: chess.js increments the number after Black's move.
+    const number = chess.moveNumber();
+    const side = chess.turn() === 'w' ? 'white' : 'black';
     let move;
     try {
       move = chess.move({
@@ -43,16 +50,17 @@ export function scoreSheet(history: readonly string[]): ScoreSheet {
     }
 
     const ply = moves.length + 1;
-    const entry: SheetMove = {
-      number: Math.ceil(ply / 2),
-      side: move.color === 'w' ? 'white' : 'black',
-      ply,
-      san: move.san,
-    };
+    const entry: SheetMove = { number, side, ply, san: move.san };
     moves.push(entry);
 
-    if (entry.side === 'white') rows.push({ number: entry.number, white: entry, black: null });
-    else rows[rows.length - 1].black = entry;
+    if (side === 'white') {
+      rows.push({ number, white: entry, black: null });
+      continue;
+    }
+
+    const last = rows[rows.length - 1];
+    if (last && last.number === number && last.white !== null) last.black = entry;
+    else rows.push({ number, white: null, black: entry });
   }
 
   return { moves, rows };

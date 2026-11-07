@@ -1,4 +1,5 @@
 import { Chess } from 'chess.js';
+import { START_FEN } from '../../lib/position';
 
 export type CapturedPiece = 'p' | 'n' | 'b' | 'r' | 'q';
 
@@ -14,13 +15,17 @@ export interface Material {
 const VALUES: Record<CapturedPiece | 'k', number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
 
 /**
- * The pieces each side took, from the move list, and the material left on the board, from the
- * position. A promotion is material on the board without being a capture, so the two measures
- * can differ, and the differential follows the board.
+ * The pieces each side took, from the move list replayed from `startFen`, and the material left on
+ * the board, from the position. A promotion is material on the board without being a capture, so
+ * the two measures can differ, and the differential follows the board.
  */
-export function materialOf(fen: string, moves: readonly string[]): Material {
+export function materialOf(
+  fen: string,
+  moves: readonly string[],
+  startFen: string = START_FEN,
+): Material {
   const captured: Record<MaterialColor, CapturedPiece[]> = { white: [], black: [] };
-  const chess = new Chess();
+  const chess = new Chess(startFen);
 
   for (const uci of moves) {
     let move;
