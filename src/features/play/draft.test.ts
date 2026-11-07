@@ -104,6 +104,40 @@ describe('the game draft', () => {
     });
   });
 
+  it('keeps a game from a position before its first move', () => {
+    const state = startGame('black', AFTER_E4, false);
+
+    const saved = draftFromGame(
+      { state, clock: createClock(0, 0), startedAt: START, level: 1500 },
+      T0,
+    );
+
+    expect(saved).toMatchObject({
+      startFen: AFTER_E4,
+      clocked: false,
+      userColor: 'black',
+      moves: [],
+      clock: { whiteMs: 0, blackMs: 0, running: null },
+    });
+  });
+
+  it('keeps a timed game from a position before its first move', () => {
+    const state = startGame('black', AFTER_E4);
+
+    const saved = draftFromGame(
+      { state, clock: createClock(TEN_MINUTES, 10_000), startedAt: START, level: 1500 },
+      T0,
+    );
+
+    expect(saved).toMatchObject({
+      startFen: AFTER_E4,
+      clocked: true,
+      userColor: 'black',
+      moves: [],
+      clock: { whiteMs: TEN_MINUTES, blackMs: TEN_MINUTES, running: null },
+    });
+  });
+
   it('does not keep a game that is over', () => {
     const state = gameAfter('f2f3', 'e7e5', 'g2g4', 'd8h4');
 
@@ -150,6 +184,44 @@ describe('the game draft', () => {
     expect(read?.startFen).toBe(AFTER_E4);
     expect(state?.fen).toBe('rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2');
     expect(state?.startFen).toBe(AFTER_E4);
+  });
+
+  it('resumes a game from a position before its first move', () => {
+    const saved = {
+      ...draft(),
+      startFen: AFTER_E4,
+      clocked: false,
+      userColor: 'black' as const,
+      moves: [],
+      clock: { whiteMs: 0, blackMs: 0, running: null },
+    };
+    const storage = memoryStorage();
+    saveDraft(saved, storage);
+
+    const read = readDraft(storage);
+    const state = read === null ? null : resumeGame(read);
+
+    expect(read).toMatchObject({ startFen: AFTER_E4, clocked: false, moves: [] });
+    expect(state?.startFen).toBe(AFTER_E4);
+    expect(state?.moves).toEqual([]);
+    expect(state?.outcome).toBe('playing');
+  });
+
+  it('resumes a timed game from a position before its first move', () => {
+    const saved = {
+      ...draft(),
+      startFen: AFTER_E4,
+      userColor: 'black' as const,
+      moves: [],
+      clock: { whiteMs: 600_000, blackMs: 600_000, running: null },
+    };
+    const storage = memoryStorage();
+    saveDraft(saved, storage);
+
+    const read = readDraft(storage);
+
+    expect(read).toMatchObject({ startFen: AFTER_E4, clocked: true, moves: [] });
+    expect(read?.clock.running).toBeNull();
   });
 
   it('resumes an untimed game', () => {
@@ -245,6 +317,19 @@ describe('the game draft', () => {
       { ...draft(), clocked: 'yes' },
       { ...draft(), clocked: false, clock: { ...draft().clock, running: 'white' } },
       { ...draft(), clocked: false, clock: { ...draft().clock, running: null } },
+      {
+        ...draft(),
+        startFen: AFTER_E4,
+        clocked: false,
+        moves: [],
+        clock: { ...draft().clock, running: null },
+      },
+      {
+        ...draft(),
+        startFen: AFTER_E4,
+        moves: [],
+        clock: { whiteMs: 600_000, blackMs: 595_000, running: null },
+      },
       { ...draft(), assisted: 'yes' },
       { ...draft(), clock: { ...draft().clock, whiteMs: -1 } },
       { ...draft(), clock: { ...draft().clock, running: 'red' } },

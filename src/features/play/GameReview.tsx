@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PositionEval } from '../../engine/uci';
 import { fr } from '../../i18n/fr';
 import { sideToMove } from '../../lib/chess';
+import { START_FEN } from '../../lib/position';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { ANALYSIS_MOVETIME_MS, findingsBySheetPly, reviewGame, type Finding } from './analysis';
 import { positionAt, type PlayState } from './game';
@@ -254,7 +255,7 @@ export function GameReview({
           onClick={onNewGame}
           className="bg-accent w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
         >
-          {fr.play.newGame}
+          {game.startFen !== START_FEN ? fr.play.replayPosition : fr.play.newGame}
         </button>
       </div>
     </>

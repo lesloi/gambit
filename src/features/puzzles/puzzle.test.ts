@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  canPlayPosition,
   legalDests,
   playMove,
   promotionPieces,
@@ -181,6 +182,42 @@ describe('puzzle session', () => {
     const revealed = revealSolution(failed);
 
     expect(revealed.moves).toEqual([...puzzle.solution]);
+  });
+});
+
+describe('playable final position', () => {
+  it('offers a solved position that is not over', () => {
+    const state = playMove(startPuzzle(quietAnswer), 'b2', 'b3');
+
+    expect(canPlayPosition(state)).toBe(true);
+  });
+
+  it('offers a revealed position that is not over', () => {
+    const state = revealSolution(startPuzzle(quietAnswer));
+
+    expect(canPlayPosition(state)).toBe(true);
+  });
+
+  it('refuses a final position that is already mate', () => {
+    const solved = playMove(startPuzzle(doubleMate), 'b1', 'b8');
+    const revealed = revealSolution(startPuzzle(puzzle));
+
+    expect(canPlayPosition(solved)).toBe(false);
+    expect(canPlayPosition(revealed)).toBe(false);
+  });
+
+  it('refuses a final position the 75-move rule already draws', () => {
+    const nearlyDrawn: Puzzle = {
+      ...quietAnswer,
+      fen: '7k/6pp/8/8/8/8/1Q6/R5K1 w - - 149 100',
+    };
+
+    expect(canPlayPosition(playMove(startPuzzle(nearlyDrawn), 'b2', 'b3'))).toBe(false);
+  });
+
+  it('refuses a puzzle that is still playing or failed', () => {
+    expect(canPlayPosition(startPuzzle(quietAnswer))).toBe(false);
+    expect(canPlayPosition(playMove(startPuzzle(quietAnswer), 'a1', 'a8'))).toBe(false);
   });
 });
 

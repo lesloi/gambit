@@ -1,5 +1,6 @@
 import { Chess, type Move } from 'chess.js';
 import type { PromotionPiece } from '../../lib/chess';
+import { gameEnd } from '../../lib/position';
 
 export { legalDests, promotionPieces } from '../../lib/chess';
 export type { PromotionPiece } from '../../lib/chess';
@@ -215,6 +216,17 @@ export function playMove(
     wrongMove: null,
     bestSan: null,
   };
+}
+
+/**
+ * Whether the puzzle ended in a position worth playing out: solved or revealed, and not already
+ * over by the rules (mate, stalemate, insufficient material or the 75-move rule).
+ */
+export function canPlayPosition(state: PuzzleState): boolean {
+  return (
+    (state.outcome === 'solved' || state.outcome === 'revealed') &&
+    gameEnd(state.fen, [state.fen]) === null
+  );
 }
 
 /** Shows the whole solution, from the puzzle position even after a wrong move. */

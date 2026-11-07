@@ -12,7 +12,7 @@ import {
   savePlayElo,
   savePlayTimeControl,
 } from './settings';
-import { DEFAULT_TIME_CONTROL_INDEX, TIME_CONTROLS } from './timeControl';
+import { DEFAULT_TIME_CONTROL_INDEX, PLAY_CLOCKS } from './timeControl';
 
 function memoryStorage(initial: Record<string, string> = {}): StorageLike {
   const entries = new Map(Object.entries(initial));
@@ -96,13 +96,16 @@ describe('play time control preference', () => {
   });
 
   it('finds the preset matching a pair stored by value', () => {
-    expect(readPlayTimeControl(storedControl({ controlMs: 300_000, incrementMs: 0 }))).toBe(2);
-    expect(readPlayTimeControl(storedControl({ controlMs: 900_000, incrementMs: 10_000 }))).toBe(4);
+    expect(readPlayTimeControl(storedControl({ controlMs: 300_000, incrementMs: 0 }))).toBe(3);
+    expect(readPlayTimeControl(storedControl({ controlMs: 900_000, incrementMs: 10_000 }))).toBe(5);
+  });
+
+  it('reads the stored untimed choice', () => {
+    expect(readPlayTimeControl(storedControl(null))).toBe(0);
   });
 
   it('falls back to the default for a pair or a shape it does not offer', () => {
     for (const value of [
-      null,
       [],
       'fast',
       42,
@@ -116,8 +119,8 @@ describe('play time control preference', () => {
     }
   });
 
-  it('keeps every saved pair in the offered list', () => {
-    for (const index of TIME_CONTROLS.keys()) {
+  it('keeps every saved choice in the offered list', () => {
+    for (const index of PLAY_CLOCKS.keys()) {
       const storage = memoryStorage();
 
       savePlayTimeControl(index, storage);

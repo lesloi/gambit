@@ -11,8 +11,10 @@ export interface MoveRequest {
    * Maia conditions on both sides; the game passes its level for both until a mode needs them apart.
    */
   rating?: number;
-  /** The moves played so far from the initial position, in UCI, for an engine that reads history. */
+  /** The moves played so far from the game's start position, in UCI, for an engine that reads history. */
   history?: readonly string[];
+  /** The position the history starts from; the standard one when omitted. */
+  startFen?: string;
   /** Sampling temperature for an engine whose move is drawn rather than searched; 0 is the top move. */
   temperature?: number;
   /** A seed that makes a drawn move repeatable. */

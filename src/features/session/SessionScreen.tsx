@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { database } from '../../db/db';
 import { journalMark } from '../../db/journal';
 import { fr } from '../../i18n/fr';
+import type { Side } from '../../lib/position';
 import { EndgamePlayer } from '../endgames/EndgameScreen';
 import { OpeningPlayer } from '../openings/OpeningScreen';
 import type { PuzzleBand } from '../puzzles/content';
@@ -34,7 +35,13 @@ type SessionState =
  * The daily session: the queue is derived from the journal pinned when the session started, and a
  * scalar cursor carries the position between visits. See GLOSSARY.md and DECISIONS.md#persistence.
  */
-export function SessionScreen({ onExit }: { onExit: () => void }) {
+export function SessionScreen({
+  onExit,
+  onPlayPosition,
+}: {
+  onExit: () => void;
+  onPlayPosition: (position: { fen: string; userColor: Side }) => void;
+}) {
   const [state, setState] = useState<SessionState>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
 
@@ -125,6 +132,13 @@ export function SessionScreen({ onExit }: { onExit: () => void }) {
     const cursor = advanceCursor(state.cursor, state.plan.cards.length, Date.now());
     saveSession(cursor);
     setState({ ...state, cursor });
+  };
+
+  // The puzzle's review is written by the player; the cursor moves now, so the detour returns to
+  // the next card rather than the card the game came from.
+  const playPosition = (position: { fen: string; userColor: Side }) => {
+    advance();
+    onPlayPosition(position);
   };
 
   const card = state.status === 'ready' ? state.plan.cards[state.cursor.position] : undefined;
@@ -238,6 +252,7 @@ export function SessionScreen({ onExit }: { onExit: () => void }) {
               puzzle={card.puzzle}
               onNext={advance}
               nextLabel={nextLabel}
+              onPlayPosition={playPosition}
             />
           ) : null}
 

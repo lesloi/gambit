@@ -42,6 +42,7 @@ import {
   playUci,
   positionAt,
   showHint,
+  START_FEN,
   startGame,
   type PlayState,
 } from './game';
@@ -56,7 +57,8 @@ import {
   savePlayElo,
   savePlayTimeControl,
 } from './settings';
-import { formatTimeControl, TIME_CONTROLS, type TimeControl } from './timeControl';
+import { formatTimeControl, PLAY_CLOCKS, timeControlAt, type TimeControl } from './timeControl';
+import { START_EVAL_MOVETIME_MS, startVerdict, type StartVerdict } from './verdict';
 
 type EngineState = 'loading' | 'ready' | 'failed';
 type Saved = 'idle' | 'saved' | 'failed';
@@ -72,13 +74,26 @@ interface PendingPromotion {
   options: PromotionPiece[];
 }
 
-export function PlayScreen({ onExit }: { onExit: () => void }) {
+/** A game to start immediately: the side the user takes, and the position it starts from. */
+export interface PlayStart {
+  fen: string;
+  userColor: Side;
+}
+
+export function PlayScreen({
+  onExit,
+  start = null,
+}: {
+  onExit: () => void;
+  /** A game to open at once, without the setup; the puzzle's final position passes one. */
+  start?: PlayStart | null;
+}) {
   const [elo, setElo] = useState(readPlayElo);
   const [controlIndex, setControlIndex] = useState(readPlayTimeControl);
   const [color, setColor] = useState(readPlayColor);
   const levelPosition = levelIndexOf(elo);
   const [gameKey, setGameKey] = useState(0);
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState(start !== null);
   const [draft, setDraft] = useState<PlayDraft | null>(readDraft);
   const [resume, setResume] = useState<PlayDraft | null>(null);
 
@@ -89,7 +104,7 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
     if (!playing) setDraft(readDraft());
   }, [playing]);
 
-  const start = () => {
+  const beginGame = () => {
     savePlayElo(levelAt(levelPosition).elo);
     savePlayTimeControl(controlIndex);
     savePlayColor(color);
@@ -116,8 +131,10 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
 
   const level = resume ? levelAt(levelIndexOf(resume.level)) : levelAt(levelPosition);
   const control = resume
-    ? { controlMs: resume.controlMs, incrementMs: resume.incrementMs }
-    : TIME_CONTROLS[controlIndex];
+    ? resume.clocked
+      ? { controlMs: resume.controlMs, incrementMs: resume.incrementMs }
+      : null
+    : timeControlAt(controlIndex);
 
   return (
     <div className="min-h-dvh bg-paper">
@@ -125,7 +142,7 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
         <header className="flex items-center gap-1">
           <button
             type="button"
-            onClick={playing ? () => setPlaying(false) : onExit}
+            onClick={playing ? (start === null ? () => setPlaying(false) : onExit) : onExit}
             aria-label={fr.play.back}
             className="text-ink-muted hover:text-ink -ml-2 grid size-11 place-items-center rounded-full"
           >
@@ -144,8 +161,9 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
             <PlayGame
               key={gameKey}
               level={level}
-              control={control}
+              control={start === null ? control : null}
               color={color}
+              start={start}
               initialDraft={resume}
               onNewGame={newGame}
             />
@@ -158,7 +176,7 @@ export function PlayScreen({ onExit }: { onExit: () => void }) {
               color={color}
               onColorChange={setColor}
               draft={draft}
-              onStart={start}
+              onStart={beginGame}
               onResume={resumeStoredGame}
             />
           )}
@@ -204,13 +222,17 @@ function PlaySetup({
               .replace('{elo}', String(levelAt(levelIndexOf(draft.level)).elo))
               .replace(
                 '{clock}',
-                formatTimeControl({
-                  controlMs: draft.controlMs,
-                  incrementMs: draft.incrementMs,
-                }),
+                formatTimeControl(
+                  draft.clocked
+                    ? { controlMs: draft.controlMs, incrementMs: draft.incrementMs }
+                    : null,
+                ),
               )
               .replace('{color}', fr.play.colors[draft.userColor])}
           </p>
+          {draft.startFen !== START_FEN ? (
+            <p className="text-ink-muted mt-1 text-xs">{fr.play.resumeFromPuzzle}</p>
+          ) : null}
           <button
             type="button"
             onClick={onResume}
@@ -254,7 +276,7 @@ function PlaySetup({
             onChange={(event) => onControlChange(Number(event.target.value))}
             className="border-line bg-paper text-ink mt-3 min-h-11 w-full rounded-sm border px-3 text-sm"
           >
-            {TIME_CONTROLS.map((control, index) => (
+            {PLAY_CLOCKS.map((control, index) => (
               <option key={index} value={index}>
                 {formatTimeControl(control)}
               </option>
@@ -322,18 +344,22 @@ function PlayGame({
   level,
   control,
   color,
+  start,
   initialDraft,
   onNewGame,
 }: {
   level: Level;
-  control: TimeControl;
+  control: TimeControl | null;
   color: PlayColor;
+  start: PlayStart | null;
   initialDraft: PlayDraft | null;
   onNewGame: () => void;
 }) {
-  const { controlMs, incrementMs } = control;
+  const { controlMs, incrementMs } = control ?? { controlMs: 0, incrementMs: 0 };
   const [state, setState] = useState<PlayState>(() =>
-    initialDraft ? resumeGame(initialDraft) : startGame(drawColor(color)),
+    initialDraft
+      ? resumeGame(initialDraft)
+      : startGame(start?.userColor ?? drawColor(color), start?.fen, control !== null),
   );
   const [clock, setClock] = useState<ClockState>(() =>
     initialDraft ? resumeClock(initialDraft) : createClock(controlMs, incrementMs),
@@ -341,6 +367,9 @@ function PlayGame({
   const [now, setNow] = useState(() => Date.now());
   const [engineState, setEngineState] = useState<EngineState>('loading');
   const [engineAttempt, setEngineAttempt] = useState(0);
+  const [evalState, setEvalState] = useState<'idle' | 'running' | 'done' | 'failed'>('idle');
+  const [startEval, setStartEval] = useState<StartVerdict | null>(null);
+  const evalAsked = useRef(false);
   const [thinking, setThinking] = useState(false);
   const [hintPending, setHintPending] = useState(false);
   const [saved, setSaved] = useState<Saved>('idle');
@@ -479,6 +508,39 @@ function PlayGame({
     };
   }, [engineAttempt, startResumedClock, updatePremoves]);
 
+  // The position a game starts from is evaluated once, from the user's side. A standard start is
+  // even and says nothing; a puzzle's final position tells the user what they are converting.
+  useEffect(() => {
+    if (state.startFen === START_FEN || evalAsked.current || engineState !== 'ready') return;
+    const instance = engine.current;
+    if (!instance) return;
+
+    let active = true;
+    evalAsked.current = true;
+    setEvalState('running');
+    instance.analyse(state.startFen, { movetimeMs: START_EVAL_MOVETIME_MS }).then(
+      (position) => {
+        if (!active) return;
+        const verdict = position.score
+          ? startVerdict(position.score, sideToMove(state.startFen), state.userColor)
+          : null;
+        if (verdict === null) {
+          setEvalState('failed');
+          return;
+        }
+        setStartEval(verdict);
+        setEvalState('done');
+      },
+      () => {
+        if (active) setEvalState('failed');
+      },
+    );
+
+    return () => {
+      active = false;
+    };
+  }, [engineState, state.startFen, state.userColor]);
+
   // Hidden means the clock stops paying: the page may be closed, frozen or put away for a while.
   useEffect(() => {
     const hide = () => {
@@ -585,9 +647,11 @@ function PlayGame({
         complete(after);
         return null;
       }
-      // A move that lands while the page is hidden must not start the next clock behind it.
-      const moved = afterMove(clockRef.current, mover, at);
-      const clock = document.visibilityState === 'hidden' ? pauseClock(moved, at) : moved;
+      // A move that lands while the page is hidden must not start the next clock behind it. An
+      // untimed game keeps its 0/0 clock, whose null running side makes the clock paths no-ops.
+      const moved = after.clocked ? afterMove(clockRef.current, mover, at) : clockRef.current;
+      const clock =
+        after.clocked && document.visibilityState === 'hidden' ? pauseClock(moved, at) : moved;
       setState(after);
       setNow(at);
       setClock(clock);
@@ -603,7 +667,8 @@ function PlayGame({
 
       const engineSide = sideToMove(game.fen);
       // A clock already at zero has lost before the engine can play, whatever it would answer.
-      if (remainingMs(clock, Date.now())[engineSide] <= 0) {
+      // An untimed game has no zero to trip on.
+      if (game.clocked && remainingMs(clock, Date.now())[engineSide] <= 0) {
         complete(flagSide(game, engineSide));
         return;
       }
@@ -618,6 +683,7 @@ function PlayGame({
             maia.current.bestMove(game.fen, {
               rating: level.elo,
               history: game.moves,
+              startFen: game.startFen,
               temperature: 1,
               seed: gameSeed.current + game.moves.length,
             }),
@@ -638,7 +704,7 @@ function PlayGame({
           }
 
           const at = Date.now();
-          const late = flagged(clockRef.current, at);
+          const late = game.clocked ? flagged(clockRef.current, at) : null;
           if (late !== null) {
             generation.current += 1;
             complete(flagSide(game, late));
@@ -677,7 +743,7 @@ function PlayGame({
     consumedPly.current = state.moves.length;
 
     const at = Date.now();
-    const late = flagged(clockRef.current, at);
+    const late = state.clocked ? flagged(clockRef.current, at) : null;
     if (late !== null) {
       // The engine is not running on the user's turn, so there is nothing to cancel here.
       complete(flagSide(state, late));
@@ -706,7 +772,7 @@ function PlayGame({
 
   const playUserMove = (from: string, to: string, promotion?: PromotionPiece) => {
     const at = Date.now();
-    const late = flagged(clock, at);
+    const late = state.clocked ? flagged(clock, at) : null;
     if (late !== null) {
       generation.current += 1;
       engine.current?.cancel();
@@ -792,7 +858,7 @@ function PlayGame({
   }, []);
 
   const clockRunning =
-    state.outcome === 'playing' && clock.running !== null && clock.since !== null;
+    state.clocked && state.outcome === 'playing' && clock.running !== null && clock.since !== null;
 
   useEffect(() => {
     if (!clockRunning) return;
@@ -868,13 +934,14 @@ function PlayGame({
             ? fr.play.yourMove
             : fr.play.thinking;
 
-  // Stepping back to the start leaves no move to name, so the bar names the position instead.
+  // Stepping back to the start leaves no move to name, so the bar names the position instead. An
+  // untimed game never claims its clock continues.
   const reviewText = shownMove
-    ? (state.outcome === 'playing'
+    ? (state.outcome === 'playing' && state.clocked
         ? fr.play.review.whilePlaying
         : fr.play.review.afterGame
       ).replace('{move}', moveLabel(shownMove))
-    : state.outcome === 'playing'
+    : state.outcome === 'playing' && state.clocked
       ? fr.play.review.startWhilePlaying
       : fr.play.review.startAfterGame;
 
@@ -884,8 +951,28 @@ function PlayGame({
         <div className="min-w-0">
           <div className="text-ink-muted flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
             <span>
-              {fr.play.clock} · {formatTimeControl(control)}
+              {control === null
+                ? fr.play.untimed
+                : `${fr.play.clock} · ${formatTimeControl(control)}`}
             </span>
+            {state.startFen !== START_FEN ? (
+              <span className="border-line rounded-xs border px-1.5 py-0.5 text-[0.625rem] tracking-wide uppercase">
+                {fr.play.fromPuzzle}
+              </span>
+            ) : null}
+            {state.startFen !== START_FEN && (evalState === 'running' || evalState === 'done') ? (
+              <span
+                className="border-line rounded-xs border px-1.5 py-0.5 text-[0.625rem] tracking-wide uppercase"
+                role="status"
+              >
+                {evalState === 'running' || startEval === null
+                  ? fr.play.verdict.evaluating
+                  : fr.play.verdict.detail
+                      .replace('{label}', fr.play.verdict.labels[startEval.label])
+                      .replace('{percent}', String(startEval.winPercent))
+                      .replace('{score}', startEval.score)}
+              </span>
+            ) : null}
             <span className="ml-auto">
               {fr.play.playingAs.replace('{color}', fr.play.colors[state.userColor])}
             </span>
@@ -899,8 +986,8 @@ function PlayGame({
           <div className="mt-1.5">
             <ClockRow
               side="black"
-              ms={remaining.black}
-              active={clock.running === 'black' && state.outcome === 'playing'}
+              ms={state.clocked ? remaining.black : undefined}
+              active={state.clocked && clock.running === 'black' && state.outcome === 'playing'}
               material={material}
             />
 
@@ -928,8 +1015,8 @@ function PlayGame({
 
             <ClockRow
               side="white"
-              ms={remaining.white}
-              active={clock.running === 'white' && state.outcome === 'playing'}
+              ms={state.clocked ? remaining.white : undefined}
+              active={state.clocked && clock.running === 'white' && state.outcome === 'playing'}
               material={material}
             />
 
@@ -1017,7 +1104,7 @@ function PlayGame({
                 onClick={restart}
                 className="border-line text-ink mt-2 min-h-11 w-full rounded-sm border px-3 text-xs"
               >
-                {fr.play.newGame}
+                {state.startFen !== START_FEN ? fr.play.replayPosition : fr.play.newGame}
               </button>
             </div>
           ) : null}
@@ -1124,7 +1211,8 @@ function ClockRow({
   material,
 }: {
   side: Side;
-  ms: number;
+  /** Undefined for an untimed game: the row keeps the material but shows no timer. */
+  ms?: number;
   active: boolean;
   material: Material;
 }) {
@@ -1149,13 +1237,15 @@ function ClockRow({
           </span>
         ) : null}
       </span>
-      <span
-        className={`text-[0.9375rem] tabular-nums ${active ? 'text-ink font-semibold' : ''}`}
-        role="timer"
-        aria-label={label}
-      >
-        {formatClock(ms)}
-      </span>
+      {ms === undefined ? null : (
+        <span
+          className={`text-[0.9375rem] tabular-nums ${active ? 'text-ink font-semibold' : ''}`}
+          role="timer"
+          aria-label={label}
+        >
+          {formatClock(ms)}
+        </span>
+      )}
     </div>
   );
 }

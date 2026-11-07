@@ -160,7 +160,7 @@ export function winPercent(score: Score): number {
 }
 
 /** A score written from the side to move to the user's point of view. */
-function userScore(score: Score, sideToMove: Side, userColor: Side): Score {
+export function userScore(score: Score, sideToMove: Side, userColor: Side): Score {
   if (sideToMove === userColor) return score;
 
   return {

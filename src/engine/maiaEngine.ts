@@ -1,4 +1,5 @@
 import { Chess } from 'chess.js';
+import { START_FEN } from '../lib/position';
 import {
   MAIA_HISTORY,
   maiaMoveIndex,
@@ -24,14 +25,19 @@ interface Pending {
 /**
  * The positions of a game before the current one, rebuilt from its moves.
  *
- * The replay starts from the standard position. When the moves do not lead to the position we
- * were asked about — a game from another start, a move the board refused — the history would
- * describe a board the model never saw, so the position stands alone rather than misleading it.
+ * The replay starts from the game's start position. When the moves do not lead to the position we
+ * were asked about — a move the board refused — the history would describe a board the model
+ * never saw, so the position stands alone rather than misleading it.
  */
-function historyFens(moves: readonly string[], fen: string, count: number): string[] {
+function historyFens(
+  moves: readonly string[],
+  fen: string,
+  count: number,
+  startFen: string = START_FEN,
+): string[] {
   if (moves.length === 0) return [fen];
 
-  const chess = new Chess();
+  const chess = new Chess(startFen);
   const fens = [chess.fen()];
   for (const move of moves) {
     try {
@@ -143,7 +149,7 @@ export function createMaiaEngine(modelUrl: string = MAIA_MODEL_URL): Engine {
       if (legal.length === 0) return null;
 
       const black = chess.turn() === 'b';
-      const fens = historyFens(request.history ?? [], fen, MAIA_HISTORY);
+      const fens = historyFens(request.history ?? [], fen, MAIA_HISTORY, request.startFen);
       const tokens = maiaTokens(fens);
       const rating = Number.isFinite(request.rating)
         ? Math.min(Math.max(request.rating ?? 1500, 0), 5000)
