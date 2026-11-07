@@ -4,11 +4,13 @@ import { Rating } from 'ts-fsrs';
 import { leavingRating } from '../../db/journal';
 import { fr } from '../../i18n/fr';
 import { sideToMove } from '../../lib/chess';
+import type { Side } from '../../lib/position';
 import { AgainButton } from '../../ui/AgainButton';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { PromotionDialog, promotionAnchor } from '../../ui/PromotionDialog';
 import { hintNudge, themeLabel } from './labels';
 import {
+  canPlayPosition,
   legalDests,
   playMove,
   promotionPieces,
@@ -44,10 +46,13 @@ export function PuzzlePlayer({
   puzzle,
   onNext,
   nextLabel = fr.puzzle.next,
+  onPlayPosition,
 }: {
   puzzle: Puzzle;
   onNext: () => void;
   nextLabel?: string;
+  /** Starts a game from the final position; the button appears only when this is given. */
+  onPlayPosition?: (position: { fen: string; userColor: Side }) => void;
 }) {
   const [state, setState] = useState(() => startPuzzle(puzzle));
   /** The hint of the position on the board: none, its sentence, or the piece it points at. */
@@ -187,11 +192,11 @@ export function PuzzlePlayer({
 
   /**
    * A solved attempt is written `good`, or `hard` when a hint helped, as the user leaves it. The
-   * button waits for the write so a second tap cannot skip a card, and a failed write keeps the
-   * screen open rather than dropping the attempt. A miss already wrote its own review, so leaving
-   * it writes nothing.
+   * action waits for the write so a second tap cannot skip the verdict, and a failed write keeps
+   * the screen open rather than dropping the attempt. A miss already wrote its own review, so
+   * leaving it writes nothing; a reveal already wrote its `again` too.
    */
-  const proceed = async () => {
+  const leave = async (after: () => void) => {
     if (busy) return;
     setBusy(true);
 
@@ -212,8 +217,15 @@ export function PuzzlePlayer({
     }
 
     setBusy(false);
-    onNext();
+    after();
   };
+
+  const proceed = () => void leave(onNext);
+  const playPosition = () => {
+    if (!onPlayPosition) return;
+    void leave(() => onPlayPosition({ fen: state.fen, userColor: orientation }));
+  };
+  const canPlay = onPlayPosition !== undefined && canPlayPosition(state);
 
   // The first outcome freezes the clock; revealing after a miss keeps the time of the miss.
   const settle = (outcome: PuzzleOutcome) => {
@@ -453,19 +465,22 @@ export function PuzzlePlayer({
       ) : null}
 
       {state.outcome === 'solved' ? (
-        <div className="mt-3 grid grid-cols-5 gap-2">
-          <div className="col-span-2">
-            <AgainButton recorded={again} disabled={busy} onPress={() => void rateAgain()} />
+        <>
+          <div className="mt-3 grid grid-cols-5 gap-2">
+            <div className="col-span-2">
+              <AgainButton recorded={again} disabled={busy} onPress={() => void rateAgain()} />
+            </div>
+            <button
+              type="button"
+              onClick={() => void proceed()}
+              disabled={busy}
+              className="bg-accent col-span-3 rounded-sm px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {nextLabel}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => void proceed()}
-            disabled={busy}
-            className="bg-accent col-span-3 rounded-sm px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
-          >
-            {nextLabel}
-          </button>
-        </div>
+          {canPlay ? <PlayPositionAction disabled={busy} onPress={playPosition} /> : null}
+        </>
       ) : null}
 
       {state.outcome === 'failed' ? (
@@ -488,23 +503,26 @@ export function PuzzlePlayer({
       ) : null}
 
       {state.outcome === 'revealed' ? (
-        <div className="mt-3 flex gap-2">
-          <button
-            type="button"
-            onClick={reset}
-            className="bg-accent flex-1 rounded-sm px-4 py-3 text-sm font-semibold text-white"
-          >
-            {fr.puzzle.retry}
-          </button>
-          <button
-            type="button"
-            onClick={() => void proceed()}
-            disabled={busy}
-            className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm disabled:opacity-60"
-          >
-            {nextLabel}
-          </button>
-        </div>
+        <>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={reset}
+              className="bg-accent flex-1 rounded-sm px-4 py-3 text-sm font-semibold text-white"
+            >
+              {fr.puzzle.retry}
+            </button>
+            <button
+              type="button"
+              onClick={() => void proceed()}
+              disabled={busy}
+              className="border-line text-ink-muted flex-1 rounded-sm border px-4 py-3 text-sm disabled:opacity-60"
+            >
+              {nextLabel}
+            </button>
+          </div>
+          {canPlay ? <PlayPositionAction disabled={busy} onPress={playPosition} /> : null}
+        </>
       ) : null}
 
       {sheet ? (
@@ -530,6 +548,23 @@ export function PuzzlePlayer({
         />
       ) : null}
     </>
+  );
+}
+
+/**
+ * The detour into a game: a secondary action under the verdict, never the primary one. The button
+ * says what it starts, so no line under it has to.
+ */
+function PlayPositionAction({ disabled, onPress }: { disabled: boolean; onPress: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onPress}
+      disabled={disabled}
+      className="border-line text-ink mt-3 flex min-h-11 w-full items-center justify-center rounded-sm border px-4 text-sm font-medium disabled:opacity-60"
+    >
+      {fr.puzzle.playPosition}
+    </button>
   );
 }
 

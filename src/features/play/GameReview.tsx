@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PositionEval } from '../../engine/uci';
 import { fr } from '../../i18n/fr';
 import { sideToMove } from '../../lib/chess';
+import { START_FEN } from '../../lib/position';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { ANALYSIS_MOVETIME_MS, findingsBySheetPly, reviewGame, type Finding } from './analysis';
 import { positionAt, type PlayState } from './game';
@@ -136,7 +137,7 @@ export function GameReview({
     <>
       <h2 className="text-lg">{fr.play.analysis.title}</h2>
 
-      <p className="text-ink-muted mt-2 text-sm" role="status">
+      <p className="text-ink-muted mt-1 text-sm" role="status">
         {progress}
       </p>
 
@@ -248,15 +249,17 @@ export function GameReview({
         </aside>
       </div>
 
-      <div className="mt-4">
-        <button
-          type="button"
-          onClick={onNewGame}
-          className="bg-accent w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
-        >
-          {fr.play.newGame}
-        </button>
-      </div>
+      {game.startFen !== START_FEN ? (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={onNewGame}
+            className="bg-accent w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
+          >
+            {fr.play.replayPosition}
+          </button>
+        </div>
+      ) : null}
     </>
   );
 }

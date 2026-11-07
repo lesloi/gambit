@@ -1,12 +1,15 @@
 import { browserStorage, type StorageLike } from '../../lib/storage';
 import { DEFAULT_PLAY_COLOR, isPlayColor, type PlayColor } from './color';
 import { DEFAULT_ELO } from './level';
-import {
-  DEFAULT_TIME_CONTROL_INDEX,
-  timeControlAt,
-  timeControlIndex,
-  type TimeControl,
-} from './timeControl';
+import { DEFAULT_TIME_CONTROL_INDEX, timeControlAt, timeControlIndex } from './timeControl';
+
+/**
+ * The setup's time control, for a resume card or a header. An untimed draft stores 0/0, so the
+ * `clocked` flag decides and the pair is only read when there is a clock.
+ */
+export function draftControl(draft: { clocked: boolean; controlMs: number; incrementMs: number }) {
+  return draft.clocked ? { controlMs: draft.controlMs, incrementMs: draft.incrementMs } : null;
+}
 
 export const PLAY_LEVEL_STORAGE_KEY = 'gambit:play-level';
 export const PLAY_TIME_CONTROL_STORAGE_KEY = 'gambit:play-time-control';
@@ -53,7 +56,9 @@ export function readPlayTimeControl(storage: StorageLike | null = browserStorage
     const raw = storage.getItem(PLAY_TIME_CONTROL_STORAGE_KEY);
     if (raw === null) return DEFAULT_TIME_CONTROL_INDEX;
     const value: unknown = JSON.parse(raw);
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    // The untimed choice is stored as null, before the object shape is checked.
+    if (value === null) return timeControlIndex(null);
+    if (typeof value !== 'object' || Array.isArray(value)) {
       return DEFAULT_TIME_CONTROL_INDEX;
     }
     const { controlMs, incrementMs } = value as Record<string, unknown>;
@@ -73,7 +78,7 @@ export function savePlayTimeControl(
 ): void {
   if (!storage) return;
 
-  const control: TimeControl = timeControlAt(index);
+  const control = timeControlAt(index);
   try {
     storage.setItem(PLAY_TIME_CONTROL_STORAGE_KEY, JSON.stringify(control));
   } catch {

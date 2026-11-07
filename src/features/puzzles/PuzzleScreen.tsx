@@ -1,6 +1,7 @@
 import { ChevronLeft } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { fr } from '../../i18n/fr';
+import type { Side } from '../../lib/position';
 import { loadPuzzleArchive, selectPuzzles, type PuzzleFilters } from './content';
 import { readPuzzleFilters, savePuzzleFilters } from './filterStorage';
 import { levelLabel } from './labels';
@@ -26,9 +27,11 @@ function shuffle<T>(items: readonly T[]): T[] {
 export function PuzzleScreen({
   onExit,
   onReviewMistakes,
+  onPlayPosition,
 }: {
   onExit: () => void;
   onReviewMistakes: () => void;
+  onPlayPosition: (position: { fen: string; userColor: Side }) => void;
 }) {
   const [load, setLoad] = useState<LoadState>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
@@ -120,7 +123,12 @@ export function PuzzleScreen({
           ) : null}
 
           {phase === 'play' && puzzle ? (
-            <PuzzlePlayer key={started} puzzle={puzzle} onNext={next} />
+            <PuzzlePlayer
+              key={started}
+              puzzle={puzzle}
+              onNext={next}
+              onPlayPosition={onPlayPosition}
+            />
           ) : null}
         </div>
       </div>

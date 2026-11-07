@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { database, type Review } from '../../db/db';
 import { fr } from '../../i18n/fr';
+import type { Side } from '../../lib/position';
 import { PuzzlePlayer } from '../puzzles/PuzzlePlayer';
 import { loadPuzzleArchive } from '../puzzles/content';
 import { levelLabel, themeLabel } from '../puzzles/labels';
@@ -24,7 +25,13 @@ interface Row {
  * ends, so a puzzle missed again moves to the top with today's date; the archive itself is loaded
  * once for the visit.
  */
-export function MistakesScreen({ onExit }: { onExit: () => void }) {
+export function MistakesScreen({
+  onExit,
+  onPlayPosition,
+}: {
+  onExit: () => void;
+  onPlayPosition: (position: { fen: string; userColor: Side }) => void;
+}) {
   const [archive, setArchive] = useState<ArchiveState>('loading');
   const [puzzles, setPuzzles] = useState<readonly Puzzle[]>(NO_PUZZLES);
   const [reviews, setReviews] = useState<readonly Review[] | null>(null);
@@ -159,7 +166,12 @@ export function MistakesScreen({ onExit }: { onExit: () => void }) {
               {fr.puzzle.loading}
             </p>
           ) : playingRow ? (
-            <PuzzlePlayer key={playingRow.puzzle.id} puzzle={playingRow.puzzle} onNext={next} />
+            <PuzzlePlayer
+              key={playingRow.puzzle.id}
+              puzzle={playingRow.puzzle}
+              onNext={next}
+              onPlayPosition={onPlayPosition}
+            />
           ) : rows.length === 0 ? (
             <p className="text-ink-muted text-sm">{fr.progress.empty}</p>
           ) : (

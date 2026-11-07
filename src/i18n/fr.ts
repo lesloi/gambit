@@ -106,7 +106,7 @@ export const fr = {
     },
     play: {
       name: 'Parties',
-      goal: 'Joue à ton niveau, avec une pendule.',
+      goal: 'Joue à ton niveau, avec ou sans pendule.',
     },
   },
   endgame: {
@@ -172,10 +172,11 @@ export const fr = {
     back: 'Retour',
     board: 'Échiquier',
     intro:
-      'Une partie contre le moteur, du premier coup à la pendule. Aucun retour en arrière ; un indice marque la partie comme assistée.',
+      'Une partie contre le moteur, avec ou sans pendule, du premier coup au résultat. Aucun retour en arrière ; un indice marque la partie comme assistée.',
     level: 'Niveau',
     levelValue: '≈ {elo} Elo',
     clock: 'Pendule',
+    untimed: 'Sans pendule',
     color: 'Couleur',
     colors: {
       white: 'Blancs',
@@ -183,6 +184,7 @@ export const fr = {
       random: 'Aléatoire',
     },
     playingAs: 'Vous jouez les {color}.',
+    fromPuzzle: 'Position du puzzle',
     sheet: 'Coups',
     review: {
       whilePlaying: 'Relecture après {move}. La pendule continue.',
@@ -198,7 +200,9 @@ export const fr = {
     resumeTitle: 'Partie en cours',
     resumeDetail: '≈ {elo} Elo · {clock} · {color}',
     resume: 'Reprendre la partie',
+    resumeFromPuzzle: 'Depuis la position d’un puzzle.',
     newGame: 'Nouvelle partie',
+    replayPosition: 'Rejouer la position',
     hint: 'Indice',
     hintPending: 'Recherche d’un indice…',
     hintShown: 'Indice : {move}. La partie est marquée comme assistée.',
@@ -250,6 +254,7 @@ export const fr = {
     material: {
       white: 'Matériel : Blancs +{points}.',
       black: 'Matériel : Noirs +{points}.',
+      even: 'Matériel : égal.',
     },
   },
   rating: {
@@ -302,6 +307,7 @@ export const fr = {
     previous: 'Précédent',
     nextMove: 'Suivant',
     next: 'Puzzle suivant',
+    playPosition: 'Jouer la position',
     loading: 'Chargement des puzzles…',
     loadFailed: 'Les puzzles n’ont pas pu être chargés.',
     reload: 'Réessayer',

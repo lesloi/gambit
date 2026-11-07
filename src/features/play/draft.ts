@@ -43,9 +43,13 @@ export interface GameSnapshot {
   level: number;
 }
 
-/** What a live game leaves behind, or null when there is nothing worth resuming. */
+/**
+ * What a live game leaves behind, or null when there is nothing worth resuming. A game that began
+ * from a position is worth resuming before its first move: the position itself is the exercise.
+ */
 export function draftFromGame(game: GameSnapshot, at: number): PlayDraft | null {
-  if (game.state.outcome !== 'playing' || game.state.moves.length === 0) return null;
+  if (game.state.outcome !== 'playing') return null;
+  if (game.state.moves.length === 0 && game.state.startFen === START_FEN) return null;
 
   const left = remainingMs(game.clock, at);
   return {
@@ -135,7 +139,7 @@ function toDraft(value: unknown): PlayDraft | null {
   if (!isTimestamp(startedAt) || !isLevel(level)) return null;
   if (!isMilliseconds(controlMs) || !isMilliseconds(incrementMs)) return null;
   if (userColor !== 'white' && userColor !== 'black') return null;
-  if (!Array.isArray(moves) || moves.length === 0) return null;
+  if (!Array.isArray(moves)) return null;
   if (!moves.every((move) => typeof move === 'string' && UCI_MOVE.test(move))) return null;
   if (typeof assisted !== 'boolean') return null;
   if (!isDraftClock(clock)) return null;
@@ -153,8 +157,15 @@ function toDraft(value: unknown): PlayDraft | null {
 
   const state = replay(moves, startFen, clocked, userColor);
   if (state === null || state.outcome !== 'playing') return null;
-  // A clocked game's running side is the side to move; an untimed one has no clock at all.
-  if (clocked) {
+
+  if (moves.length === 0) {
+    // A game that began from a position may be resumed before its first move. Its clock has not
+    // started, an untimed one still has no time fields, and a timed one still holds its control.
+    if (startFen === START_FEN || clock.running !== null) return null;
+    if (!clocked && (clock.whiteMs !== 0 || clock.blackMs !== 0)) return null;
+    if (clocked && (clock.whiteMs !== controlMs || clock.blackMs !== controlMs)) return null;
+  } else if (clocked) {
+    // A clocked game's running side is the side to move; an untimed one has no clock at all.
     if (clock.running !== sideToMove(state.fen)) return null;
   } else if (clock.running !== null || clock.whiteMs !== 0 || clock.blackMs !== 0) {
     return null;

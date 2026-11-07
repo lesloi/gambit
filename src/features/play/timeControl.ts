@@ -1,3 +1,5 @@
+import { fr } from '../../i18n/fr';
+
 export interface TimeControl {
   /** How much time each side starts with, in milliseconds. */
   controlMs: number;
@@ -16,22 +18,33 @@ export const TIME_CONTROLS: readonly TimeControl[] = [
   { controlMs: 15 * 60_000, incrementMs: 10_000 },
 ];
 
-export const DEFAULT_TIME_CONTROL_INDEX = TIME_CONTROLS.indexOf(DEFAULT_TIME_CONTROL);
+/**
+ * The setup's choices: no clock first, then the presets. The untimed choice is a real entry, not
+ * a 0/0 sentinel that the stored preference or the resume card would misread.
+ */
+export const PLAY_CLOCKS: readonly (TimeControl | null)[] = [null, ...TIME_CONTROLS];
 
-export function timeControlAt(index: number): TimeControl {
-  const clamped = Math.min(Math.max(Math.round(index), 0), TIME_CONTROLS.length - 1);
-  return TIME_CONTROLS[clamped];
+export const DEFAULT_TIME_CONTROL_INDEX = PLAY_CLOCKS.indexOf(DEFAULT_TIME_CONTROL);
+
+export function timeControlAt(index: number): TimeControl | null {
+  const clamped = Math.min(Math.max(Math.round(index), 0), PLAY_CLOCKS.length - 1);
+  return PLAY_CLOCKS[clamped] ?? null;
 }
 
-/** The preset a stored pair names, or -1 when it is not one the screen offers. */
-export function timeControlIndex(control: TimeControl): number {
-  return TIME_CONTROLS.findIndex(
+/** The preset a stored pair names, or the untimed choice for null; -1 when it is not offered. */
+export function timeControlIndex(control: TimeControl | null): number {
+  if (control === null) return PLAY_CLOCKS.indexOf(null);
+
+  return PLAY_CLOCKS.findIndex(
     (preset) =>
-      preset.controlMs === control.controlMs && preset.incrementMs === control.incrementMs,
+      preset !== null &&
+      preset.controlMs === control.controlMs &&
+      preset.incrementMs === control.incrementMs,
   );
 }
 
-/** Chess convention: minutes plus increment in seconds, as on a scoresheet or a pairing list. */
-export function formatTimeControl(control: TimeControl): string {
+/** Chess convention: minutes plus increment in seconds; "Sans pendule" when there is no clock. */
+export function formatTimeControl(control: TimeControl | null): string {
+  if (control === null) return fr.play.untimed;
   return `${control.controlMs / 60_000} + ${control.incrementMs / 1_000}`;
 }

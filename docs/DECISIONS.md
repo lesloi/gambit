@@ -90,7 +90,14 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   where the literal rule would give the win to the side with time.
 - **A game can start from a position, and it can be untimed.** The start FEN is the game's whole
   history: the analysis and the move numbers come from it, and a position one move from the
-  75-move draw can end there. An untimed game has no clock to flag; the draft and the row say so.
+  75-move draw can end there. An untimed game has no clock to flag; the play mode offers it as a
+  time control, and the draft and the row say so.
+- **A puzzle's final position can be played, and the game is not a review.** After a solve or a
+  revealed solution, when the rules do not already end the position, the puzzle screen, the session
+  and the mistakes list offer to continue from it. The user plays the side that solved; the game is untimed, stored and analysed
+  from its start FEN like any other. It writes no review — the puzzle's review is the only journal
+  entry — and does not feed FSRS. No new mode, no card. The start position's Stockfish evaluation
+  is shown from the user's side; the end verdict compares it with the result.
 - **The app calls no third party at runtime.** No tablebase, no opening explorer, no CDN, no font
   service: every byte it shows comes from the image, and the CSP allows `'self'` only, plus
   `'wasm-unsafe-eval'` so the bundled Stockfish can compile. Reading that image is not a call out:
