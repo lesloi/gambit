@@ -1,7 +1,7 @@
 import { Chess } from 'chess.js';
 import type { PositionEval, Score } from '../../engine/uci';
 import type { PromotionPiece } from '../../lib/chess';
-import { gameEnd, type Side } from '../../lib/position';
+import { gameEnd, START_FEN, type Side } from '../../lib/position';
 
 /** How long the engine looks at each position, in milliseconds. */
 export const ANALYSIS_MOVETIME_MS = 300;
@@ -21,6 +21,8 @@ export interface GamePosition {
   san: string | null;
   lastMove: [string, string] | null;
   turn: Side;
+  /** The full-move number of the move about to be played from this position. */
+  moveNumber: number;
 }
 
 export interface Finding {
@@ -46,11 +48,20 @@ export interface ReviewOptions {
   cancelled?: () => boolean;
 }
 
-/** Replays the game's moves from the initial position, for the board and the analysis. */
-export function replayMoves(moves: readonly string[]): GamePosition[] {
-  const chess = new Chess();
+/** Replays the game's moves from its start position, for the board and the analysis. */
+export function replayMoves(
+  moves: readonly string[],
+  startFen: string = START_FEN,
+): GamePosition[] {
+  const chess = new Chess(startFen);
   const positions: GamePosition[] = [
-    { fen: chess.fen(), san: null, lastMove: null, turn: 'white' },
+    {
+      fen: chess.fen(),
+      san: null,
+      lastMove: null,
+      turn: chess.turn() === 'w' ? 'white' : 'black',
+      moveNumber: chess.moveNumber(),
+    },
   ];
 
   for (const uci of moves) {
@@ -60,6 +71,7 @@ export function replayMoves(moves: readonly string[]): GamePosition[] {
       san: move.san,
       lastMove: [move.from, move.to],
       turn: chess.turn() === 'w' ? 'white' : 'black',
+      moveNumber: chess.moveNumber(),
     });
   }
 
@@ -73,10 +85,10 @@ export function replayMoves(moves: readonly string[]): GamePosition[] {
  */
 export async function reviewGame(
   evaluate: Evaluate,
-  game: { moves: readonly string[]; userColor: Side },
+  game: { moves: readonly string[]; userColor: Side; startFen?: string },
   options: ReviewOptions = {},
 ): Promise<Finding[] | null> {
-  const positions = replayMoves(game.moves);
+  const positions = replayMoves(game.moves, game.startFen);
   const fens = positions.map((position) => position.fen);
   const terminals = fens.map((fen, index) => terminalScore(fen, fens.slice(0, index + 1)));
   const total = terminals.filter((score) => score === null).length;
@@ -117,7 +129,7 @@ export async function reviewGame(
 
     findings.push({
       ply,
-      moveNumber: Math.floor(ply / 2) + 1,
+      moveNumber: positions[ply].moveNumber,
       side: positions[ply].turn,
       fen: fens[ply],
       lastMove: positions[ply].lastMove,

@@ -2,7 +2,7 @@ import { sideToMove } from '../../lib/chess';
 import type { Side } from '../../lib/position';
 import { browserStorage, type StorageLike } from '../../lib/storage';
 import { remainingMs, type ClockState } from './clock';
-import { playUci, startGame, type PlayState } from './game';
+import { playUci, START_FEN, startGame, type PlayState } from './game';
 
 /** The key the game in progress is remembered under. */
 export const PLAY_DRAFT_STORAGE_KEY = 'gambit:play-draft';
@@ -25,8 +25,12 @@ export interface PlayDraft {
   level: number;
   controlMs: number;
   incrementMs: number;
+  /** The position the game started from. */
+  startFen: string;
+  /** Whether the game has a clock; an untimed draft has no running side. */
+  clocked: boolean;
   userColor: Side;
-  /** Every move played from the initial position, in UCI. */
+  /** Every move played from the start position, in UCI. */
   moves: string[];
   assisted: boolean;
   clock: DraftClock;
@@ -49,6 +53,8 @@ export function draftFromGame(game: GameSnapshot, at: number): PlayDraft | null 
     level: game.level,
     controlMs: game.clock.controlMs,
     incrementMs: game.clock.incrementMs,
+    startFen: game.state.startFen,
+    clocked: game.state.clocked,
     userColor: game.state.userColor,
     moves: [...game.state.moves],
     assisted: game.state.assisted,
@@ -88,9 +94,12 @@ export function clearDraft(storage: StorageLike | null = browserStorage()): void
   }
 }
 
-/** Replays the moves, then restores what the replay cannot derive. */
+/** Replays the moves from the draft's start, then restores what the replay cannot derive. */
 export function resumeGame(draft: PlayDraft): PlayState {
-  const state = draft.moves.reduce(playUci, startGame());
+  const state = draft.moves.reduce(
+    playUci,
+    startGame(draft.userColor, draft.startFen, draft.clocked),
+  );
   return { ...state, userColor: draft.userColor, assisted: draft.assisted };
 }
 
@@ -111,8 +120,18 @@ const UCI_MOVE = /^[a-h][1-8][a-h][1-8][qrbn]?$/;
 function toDraft(value: unknown): PlayDraft | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
 
-  const { startedAt, level, controlMs, incrementMs, userColor, moves, assisted, clock } =
-    value as Record<string, unknown>;
+  const {
+    startedAt,
+    level,
+    controlMs,
+    incrementMs,
+    startFen: rawStartFen,
+    clocked: rawClocked,
+    userColor,
+    moves,
+    assisted,
+    clock,
+  } = value as Record<string, unknown>;
   if (!isTimestamp(startedAt) || !isLevel(level)) return null;
   if (!isMilliseconds(controlMs) || !isMilliseconds(incrementMs)) return null;
   if (userColor !== 'white' && userColor !== 'black') return null;
@@ -121,16 +140,33 @@ function toDraft(value: unknown): PlayDraft | null {
   if (typeof assisted !== 'boolean') return null;
   if (!isDraftClock(clock)) return null;
 
-  const state = replay(moves);
+  // A draft from before start positions began at the standard one, on a clock.
+  const startFen = rawStartFen === undefined ? START_FEN : rawStartFen;
+  if (typeof startFen !== 'string') return null;
+  try {
+    sideToMove(startFen);
+  } catch {
+    return null;
+  }
+  const clocked = rawClocked === undefined ? true : rawClocked;
+  if (typeof clocked !== 'boolean') return null;
+
+  const state = replay(moves, startFen, clocked, userColor);
   if (state === null || state.outcome !== 'playing') return null;
-  // The side whose clock ran is the side to move; anything else would resume a broken position.
-  if (clock.running !== sideToMove(state.fen)) return null;
+  // A clocked game's running side is the side to move; an untimed one has no clock at all.
+  if (clocked) {
+    if (clock.running !== sideToMove(state.fen)) return null;
+  } else if (clock.running !== null || clock.whiteMs !== 0 || clock.blackMs !== 0) {
+    return null;
+  }
 
   return {
     startedAt,
     level,
     controlMs,
     incrementMs,
+    startFen,
+    clocked,
     userColor,
     moves: [...moves],
     assisted,
@@ -138,8 +174,13 @@ function toDraft(value: unknown): PlayDraft | null {
   };
 }
 
-function replay(moves: string[]): PlayState | null {
-  let state = startGame();
+function replay(
+  moves: string[],
+  startFen: string,
+  clocked: boolean,
+  userColor: Side,
+): PlayState | null {
+  let state = startGame(userColor, startFen, clocked);
   for (const uci of moves) {
     const next = playUci(state, uci);
     if (next === state) return null;

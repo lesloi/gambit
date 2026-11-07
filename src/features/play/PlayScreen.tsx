@@ -513,7 +513,10 @@ function PlayGame({
     };
   }, [saveNow, startResumedClock]);
 
-  const { moves: played, rows: pairs } = useMemo(() => scoreSheet(state.moves), [state.moves]);
+  const { moves: played, rows: pairs } = useMemo(
+    () => scoreSheet(state.moves, state.startFen),
+    [state.moves, state.startFen],
+  );
   const livePly = state.moves.length;
   const shownPly = browsedPly ?? livePly;
   const browsing = shownPly !== livePly;
@@ -534,10 +537,16 @@ function PlayGame({
     state.outcome === 'playing' && !userTurn && engineState === 'ready' && !browsing;
   const dests = useMemo(() => (movable ? legalDests(state.fen) : NO_DESTS), [movable, state.fen]);
   const remaining = remainingMs(clock, now);
-  const liveMaterial = useMemo(() => materialOf(state.fen, state.moves), [state.fen, state.moves]);
+  const liveMaterial = useMemo(
+    () => materialOf(state.fen, state.moves, state.startFen),
+    [state.fen, state.moves, state.startFen],
+  );
   const material = useMemo(
-    () => (browsing ? materialOf(shown.fen, state.moves.slice(0, shownPly)) : liveMaterial),
-    [browsing, shown.fen, state.moves, shownPly, liveMaterial],
+    () =>
+      browsing
+        ? materialOf(shown.fen, state.moves.slice(0, shownPly), state.startFen)
+        : liveMaterial,
+    [browsing, shown.fen, state.moves, shownPly, state.startFen, liveMaterial],
   );
 
   const complete = useCallback(

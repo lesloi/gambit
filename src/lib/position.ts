@@ -2,6 +2,9 @@ import { Chess } from 'chess.js';
 
 export type Side = 'white' | 'black';
 
+/** The position a game starts from unless it is launched from a FEN. */
+export const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
 export type GameEnd =
   | { kind: 'mate'; winner: 'white' | 'black' }
   | { kind: 'stalemate' }

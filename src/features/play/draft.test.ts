@@ -11,7 +11,7 @@ import {
   saveDraft,
   type PlayDraft,
 } from './draft';
-import { playUci, startGame, type PlayState } from './game';
+import { playUci, START_FEN, startGame, type PlayState } from './game';
 
 const START = Date.UTC(2026, 0, 1, 9, 0, 0);
 const T0 = START + 10_000;
@@ -33,11 +33,15 @@ function memoryStorage(initial: Record<string, string> = {}): StorageLike {
 const stored = (value: unknown): StorageLike =>
   memoryStorage({ [PLAY_DRAFT_STORAGE_KEY]: JSON.stringify(value) });
 
+const AFTER_E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+
 const draft = (): PlayDraft => ({
   startedAt: START,
   level: 1500,
   controlMs: TEN_MINUTES,
   incrementMs: 10_000,
+  startFen: START_FEN,
+  clocked: true,
   userColor: 'white',
   moves: ['e2e4', 'e7e5'],
   assisted: false,
@@ -83,6 +87,23 @@ describe('the game draft', () => {
     expect(saved?.clock).toEqual({ whiteMs: 610_000, blackMs: 595_000, running: 'black' });
   });
 
+  it('keeps the position and the clock choice of the game', () => {
+    const state = playUci(startGame('black', AFTER_E4, false), 'e7e5');
+
+    const saved = draftFromGame(
+      { state, clock: createClock(0, 0), startedAt: START, level: 1500 },
+      T0,
+    );
+
+    expect(saved).toMatchObject({
+      startFen: AFTER_E4,
+      clocked: false,
+      userColor: 'black',
+      moves: ['e7e5'],
+      clock: { whiteMs: 0, blackMs: 0, running: null },
+    });
+  });
+
   it('does not keep a game that is over', () => {
     const state = gameAfter('f2f3', 'e7e5', 'g2g4', 'd8h4');
 
@@ -110,6 +131,54 @@ describe('the game draft', () => {
     expect(state.assisted).toBe(true);
     expect(state.userColor).toBe('white');
     expect(saved.startedAt).toBe(START);
+  });
+
+  it('resumes a game from the position it started from', () => {
+    const saved = {
+      ...draft(),
+      startFen: AFTER_E4,
+      userColor: 'black' as const,
+      moves: ['e7e5'],
+      clock: { whiteMs: 600_000, blackMs: 600_000, running: 'white' as const },
+    };
+    const storage = memoryStorage();
+    saveDraft(saved, storage);
+
+    const read = readDraft(storage);
+    const state = read === null ? null : resumeGame(read);
+
+    expect(read?.startFen).toBe(AFTER_E4);
+    expect(state?.fen).toBe('rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2');
+    expect(state?.startFen).toBe(AFTER_E4);
+  });
+
+  it('resumes an untimed game', () => {
+    const saved = {
+      ...draft(),
+      startFen: AFTER_E4,
+      clocked: false,
+      userColor: 'black' as const,
+      moves: ['e7e5'],
+      clock: { whiteMs: 0, blackMs: 0, running: null },
+    };
+    const storage = memoryStorage();
+    saveDraft(saved, storage);
+
+    const read = readDraft(storage);
+    const state = read === null ? null : resumeGame(read);
+
+    expect(read).toMatchObject({ startFen: AFTER_E4, clocked: false });
+    expect(state?.clocked).toBe(false);
+  });
+
+  it('reads a draft stored before the start position with the standard one', () => {
+    const old: Record<string, unknown> = { ...draft() };
+    delete old.startFen;
+    delete old.clocked;
+
+    const read = readDraft(stored(old));
+
+    expect(read).toMatchObject({ startFen: START_FEN, clocked: true });
   });
 
   it('resumes a game the user played as Black', () => {
@@ -171,6 +240,11 @@ describe('the game draft', () => {
       { ...draft(), userColor: 'red' },
       { ...draft(), moves: 'e2e4' },
       { ...draft(), moves: [] },
+      { ...draft(), startFen: 'not-a-fen' },
+      { ...draft(), startFen: 42 },
+      { ...draft(), clocked: 'yes' },
+      { ...draft(), clocked: false, clock: { ...draft().clock, running: 'white' } },
+      { ...draft(), clocked: false, clock: { ...draft().clock, running: null } },
       { ...draft(), assisted: 'yes' },
       { ...draft(), clock: { ...draft().clock, whiteMs: -1 } },
       { ...draft(), clock: { ...draft().clock, running: 'red' } },

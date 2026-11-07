@@ -24,10 +24,9 @@ interface Pending {
 /**
  * The positions of a game before the current one, rebuilt from its moves.
  *
- * The replay starts from the initial position, which is where this mode's games start. When the
- * moves do not lead to the position we were asked about — a game from another start, a move the
- * board refused — the history would describe a board the model never saw, so the position stands
- * alone rather than misleading it.
+ * The replay starts from the standard position. When the moves do not lead to the position we
+ * were asked about — a game from another start, a move the board refused — the history would
+ * describe a board the model never saw, so the position stands alone rather than misleading it.
  */
 function historyFens(moves: readonly string[], fen: string, count: number): string[] {
   if (moves.length === 0) return [fen];

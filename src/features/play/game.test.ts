@@ -10,6 +10,8 @@ import {
 } from './game';
 
 const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const AFTER_E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+const BACK_RANK_MATE = 'R5k1/5ppp/8/8/8/8/5PPP/6K1 b - - 0 1';
 const KNIGHT_SHUFFLE = ['g1f3', 'g8f6', 'f3g1', 'f6g8'] as const;
 
 describe('play game', () => {
@@ -17,15 +19,58 @@ describe('play game', () => {
     const state = startGame();
 
     expect(state).toMatchObject({
+      startFen: START,
       fen: START,
+      positions: [START],
       moves: [],
       lastMove: null,
       userColor: 'white',
+      clocked: true,
       outcome: 'playing',
       result: null,
       assisted: false,
       hint: null,
     });
+  });
+
+  it('starts from the position it is given', () => {
+    const state = startGame('black', AFTER_E4);
+
+    expect(state).toMatchObject({
+      startFen: AFTER_E4,
+      fen: AFTER_E4,
+      positions: [AFTER_E4],
+      moves: [],
+      userColor: 'black',
+      clocked: true,
+      outcome: 'playing',
+    });
+  });
+
+  it('starts an untimed game', () => {
+    const state = startGame('white', START, false);
+
+    expect(state.clocked).toBe(false);
+  });
+
+  it('is already over when the position is over', () => {
+    const state = startGame('white', BACK_RANK_MATE);
+
+    expect(state.outcome).toBe('over');
+    expect(state.result).toEqual({ winner: 'white', reason: 'mate' });
+  });
+
+  it('is already a 75-move draw when the FEN says so', () => {
+    const state = startGame('white', '4k3/8/8/8/8/8/8/4K2R w - - 150 100');
+
+    expect(state.outcome).toBe('over');
+    expect(state.result).toEqual({ winner: null, reason: 'seventy-five-move' });
+  });
+
+  it('never flags an untimed game', () => {
+    const state = startGame('white', START, false);
+
+    expect(flagSide(state, 'white')).toBe(state);
   });
 
   it('opens as Black when the user chose Black', () => {
@@ -220,6 +265,13 @@ describe('the engine turn the screen asks for on its own', () => {
 describe('position at a ply', () => {
   it('returns the start before any move', () => {
     expect(positionAt(startGame(), 0)).toEqual({ fen: START, lastMove: null });
+  });
+
+  it('returns the given start before any move', () => {
+    expect(positionAt(startGame('black', AFTER_E4), 0)).toEqual({
+      fen: AFTER_E4,
+      lastMove: null,
+    });
   });
 
   it('returns the position after a past move, with that move highlighted', () => {
