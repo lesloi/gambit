@@ -141,8 +141,18 @@ export function ChessBoard({
       draggable: { showGhost: true },
       selectable: { enabled: true },
     });
+    // Chessground refreshes its memoized board rectangle when the wrap resizes or the page
+    // scrolls, but not when the board only moves: a puzzle's hint line appears above it and
+    // pushes it down, and a click was then read against the old top and landed a square off.
+    // Measure the board again at the start of every gesture instead; `pointerdown` fires before
+    // the mouse and touch events chessground listens to.
+    const node = host.current;
+    const forgetBounds = () => board.state.dom.bounds.clear();
+    const forgetBoundsOnGesture = { capture: true, passive: true };
+    node.addEventListener('pointerdown', forgetBounds, forgetBoundsOnGesture);
     api.current = board;
     return () => {
+      node.removeEventListener('pointerdown', forgetBounds, forgetBoundsOnGesture);
       board.destroy();
       api.current = null;
     };
