@@ -153,7 +153,7 @@ export function PlayScreen({
           ) : null}
         </header>
 
-        <div className="mt-4 flex-1">
+        <div className={`flex-1 ${playing ? 'mt-2' : 'mt-4'}`}>
           {playing ? (
             <PlayGame
               key={gameKey}
@@ -314,6 +314,11 @@ function materialLabel(advantage: number): string {
   // An even material says nothing: the region stays mounted so a later advantage is announced.
   if (advantage === 0) return '';
 
+  return materialSentence(advantage);
+}
+
+/** The material as a sentence, for the live region of both game layouts. */
+function materialSentence(advantage: number): string {
   return (advantage > 0 ? fr.play.material.white : fr.play.material.black).replace(
     '{points}',
     String(Math.abs(advantage)),
@@ -1015,22 +1020,23 @@ function PlayGame({
               </div>
             ) : null}
 
+            {/* An untimed game shows its material under the board, where that line speaks. */}
             <p className="sr-only" role="status">
-              {materialLabel(liveMaterial.advantage)}
+              {state.clocked ? materialLabel(liveMaterial.advantage) : ''}
             </p>
           </div>
 
-          <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
-            <p className="text-[0.8125rem] font-medium" role="status">
-              {state.outcome === 'over' && state.result ? resultLabel(state.result) : status}
-            </p>
-            {/* An untimed game has no clock row, so the material it would carry rides here. */}
-            {state.clocked ? null : <UntimedMaterial material={material} />}
-          </div>
+          {/* The clock rows space the board from the status on their own; an untimed game has
+              none, so the material takes their place and the same gap. */}
+          {state.clocked ? null : (
+            <div className="mt-0.5 flex items-center justify-end text-xs">
+              <UntimedMaterial material={material} />
+            </div>
+          )}
 
           {/* What the start position is worth, from the user's side: it frames the conversion. */}
           {state.startFen !== START_FEN && (evalState === 'running' || evalState === 'done') ? (
-            <p className="text-ink-muted text-xs" role="status">
+            <p className="text-ink-muted mt-0.5 text-xs" role="status">
               {evalState === 'running' || startEval === null
                 ? fr.play.verdict.evaluating
                 : fr.play.verdict.detail
@@ -1040,7 +1046,11 @@ function PlayGame({
             </p>
           ) : null}
 
-          <p className="text-ink-muted mt-1 min-h-4 text-xs" role="status">
+          <p className="mt-1 text-[0.8125rem] font-medium" role="status">
+            {state.outcome === 'over' && state.result ? resultLabel(state.result) : status}
+          </p>
+
+          <p className="text-ink-muted min-h-4 text-xs" role="status">
             {browsing
               ? ''
               : hintPending
@@ -1208,16 +1218,12 @@ function CapturedPieces({
  */
 function UntimedMaterial({ material }: { material: Material }) {
   const advantage = material.advantage;
-  const label =
-    advantage > 0
-      ? fr.play.material.white.replace('{points}', String(advantage))
-      : advantage < 0
-        ? fr.play.material.black.replace('{points}', String(-advantage))
-        : fr.play.material.even;
 
   return (
-    <p className="text-xs">
-      <span className="sr-only">{label}</span>
+    <p role="status">
+      <span className="sr-only">
+        {advantage === 0 ? fr.play.material.even : materialSentence(advantage)}
+      </span>
       <span aria-hidden="true" className="text-ink-muted flex items-center gap-2">
         <span className="flex items-center gap-1.5">
           <span>{fr.play.colors.black}</span>

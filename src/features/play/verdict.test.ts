@@ -39,14 +39,14 @@ describe('start verdict', () => {
     expect(startVerdict(CP(-120), 'white', 'white')?.score).toBe('-1,2');
   });
 
-  it('names a mate for and against', () => {
+  it('reads a mate as winning or difficult and names it in the score', () => {
     expect(startVerdict({ cp: null, mate: 5 }, 'white', 'white')).toEqual({
-      label: 'mate-for',
+      label: 'winning',
       winPercent: 100,
       score: 'M5',
     });
     expect(startVerdict({ cp: null, mate: -5 }, 'white', 'white')).toEqual({
-      label: 'mate-against',
+      label: 'difficult',
       winPercent: 0,
       score: '-M5',
     });
@@ -54,7 +54,7 @@ describe('start verdict', () => {
 
   it('reads a mate from the other side', () => {
     expect(startVerdict({ cp: null, mate: 5 }, 'white', 'black')).toMatchObject({
-      label: 'mate-against',
+      label: 'difficult',
       winPercent: 0,
       score: '-M5',
     });

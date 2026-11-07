@@ -137,7 +137,7 @@ export function GameReview({
     <>
       <h2 className="text-lg">{fr.play.analysis.title}</h2>
 
-      <p className="text-ink-muted mt-2 text-sm" role="status">
+      <p className="text-ink-muted mt-1 text-sm" role="status">
         {progress}
       </p>
 
@@ -249,15 +249,17 @@ export function GameReview({
         </aside>
       </div>
 
-      <div className="mt-4">
-        <button
-          type="button"
-          onClick={onNewGame}
-          className="bg-accent w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
-        >
-          {game.startFen !== START_FEN ? fr.play.replayPosition : fr.play.newGame}
-        </button>
-      </div>
+      {game.startFen !== START_FEN ? (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={onNewGame}
+            className="bg-accent w-full rounded-sm px-4 py-3 text-sm font-semibold text-white"
+          >
+            {fr.play.replayPosition}
+          </button>
+        </div>
+      ) : null}
     </>
   );
 }
