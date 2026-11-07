@@ -36,12 +36,6 @@ interface Preview {
 const EYEBROW = 'text-ink-muted text-[0.6875rem] font-semibold tracking-[0.12em] uppercase';
 const MODE_ROW =
   'border-line-soft flex w-full items-center gap-3 border-b py-2.5 pr-1 text-left disabled:cursor-default';
-const TODAY = new Intl.DateTimeFormat('fr-FR', {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-});
-
 export function HomePage({
   onStartSession,
   onStartPuzzle,
@@ -178,12 +172,11 @@ export function HomePage({
       <SkipLink />
 
       <header className="border-line border-b">
-        <div className="mx-auto flex w-full max-w-2xl items-baseline justify-between gap-3 px-5 py-3">
+        <div className="mx-auto flex w-full max-w-2xl items-baseline gap-3 px-5 py-3">
           <h1 className="text-[0.9375rem] font-semibold tracking-tight">
             {fr.app.name.toLowerCase()}
             <span className="text-accent-ink">.</span>
           </h1>
-          <p className="text-ink-muted text-xs">{TODAY.format(new Date())}</p>
         </div>
       </header>
 
