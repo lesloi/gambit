@@ -265,6 +265,7 @@ export const fr = {
     material: {
       white: 'Matériel : Blancs +{points}.',
       black: 'Matériel : Noirs +{points}.',
+      even: 'Matériel : égal.',
     },
   },
   rating: {
@@ -318,7 +319,6 @@ export const fr = {
     nextMove: 'Suivant',
     next: 'Puzzle suivant',
     playPosition: 'Jouer la position',
-    playPositionDetail: 'Sans pendule, contre le moteur.',
     loading: 'Chargement des puzzles…',
     loadFailed: 'Les puzzles n’ont pas pu être chargés.',
     reload: 'Réessayer',

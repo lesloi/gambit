@@ -940,11 +940,11 @@ function PlayGame({
       <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_190px] md:items-start">
         <div className="min-w-0">
           <div className="text-ink-muted flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-            <span>
-              {control === null
-                ? fr.play.untimed
-                : `${fr.play.clock} · ${formatTimeControl(control)}`}
-            </span>
+            {control === null ? null : (
+              <span>
+                {fr.play.clock} · {formatTimeControl(control)}
+              </span>
+            )}
             {state.startFen !== START_FEN ? (
               <span className="border-line rounded-xs border px-1.5 py-0.5 text-[0.625rem] tracking-wide uppercase">
                 {fr.play.fromPuzzle}
@@ -961,12 +961,15 @@ function PlayGame({
           </div>
 
           <div className="mt-1.5">
-            <ClockRow
-              side="black"
-              ms={state.clocked ? remaining.black : undefined}
-              active={state.clocked && clock.running === 'black' && state.outcome === 'playing'}
-              material={material}
-            />
+            {/* An untimed game has no clock row: the material rides with the status line. */}
+            {state.clocked ? (
+              <ClockRow
+                side="black"
+                ms={remaining.black}
+                active={clock.running === 'black' && state.outcome === 'playing'}
+                material={material}
+              />
+            ) : null}
 
             <div
               ref={boardHost}
@@ -990,12 +993,14 @@ function PlayGame({
               />
             </div>
 
-            <ClockRow
-              side="white"
-              ms={state.clocked ? remaining.white : undefined}
-              active={state.clocked && clock.running === 'white' && state.outcome === 'playing'}
-              material={material}
-            />
+            {state.clocked ? (
+              <ClockRow
+                side="white"
+                ms={remaining.white}
+                active={clock.running === 'white' && state.outcome === 'playing'}
+                material={material}
+              />
+            ) : null}
 
             {browsing ? (
               <div className="bg-accent-soft mt-1.5 flex flex-wrap items-center justify-between gap-2 rounded-sm px-2.5 py-1 text-xs">
@@ -1015,13 +1020,17 @@ function PlayGame({
             </p>
           </div>
 
-          <p className="mt-3 text-[0.8125rem] font-medium" role="status">
-            {state.outcome === 'over' && state.result ? resultLabel(state.result) : status}
-          </p>
+          <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
+            <p className="text-[0.8125rem] font-medium" role="status">
+              {state.outcome === 'over' && state.result ? resultLabel(state.result) : status}
+            </p>
+            {/* An untimed game has no clock row, so the material it would carry rides here. */}
+            {state.clocked ? null : <UntimedMaterial material={material} />}
+          </div>
 
           {/* What the start position is worth, from the user's side: it frames the conversion. */}
           {state.startFen !== START_FEN && (evalState === 'running' || evalState === 'done') ? (
-            <p className="text-ink-muted mt-0.5 text-xs" role="status">
+            <p className="text-ink-muted text-xs" role="status">
               {evalState === 'running' || startEval === null
                 ? fr.play.verdict.evaluating
                 : fr.play.verdict.detail
@@ -1193,6 +1202,42 @@ function CapturedPieces({
   );
 }
 
+/**
+ * The material of an untimed game, where a clock row would sit: the captures and the advantage
+ * keep saying who is ahead, and the count follows the position the board shows.
+ */
+function UntimedMaterial({ material }: { material: Material }) {
+  const advantage = material.advantage;
+  const label =
+    advantage > 0
+      ? fr.play.material.white.replace('{points}', String(advantage))
+      : advantage < 0
+        ? fr.play.material.black.replace('{points}', String(-advantage))
+        : fr.play.material.even;
+
+  return (
+    <p className="text-xs">
+      <span className="sr-only">{label}</span>
+      <span aria-hidden="true" className="text-ink-muted flex items-center gap-2">
+        <span className="flex items-center gap-1.5">
+          <span>{fr.play.colors.black}</span>
+          <CapturedPieces side="black" pieces={material.captured.black} />
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span>{fr.play.colors.white}</span>
+          <CapturedPieces side="white" pieces={material.captured.white} />
+        </span>
+        {advantage !== 0 ? (
+          <span className="text-ink font-semibold tabular-nums">
+            {advantage > 0 ? '+' : '−'}
+            {Math.abs(advantage)}
+          </span>
+        ) : null}
+      </span>
+    </p>
+  );
+}
+
 function ClockRow({
   side,
   ms,
@@ -1200,8 +1245,7 @@ function ClockRow({
   material,
 }: {
   side: Side;
-  /** Undefined for an untimed game: the row keeps the material but shows no timer. */
-  ms?: number;
+  ms: number;
   active: boolean;
   material: Material;
 }) {
@@ -1226,15 +1270,13 @@ function ClockRow({
           </span>
         ) : null}
       </span>
-      {ms === undefined ? null : (
-        <span
-          className={`text-[0.9375rem] tabular-nums ${active ? 'text-ink font-semibold' : ''}`}
-          role="timer"
-          aria-label={label}
-        >
-          {formatClock(ms)}
-        </span>
-      )}
+      <span
+        className={`text-[0.9375rem] tabular-nums ${active ? 'text-ink font-semibold' : ''}`}
+        role="timer"
+        aria-label={label}
+      >
+        {formatClock(ms)}
+      </span>
     </div>
   );
 }

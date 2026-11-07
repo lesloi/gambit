@@ -551,20 +551,20 @@ export function PuzzlePlayer({
   );
 }
 
-/** The detour into a game: a secondary action under the verdict, never the primary one. */
+/**
+ * The detour into a game: a secondary action under the verdict, never the primary one. The button
+ * says what it starts, so no line under it has to.
+ */
 function PlayPositionAction({ disabled, onPress }: { disabled: boolean; onPress: () => void }) {
   return (
-    <div className="mt-3">
-      <button
-        type="button"
-        onClick={onPress}
-        disabled={disabled}
-        className="border-line text-ink flex min-h-11 w-full items-center justify-center rounded-sm border px-4 text-sm font-medium disabled:opacity-60"
-      >
-        {fr.puzzle.playPosition}
-      </button>
-      <p className="text-ink-muted mt-1 text-center text-xs">{fr.puzzle.playPositionDetail}</p>
-    </div>
+    <button
+      type="button"
+      onClick={onPress}
+      disabled={disabled}
+      className="border-line text-ink mt-3 flex min-h-11 w-full items-center justify-center rounded-sm border px-4 text-sm font-medium disabled:opacity-60"
+    >
+      {fr.puzzle.playPosition}
+    </button>
   );
 }
 
