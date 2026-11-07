@@ -1,6 +1,6 @@
 import Dexie, { type EntityTable, type Table } from 'dexie';
 import type { Opponent } from '../engine/uci';
-import type { GameResult } from '../lib/position';
+import { START_FEN, type GameResult } from '../lib/position';
 import type { ReviewEntry } from './fsrs';
 import { SCHEDULER } from './fsrs';
 
@@ -10,7 +10,7 @@ export interface Review extends ReviewEntry {
 }
 
 /**
- * A finished game, kept as its moves from the initial position rather than as a PGN string, so the
+ * A finished game, kept as its moves from its start position rather than as a PGN string, so the
  * analysis can replay it. See docs/DECISIONS.md#persistence.
  */
 export interface StoredGame {
@@ -25,7 +25,11 @@ export interface StoredGame {
   controlMs: number;
   /** The increment added after each move, in milliseconds. */
   incrementMs: number;
-  /** Every move from the initial position, in UCI. */
+  /** The position the game started from. */
+  startFen: string;
+  /** Whether the game had a clock; an untimed game never flags. */
+  clocked: boolean;
+  /** Every move from the start position, in UCI. */
   moves: string[];
   /**
    * The result of the game. Rows written before the FIDE draw limits can still hold the former
@@ -89,6 +93,22 @@ export class GambitDatabase extends Dexie {
           .toCollection()
           .modify((game) => {
             game.engine ??= 'stockfish';
+          }),
+      );
+    // Games recorded before start positions began at the standard one, on a clock.
+    this.version(5)
+      .stores({
+        reviews: '++id, cardId, reviewedAt',
+        games: '++id, startedAt',
+        meta: 'key',
+      })
+      .upgrade((transaction) =>
+        transaction
+          .table('games')
+          .toCollection()
+          .modify((game) => {
+            game.startFen ??= START_FEN;
+            game.clocked ??= true;
           }),
       );
     this.on('populate', () => this.meta.add({ key: 'scheduler', ...SCHEDULER }));

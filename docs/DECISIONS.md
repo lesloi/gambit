@@ -88,6 +88,9 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   This is a table, not a search: a lone bishop or knight may still mate under the literal rule
   when the opponent's pieces block, so king and knight against king and knight is a draw here
   where the literal rule would give the win to the side with time.
+- **A game can start from a position, and it can be untimed.** The start FEN is the game's whole
+  history: the analysis and the move numbers come from it, and a position one move from the
+  75-move draw can end there. An untimed game has no clock to flag; the draft and the row say so.
 - **The app calls no third party at runtime.** No tablebase, no opening explorer, no CDN, no font
   service: every byte it shows comes from the image, and the CSP allows `'self'` only, plus
   `'wasm-unsafe-eval'` so the bundled Stockfish can compile. Reading that image is not a call out:
@@ -164,16 +167,20 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   scheduler is therefore pinned with its parameters, fuzzing is off, and the short steps (1 min,
   10 min) are kept: replaying the same journal must give the same due date, and the scheduler that
   produced it is written in the database's `meta` table.
-- **A finished game is stored as its move list, not a PGN.** The analysis will replay it from the
-  initial position; a PGN string would need parsing and would freeze the notation. An abandoned
-  game is not stored: only a game that reached a result is worth analysing.
+- **A finished game is stored as its move list, not a PGN.** The analysis will replay it from its
+  start position; a PGN string would need parsing and would freeze the notation. The row and the
+  draft carry the start FEN and whether the game is clocked; the analysis and the move numbers come
+  from the FEN, and the halfmove clock and the repetition count start there, not at a line the
+  position was reached by. Old rows and drafts default to the initial position and a clock. An
+  abandoned game is not stored: only a game that reached a result is worth analysing.
 - **An unfinished game is a draft in localStorage, not a row in `games`.** It is rewritten after
   every move and on the way out, with the time left frozen at that instant, so a reload, a
   navigation or a closed tab resumes the same position without charging the absence; the clock
-  starts again once the engine is ready. The finished game is then written once, with the start
-  time the draft carried. The draft is small, synchronous to write as the page closes and
-  ephemeral, so it stays out of IndexedDB like the session cursor; two tabs share one draft and
-  the last writer wins.
+  starts again once the engine is ready. The draft carries the start FEN and the clock choice, so a
+  reload resumes the same board. The finished game is then written once, with the start time the
+  draft carried. The draft is small, synchronous to write as the page closes and ephemeral, so it
+  stays out of IndexedDB like the session cursor; two tabs share one draft and the last writer
+  wins.
 - **Storage is not made persistent.** `navigator.storage.persist()` would ask for a permission the
   app does not need on first load.
 - **IndexedDB, through Dexie.** The data is structured and can exceed the few megabytes of

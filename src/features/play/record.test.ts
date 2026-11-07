@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { afterAll, describe, expect, it } from 'vitest';
 import { database } from '../../db/db';
-import { flagSide, playMove, playUci, showHint, startGame } from './game';
+import { flagSide, playMove, playUci, showHint, START_FEN, startGame } from './game';
 import { gameRecord, saveGame } from './record';
 
 afterAll(async () => {
@@ -27,12 +27,23 @@ describe('gameRecord', () => {
       controlMs: 600_000,
       incrementMs: 10_000,
       userColor: 'white',
+      startFen: START_FEN,
+      clocked: true,
       moves: ['e2e4'],
       result: { winner: 'black', reason: 'flag' },
       assisted: false,
       startedAt: 1_000,
       endedAt: 2_000,
     });
+  });
+
+  it('keeps the start position and the clock choice of the game', () => {
+    const startFen = 'R5k1/5ppp/8/8/8/8/5PPP/6K1 b - - 0 1';
+    const state = startGame('white', startFen, false);
+
+    const record = gameRecord(state, { ...meta, controlMs: 0, incrementMs: 0 });
+
+    expect(record).toMatchObject({ startFen, clocked: false, controlMs: 0, incrementMs: 0 });
   });
 
   it('keeps the opponent the game was played against', () => {

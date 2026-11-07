@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { Rating, type Grade } from 'ts-fsrs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { START_FEN } from '../lib/position';
 import { GambitDatabase } from './db';
 import { SCHEDULER, replayCard } from './fsrs';
 import {
@@ -228,7 +229,7 @@ describe('the database', () => {
 
     const reopened = new GambitDatabase(name);
     try {
-      expect(reopened.verno).toBe(4);
+      expect(reopened.verno).toBe(5);
       expect(await reopened.reviews.count()).toBe(1);
       expect(await reopened.games.count()).toBe(0);
       expect(await reopened.meta.get('scheduler')).toEqual({ key: 'scheduler', ...SCHEDULER });
@@ -293,6 +294,42 @@ describe('the database', () => {
         { controlMs: 600_000, incrementMs: 0 },
         { controlMs: 600_000, incrementMs: 0 },
       ]);
+    } finally {
+      reopened.close();
+    }
+  });
+
+  it('gives every game stored before the start position the standard one', async () => {
+    // A v4 game predates start positions and untimed games: it began at the standard position,
+    // on a clock, so the upgrade writes those defaults.
+    const name = `gambit-test-${crypto.randomUUID()}`;
+    const legacy = new Dexie(name);
+    legacy.version(4).stores({
+      reviews: '++id, cardId, reviewedAt',
+      games: '++id, startedAt',
+      meta: 'key',
+    });
+    await legacy.open();
+    await legacy.table('games').add({
+      startedAt: START,
+      endedAt: START + MINUTE,
+      level: 1500,
+      engine: 'maia',
+      userColor: 'white',
+      controlMs: 600_000,
+      incrementMs: 0,
+      moves: [],
+      result: { winner: null, reason: 'stalemate' as const },
+      assisted: false,
+    });
+    legacy.close();
+
+    const reopened = new GambitDatabase(name);
+    try {
+      await expect(reopened.games.get(1)).resolves.toMatchObject({
+        startFen: START_FEN,
+        clocked: true,
+      });
     } finally {
       reopened.close();
     }

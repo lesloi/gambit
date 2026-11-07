@@ -21,6 +21,8 @@ export function gameRecord(state: PlayState, meta: GameMeta): StoredGame {
     level: meta.level,
     engine: meta.engine,
     userColor: state.userColor,
+    startFen: state.startFen,
+    clocked: state.clocked,
     controlMs: meta.controlMs,
     incrementMs: meta.incrementMs,
     moves: [...state.moves],

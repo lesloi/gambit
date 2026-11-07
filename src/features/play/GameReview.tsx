@@ -67,7 +67,10 @@ export function GameReview({
     };
   }, [analyse, game, attempt]);
 
-  const { moves, rows } = useMemo(() => scoreSheet(game.moves), [game.moves]);
+  const { moves, rows } = useMemo(
+    () => scoreSheet(game.moves, game.startFen),
+    [game.moves, game.startFen],
+  );
   const livePly = moves.length;
   const findingsByPly = useMemo(() => findingsBySheetPly(findings), [findings]);
   const marks = useMemo(
@@ -226,7 +229,11 @@ export function GameReview({
         <aside className="min-w-0">
           {rows.length > 0 ? (
             state.status === 'running' ? (
-              <MoveSheetSkeleton rowCount={rows.length} listClassName="max-h-56 md:max-h-[40vh]" />
+              <MoveSheetSkeleton
+                rowCount={rows.length}
+                startNumber={rows[0]?.number ?? 1}
+                listClassName="max-h-56 md:max-h-[40vh]"
+              />
             ) : (
               <MoveSheet
                 rows={rows}
