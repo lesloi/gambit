@@ -185,17 +185,6 @@ export const fr = {
     },
     playingAs: 'Vous jouez les {color}.',
     fromPuzzle: 'Position du puzzle',
-    verdict: {
-      evaluating: 'Évaluation…',
-      detail: '{label} · {percent} % · {score}',
-      labels: {
-        winning: 'Position gagnante',
-        even: 'Position équilibrée',
-        difficult: 'Position difficile',
-        'mate-for': 'Mat forcé',
-        'mate-against': 'Mat contre toi',
-      },
-    },
     sheet: 'Coups',
     review: {
       whilePlaying: 'Relecture après {move}. La pendule continue.',

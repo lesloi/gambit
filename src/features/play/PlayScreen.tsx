@@ -59,7 +59,6 @@ import {
   savePlayTimeControl,
 } from './settings';
 import { formatTimeControl, PLAY_CLOCKS, timeControlAt, type TimeControl } from './timeControl';
-import { START_EVAL_MOVETIME_MS, startVerdict, type StartVerdict } from './verdict';
 
 type EngineState = 'loading' | 'ready' | 'failed';
 type Saved = 'idle' | 'saved' | 'failed';
@@ -362,9 +361,6 @@ function PlayGame({
   const [now, setNow] = useState(() => Date.now());
   const [engineState, setEngineState] = useState<EngineState>('loading');
   const [engineAttempt, setEngineAttempt] = useState(0);
-  const [evalState, setEvalState] = useState<'idle' | 'running' | 'done' | 'failed'>('idle');
-  const [startEval, setStartEval] = useState<StartVerdict | null>(null);
-  const evalAsked = useRef(false);
   const [thinking, setThinking] = useState(false);
   const [hintPending, setHintPending] = useState(false);
   const [saved, setSaved] = useState<Saved>('idle');
@@ -502,39 +498,6 @@ function PlayGame({
       if (maia.current === maiaEngine) maia.current = null;
     };
   }, [engineAttempt, startResumedClock, updatePremoves]);
-
-  // The position a game starts from is evaluated once, from the user's side. A standard start is
-  // even and says nothing; a puzzle's final position tells the user what they are converting.
-  useEffect(() => {
-    if (state.startFen === START_FEN || evalAsked.current || engineState !== 'ready') return;
-    const instance = engine.current;
-    if (!instance) return;
-
-    let active = true;
-    evalAsked.current = true;
-    setEvalState('running');
-    instance.analyse(state.startFen, { movetimeMs: START_EVAL_MOVETIME_MS }).then(
-      (position) => {
-        if (!active) return;
-        const verdict = position.score
-          ? startVerdict(position.score, sideToMove(state.startFen), state.userColor)
-          : null;
-        if (verdict === null) {
-          setEvalState('failed');
-          return;
-        }
-        setStartEval(verdict);
-        setEvalState('done');
-      },
-      () => {
-        if (active) setEvalState('failed');
-      },
-    );
-
-    return () => {
-      active = false;
-    };
-  }, [engineState, state.startFen, state.userColor]);
 
   // Hidden means the clock stops paying: the page may be closed, frozen or put away for a while.
   useEffect(() => {
@@ -966,7 +929,8 @@ function PlayGame({
           </div>
 
           <div className="mt-1.5">
-            {/* An untimed game has no clock row: the material rides with the status line. */}
+            {/* The rows above and below the board are the clock rows of a timed game and the
+                material row of an untimed one, each on its own side of the board. */}
             {state.clocked ? (
               <ClockRow
                 side="black"
@@ -974,7 +938,13 @@ function PlayGame({
                 active={clock.running === 'black' && state.outcome === 'playing'}
                 material={material}
               />
-            ) : null}
+            ) : (
+              <MaterialRow
+                side="black"
+                material={material}
+                active={sideToMove(shown.fen) === 'black'}
+              />
+            )}
 
             <div
               ref={boardHost}
@@ -1005,7 +975,13 @@ function PlayGame({
                 active={clock.running === 'white' && state.outcome === 'playing'}
                 material={material}
               />
-            ) : null}
+            ) : (
+              <MaterialRow
+                side="white"
+                material={material}
+                active={sideToMove(shown.fen) === 'white'}
+              />
+            )}
 
             {browsing ? (
               <div className="bg-accent-soft mt-1.5 flex flex-wrap items-center justify-between gap-2 rounded-sm px-2.5 py-1 text-xs">
@@ -1020,31 +996,13 @@ function PlayGame({
               </div>
             ) : null}
 
-            {/* An untimed game shows its material under the board, where that line speaks. */}
-            <p className="sr-only" role="status">
-              {state.clocked ? materialLabel(liveMaterial.advantage) : ''}
-            </p>
+            {/* The material rows announce themselves; a timed game announces them here. */}
+            {state.clocked ? (
+              <p className="sr-only" role="status">
+                {materialLabel(liveMaterial.advantage)}
+              </p>
+            ) : null}
           </div>
-
-          {/* The clock rows space the board from the status on their own; an untimed game has
-              none, so the material takes their place and the same gap. */}
-          {state.clocked ? null : (
-            <div className="mt-0.5 flex items-center justify-end text-xs">
-              <UntimedMaterial material={material} />
-            </div>
-          )}
-
-          {/* What the start position is worth, from the user's side: it frames the conversion. */}
-          {state.startFen !== START_FEN && (evalState === 'running' || evalState === 'done') ? (
-            <p className="text-ink-muted mt-0.5 text-xs" role="status">
-              {evalState === 'running' || startEval === null
-                ? fr.play.verdict.evaluating
-                : fr.play.verdict.detail
-                    .replace('{label}', fr.play.verdict.labels[startEval.label])
-                    .replace('{percent}', String(startEval.winPercent))
-                    .replace('{score}', startEval.score)}
-            </p>
-          ) : null}
 
           <p className="mt-1 text-[0.8125rem] font-medium" role="status">
             {state.outcome === 'over' && state.result ? resultLabel(state.result) : status}
@@ -1213,34 +1171,44 @@ function CapturedPieces({
 }
 
 /**
- * The material of an untimed game, where a clock row would sit: the captures and the advantage
- * keep saying who is ahead, and the count follows the position the board shows.
+ * A side's material in an untimed game, in the row a clock would take: the pieces it took and its
+ * advantage, over and under the board like its clock. The count follows the position on show.
  */
-function UntimedMaterial({ material }: { material: Material }) {
-  const advantage = material.advantage;
+function MaterialRow({
+  side,
+  material,
+  active,
+}: {
+  side: Side;
+  material: Material;
+  active: boolean;
+}) {
+  const advantage = side === 'white' ? material.advantage : -material.advantage;
+  const spoken =
+    material.advantage === 0 ? fr.play.material.even : materialSentence(material.advantage);
 
   return (
-    <p role="status">
-      <span className="sr-only">
-        {advantage === 0 ? fr.play.material.even : materialSentence(advantage)}
+    <div
+      className={`flex items-center justify-between gap-3 py-0.5 text-xs ${
+        active ? 'text-ink' : 'text-ink-muted'
+      }`}
+    >
+      <span className="flex min-w-0 items-center gap-1.5">
+        <span className="shrink-0">{side === 'white' ? fr.opening.white : fr.opening.black}</span>
+        <CapturedPieces side={side} pieces={material.captured[side]} />
       </span>
-      <span aria-hidden="true" className="text-ink-muted flex items-center gap-2">
-        <span className="flex items-center gap-1.5">
-          <span>{fr.play.colors.black}</span>
-          <CapturedPieces side="black" pieces={material.captured.black} />
+      {advantage > 0 ? (
+        <span className="text-ink shrink-0 text-[0.6875rem] font-semibold tabular-nums">
+          +{advantage}
         </span>
-        <span className="flex items-center gap-1.5">
-          <span>{fr.play.colors.white}</span>
-          <CapturedPieces side="white" pieces={material.captured.white} />
+      ) : null}
+      {/* The advantage is read once, on the side that holds it. */}
+      {advantage > 0 ? (
+        <span className="sr-only" role="status">
+          {spoken}
         </span>
-        {advantage !== 0 ? (
-          <span className="text-ink font-semibold tabular-nums">
-            {advantage > 0 ? '+' : '−'}
-            {Math.abs(advantage)}
-          </span>
-        ) : null}
-      </span>
-    </p>
+      ) : null}
+    </div>
   );
 }
 
