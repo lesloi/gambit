@@ -3,6 +3,14 @@ import { DEFAULT_PLAY_COLOR, isPlayColor, type PlayColor } from './color';
 import { DEFAULT_ELO } from './level';
 import { DEFAULT_TIME_CONTROL_INDEX, timeControlAt, timeControlIndex } from './timeControl';
 
+/**
+ * The setup's time control, for a resume card or a header. An untimed draft stores 0/0, so the
+ * `clocked` flag decides and the pair is only read when there is a clock.
+ */
+export function draftControl(draft: { clocked: boolean; controlMs: number; incrementMs: number }) {
+  return draft.clocked ? { controlMs: draft.controlMs, incrementMs: draft.incrementMs } : null;
+}
+
 export const PLAY_LEVEL_STORAGE_KEY = 'gambit:play-level';
 export const PLAY_TIME_CONTROL_STORAGE_KEY = 'gambit:play-time-control';
 export const PLAY_COLOR_STORAGE_KEY = 'gambit:play-color';

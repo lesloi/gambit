@@ -8,7 +8,7 @@ import { SkipLink } from '../../ui/SkipLink';
 import { ThemePicker } from '../../ui/ThemePicker';
 import { readDraft } from '../play/draft';
 import { levelAt, levelIndex } from '../play/level';
-import { readPlayElo, readPlayTimeControl } from '../play/settings';
+import { draftControl, readPlayElo, readPlayTimeControl } from '../play/settings';
 import { formatTimeControl, timeControlAt } from '../play/timeControl';
 import { puzzleMistakes } from '../progress/mistakes';
 import { RATING_BANDS, type PuzzleBand } from '../puzzles/content';
@@ -61,9 +61,7 @@ export function HomePage({
   const [draft] = useState(readDraft);
   const [playLevel] = useState(() => levelAt(levelIndex(draft ? draft.level : readPlayElo())));
   const [playControl] = useState(() =>
-    draft
-      ? { controlMs: draft.controlMs, incrementMs: draft.incrementMs }
-      : timeControlAt(readPlayTimeControl()),
+    draft ? draftControl(draft) : timeControlAt(readPlayTimeControl()),
   );
 
   const running = session !== null && session.completedAt === null ? session : null;

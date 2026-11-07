@@ -50,6 +50,7 @@ import { LEVELS, levelAt, levelIndex as levelIndexOf, type Level } from './level
 import { materialOf, type CapturedPiece, type Material, type MaterialColor } from './material';
 import { gameRecord, saveGame } from './record';
 import {
+  draftControl,
   readPlayColor,
   readPlayElo,
   readPlayTimeControl,
@@ -130,11 +131,7 @@ export function PlayScreen({
   };
 
   const level = resume ? levelAt(levelIndexOf(resume.level)) : levelAt(levelPosition);
-  const control = resume
-    ? resume.clocked
-      ? { controlMs: resume.controlMs, incrementMs: resume.incrementMs }
-      : null
-    : timeControlAt(controlIndex);
+  const control = resume ? draftControl(resume) : timeControlAt(controlIndex);
 
   return (
     <div className="min-h-dvh bg-paper">
@@ -220,14 +217,7 @@ function PlaySetup({
           <p className="text-ink-muted mt-1 text-xs">
             {fr.play.resumeDetail
               .replace('{elo}', String(levelAt(levelIndexOf(draft.level)).elo))
-              .replace(
-                '{clock}',
-                formatTimeControl(
-                  draft.clocked
-                    ? { controlMs: draft.controlMs, incrementMs: draft.incrementMs }
-                    : null,
-                ),
-              )
+              .replace('{clock}', formatTimeControl(draftControl(draft)))
               .replace('{color}', fr.play.colors[draft.userColor])}
           </p>
           {draft.startFen !== START_FEN ? (
@@ -960,19 +950,6 @@ function PlayGame({
                 {fr.play.fromPuzzle}
               </span>
             ) : null}
-            {state.startFen !== START_FEN && (evalState === 'running' || evalState === 'done') ? (
-              <span
-                className="border-line rounded-xs border px-1.5 py-0.5 text-[0.625rem] tracking-wide uppercase"
-                role="status"
-              >
-                {evalState === 'running' || startEval === null
-                  ? fr.play.verdict.evaluating
-                  : fr.play.verdict.detail
-                      .replace('{label}', fr.play.verdict.labels[startEval.label])
-                      .replace('{percent}', String(startEval.winPercent))
-                      .replace('{score}', startEval.score)}
-              </span>
-            ) : null}
             <span className="ml-auto">
               {fr.play.playingAs.replace('{color}', fr.play.colors[state.userColor])}
             </span>
@@ -1041,6 +1018,18 @@ function PlayGame({
           <p className="mt-3 text-[0.8125rem] font-medium" role="status">
             {state.outcome === 'over' && state.result ? resultLabel(state.result) : status}
           </p>
+
+          {/* What the start position is worth, from the user's side: it frames the conversion. */}
+          {state.startFen !== START_FEN && (evalState === 'running' || evalState === 'done') ? (
+            <p className="text-ink-muted mt-0.5 text-xs" role="status">
+              {evalState === 'running' || startEval === null
+                ? fr.play.verdict.evaluating
+                : fr.play.verdict.detail
+                    .replace('{label}', fr.play.verdict.labels[startEval.label])
+                    .replace('{percent}', String(startEval.winPercent))
+                    .replace('{score}', startEval.score)}
+            </p>
+          ) : null}
 
           <p className="text-ink-muted mt-1 min-h-4 text-xs" role="status">
             {browsing

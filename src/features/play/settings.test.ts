@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { StorageLike } from '../../lib/storage';
 import { DEFAULT_ELO } from './level';
 import {
+  draftControl,
   PLAY_COLOR_STORAGE_KEY,
   PLAY_LEVEL_STORAGE_KEY,
   PLAY_TIME_CONTROL_STORAGE_KEY,
@@ -127,6 +128,19 @@ describe('play time control preference', () => {
 
       expect(readPlayTimeControl(storage)).toBe(index);
     }
+  });
+});
+
+describe('draft time control', () => {
+  it('reads an untimed draft as no clock', () => {
+    expect(draftControl({ clocked: false, controlMs: 0, incrementMs: 0 })).toBeNull();
+  });
+
+  it('reads a clocked draft as its pair', () => {
+    expect(draftControl({ clocked: true, controlMs: 300_000, incrementMs: 2_000 })).toEqual({
+      controlMs: 300_000,
+      incrementMs: 2_000,
+    });
   });
 });
 
