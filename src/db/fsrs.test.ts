@@ -54,8 +54,9 @@ describe('replayCard', () => {
 
   // A golden literal on purpose: a snapshot would bless a drift instead of catching it. This
   // journal runs a card into a stable long interval, where a change of the weights or the decay
-  // shows up long before the first cards would notice.
-  it('keeps the due dates a journal produced under ts-fsrs 5.4.2', () => {
+  // shows up long before the first cards would notice. The literals were derived on 5.4.2 and
+  // replayed unchanged on 6.0.0, which is what makes the bump a no-op for the schedule.
+  it('keeps the due dates a journal produced under ts-fsrs 5.4.2, still the same on 6.0.0', () => {
     const ratings = [
       Rating.Good,
       Rating.Good,
