@@ -173,7 +173,11 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   appended and never edited. The statistics, the due dates and an undo are then computations. The
   scheduler is therefore pinned with its parameters, fuzzing is off, and the short steps (1 min,
   10 min) are kept: replaying the same journal must give the same due date, and the scheduler that
-  produced it is written in the database's `meta` table.
+  produced it is written in the database's `meta` table. The 21 FSRS-6 weights are the exception,
+  left to the package's defaults: pinning a copy would freeze a tuning the library keeps refining,
+  and the journal records the build that wrote each review. A bump of the defaults moves every due
+  date, and the golden test in `fsrs.test.ts` fails on it: `pnpm test` is the gate, before the
+  build ships.
 - **A finished game is stored as its move list, not a PGN.** The analysis will replay it from its
   start position; a PGN string would need parsing and would freeze the notation. The row and the
   draft carry the start FEN and whether the game is clocked; the analysis and the move numbers come

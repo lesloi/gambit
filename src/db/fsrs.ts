@@ -24,8 +24,8 @@ export interface CardState {
 /**
  * Pinned with its parameters, because replaying the journal under another model would move every
  * due date. Fuzzing is off for the same reason; the short steps keep a missed card in the session.
- * A bump of ts-fsrs must change the line on purpose: fsrs.test.ts fails until the pin moves and
- * the golden literals in it are re-derived against the new build.
+ * The FSRS-6 weights are the exception: they stay the package's defaults, and the golden test in
+ * fsrs.test.ts fails on a bump that changes them. Any other bump must change the line on purpose.
  * See docs/DECISIONS.md#persistence.
  */
 export const SCHEDULER = {
