@@ -53,7 +53,6 @@ function move(patch: Partial<MoveReview> = {}): MoveReview {
     winBefore: 50,
     winAfter: 50,
     drop: 0,
-    cpLoss: 0,
     class: 'best',
     phase: 'opening',
     book: false,

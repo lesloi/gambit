@@ -28,15 +28,3 @@ export function userScore(score: Score, sideToMove: Side, userColor: Side): Scor
     mate: score.mate === null ? null : -score.mate,
   };
 }
-
-/**
- * A score in centipawns for a loss average. A mate is worth a decisive but finite advantage, so a
- * game that never leaves a won position does not get an infinite loss.
- */
-export function scoreCp(score: Score): number {
-  if (score.mate !== null) {
-    return score.mate > 0 ? WIN_PERCENT_CP_LIMIT : -WIN_PERCENT_CP_LIMIT;
-  }
-
-  return Math.max(-WIN_PERCENT_CP_LIMIT, Math.min(WIN_PERCENT_CP_LIMIT, score.cp ?? 0));
-}

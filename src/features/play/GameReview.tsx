@@ -311,6 +311,7 @@ export function GameReview({
               dests={NO_DESTS}
               onMove={ignoreMove}
               hint={bestHint}
+              hintBrush="hint"
             />
           </div>
 

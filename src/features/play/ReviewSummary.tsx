@@ -8,13 +8,6 @@ function percent(value: number | null): string {
   return value === null ? '—' : `${Math.round(value)} %`;
 }
 
-function acpl(value: number | null): string {
-  if (value === null) return '—';
-  const pawns = value / 100;
-  const unit = pawns >= 2 ? fr.play.analysis.pawns : fr.play.analysis.pawn;
-  return `${pawns.toFixed(2).replace('.', ',')} ${unit}`;
-}
-
 function openingDetail(opening: OpeningReport, userColor: Side): string {
   const deviation = opening.deviation;
   if (deviation) {
@@ -37,12 +30,10 @@ function openingDetail(opening: OpeningReport, userColor: Side): string {
 function AccuracyCard({
   label,
   accuracy,
-  loss,
   highlight = false,
 }: {
   label: string;
   accuracy: number | null;
-  loss: number | null;
   highlight?: boolean;
 }) {
   return (
@@ -55,16 +46,13 @@ function AccuracyCard({
         {label} · {fr.play.analysis.accuracy}
       </p>
       <p className="text-2xl font-semibold tabular-nums">{percent(accuracy)}</p>
-      <p className="text-ink-muted text-[0.6875rem]">
-        {fr.play.analysis.acpl} : {acpl(loss)}
-      </p>
     </div>
   );
 }
 
 /**
- * The shape of the game before the board: how accurately each side played, what the user's moves
- * were worth, how the phases went, and whether the game stayed in the repertoire.
+ * The shape of the game before the board: how accurately each side played, how the phases went,
+ * and whether the game stayed in the repertoire.
  */
 export function ReviewSummary({ report }: { report: GameReport }) {
   return (
@@ -72,17 +60,8 @@ export function ReviewSummary({ report }: { report: GameReport }) {
       <h2 className="text-sm font-semibold">{fr.play.analysis.reviewTitle}</h2>
 
       <div className="mt-2 grid grid-cols-2 gap-2">
-        <AccuracyCard
-          label={fr.play.analysis.you}
-          accuracy={report.user.accuracy}
-          loss={report.user.acpl}
-          highlight
-        />
-        <AccuracyCard
-          label={fr.play.analysis.opponent}
-          accuracy={report.opponent.accuracy}
-          loss={report.opponent.acpl}
-        />
+        <AccuracyCard label={fr.play.analysis.you} accuracy={report.user.accuracy} highlight />
+        <AccuracyCard label={fr.play.analysis.opponent} accuracy={report.opponent.accuracy} />
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
@@ -144,10 +123,6 @@ export function ReviewSummary({ report }: { report: GameReport }) {
           )}
         </div>
       ) : null}
-
-      <p className="text-ink-muted mt-2 text-[0.6875rem] leading-relaxed">
-        {fr.play.analysis.accuracyNote}
-      </p>
     </section>
   );
 }

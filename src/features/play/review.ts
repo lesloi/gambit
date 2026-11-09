@@ -4,7 +4,7 @@ import { START_FEN, type Side } from '../../lib/position';
 import type { OpeningLine } from '../openings/opening';
 import type { GamePosition } from './analysis';
 import { matchOpening, sameMove, type OpeningReport } from './openingMatch';
-import { scoreCp, userScore, winPercent } from './score';
+import { userScore, winPercent } from './score';
 
 /** Win points a move must give away to count as a blunder. */
 export const BLUNDER_WIN_POINTS = 20;
@@ -58,8 +58,6 @@ export interface MoveReview {
   winAfter: number | null;
   /** Win points the mover gave away, never negative. Null when a score is missing. */
   drop: number | null;
-  /** The same loss in centipawns, for the average. */
-  cpLoss: number | null;
   class: MoveClass;
   phase: Phase;
   /** The move is inside the user's repertoire line; it is not judged in the summary. */
@@ -87,8 +85,6 @@ export interface SideReport {
   /** Every move played by the side, including the repertoire's and the unjudged ones. */
   moves: number;
   accuracy: number | null;
-  /** Average centipawn loss, in centipawns. */
-  acpl: number | null;
   counts: ClassCounts;
   phases: Record<Phase, PhaseAccuracy>;
   bookMoves: number;
@@ -252,15 +248,6 @@ function gameAccuracy(moves: readonly MoveReview[], side: Side): number | null {
   return aggregateAccuracy(samples);
 }
 
-function averageLoss(moves: readonly MoveReview[], side: Side): number | null {
-  const losses = moves
-    .filter((move) => move.side === side && move.class !== 'unknown' && move.cpLoss !== null)
-    .map((move) => move.cpLoss!);
-  if (losses.length === 0) return null;
-
-  return losses.reduce((sum, loss) => sum + loss, 0) / losses.length;
-}
-
 function phaseReport(moves: readonly MoveReview[], side: Side, phase: Phase): PhaseAccuracy {
   const samples = moves
     .filter(
@@ -299,7 +286,6 @@ function sideReport(moves: readonly MoveReview[], side: Side): SideReport {
   return {
     moves: own.length,
     accuracy: gameAccuracy(moves, side),
-    acpl: averageLoss(moves, side),
     counts,
     phases: {
       opening: phaseReport(moves, side, 'opening'),
@@ -405,9 +391,6 @@ export function buildReport(input: BuildReportInput): GameReport {
     const winBefore = scoreBefore === null ? null : winPercent(scoreBefore);
     const winAfter = moverAfter === null ? null : winPercent(moverAfter);
     const drop = winBefore === null || winAfter === null ? null : Math.max(0, winBefore - winAfter);
-    const cpBefore = scoreBefore === null ? null : scoreCp(scoreBefore);
-    const cpAfter = moverAfter === null ? null : scoreCp(moverAfter);
-    const cpLoss = cpBefore === null || cpAfter === null ? null : Math.max(0, cpBefore - cpAfter);
     const bestUci = engineBefore?.bestMove ?? null;
     const bestSan = bestUci === null ? null : sanOf(before.fen, bestUci);
     const book =
@@ -439,7 +422,6 @@ export function buildReport(input: BuildReportInput): GameReport {
       winBefore,
       winAfter,
       drop,
-      cpLoss,
       class: klass,
       phase: phaseOf(after.fen, ply, startFen),
       book,

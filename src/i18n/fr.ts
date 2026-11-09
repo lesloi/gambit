@@ -226,20 +226,15 @@ export const fr = {
       you: 'Toi',
       opponent: 'Adversaire',
       accuracy: 'Précision',
-      acpl: 'Perte moyenne',
-      pawn: 'pion',
-      pawns: 'pions',
-      accuracyNote:
-        'Estimation par une analyse locale de 0,5 s par coup : un repère, pas une note comparable à lichess ou chess.com.',
       counts: {
         best: 'Meilleur',
-        excellent: 'Excellent',
+        excellent: 'Très bon',
         good: 'Bon',
         inaccuracy: 'Imprécision',
         mistake: 'Erreur',
         blunder: 'Gaffe',
         missedWin: 'Gain manqué',
-        turningPoint: 'Renversement',
+        turningPoint: 'Tournant',
       },
       unrated: 'Non évalué',
       phases: {
