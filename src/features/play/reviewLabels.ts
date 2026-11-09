@@ -9,7 +9,6 @@ export const CLASS_LABEL: Record<MoveClass, string> = {
   mistake: fr.play.analysis.counts.mistake,
   blunder: fr.play.analysis.counts.blunder,
   'missed-win': fr.play.analysis.counts.missedWin,
-  'turning-point': fr.play.analysis.counts.turningPoint,
   unknown: fr.play.analysis.unrated,
 };
 
@@ -22,7 +21,6 @@ export const CLASS_ORDER: readonly MoveClass[] = [
   'mistake',
   'blunder',
   'missed-win',
-  'turning-point',
 ];
 
 export const CLASS_TONE: Record<MoveClass, string> = {
@@ -33,7 +31,6 @@ export const CLASS_TONE: Record<MoveClass, string> = {
   mistake: 'bg-bad-soft text-bad',
   blunder: 'bg-bad-soft text-bad',
   'missed-win': 'bg-accent-soft text-accent-ink',
-  'turning-point': 'bg-ok-soft text-ok',
   unknown: 'bg-line text-ink-muted',
 };
 
@@ -45,7 +42,6 @@ export const CLASS_COUNT_TONE: Record<MoveClass, string> = {
   mistake: 'text-bad',
   blunder: 'text-bad',
   'missed-win': 'text-accent-ink',
-  'turning-point': 'text-ok',
   unknown: 'text-ink-muted',
 };
 
@@ -55,7 +51,6 @@ export const MARK_LABEL: Record<MoveMark, string> = {
   mistake: fr.play.analysis.counts.mistake,
   blunder: fr.play.analysis.counts.blunder,
   'missed-win': fr.play.analysis.counts.missedWin,
-  'turning-point': fr.play.analysis.counts.turningPoint,
 };
 
 export const MARK_GLYPH: Record<MoveMark, string> = {
@@ -64,7 +59,6 @@ export const MARK_GLYPH: Record<MoveMark, string> = {
   mistake: '?',
   blunder: '??',
   'missed-win': '✗',
-  'turning-point': '↗',
 };
 
 export const MARK_TONE: Record<MoveMark, string> = {
@@ -73,5 +67,4 @@ export const MARK_TONE: Record<MoveMark, string> = {
   mistake: 'text-bad',
   blunder: 'text-bad',
   'missed-win': 'text-accent-ink',
-  'turning-point': 'text-ok',
 };

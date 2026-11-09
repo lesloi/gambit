@@ -7,16 +7,10 @@ const HEIGHT = 112;
 const PAD_X = 8;
 const PAD_Y = 8;
 
-const MARKED: readonly MoveClass[] = [
-  'inaccuracy',
-  'mistake',
-  'blunder',
-  'missed-win',
-  'turning-point',
-];
+const MARKED: readonly MoveClass[] = ['inaccuracy', 'mistake', 'blunder', 'missed-win'];
 
 function markerColor(kind: MoveClass): string {
-  if (kind === 'turning-point' || kind === 'best') return 'var(--ok)';
+  if (kind === 'best') return 'var(--ok)';
   if (kind === 'missed-win') return 'var(--accent)';
   if (kind === 'inaccuracy') return 'var(--ink-muted)';
   return 'var(--bad)';

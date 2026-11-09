@@ -15,26 +15,16 @@ export const WINNING_WIN_PERCENT = 70;
 const EXCELLENT_WIN_POINTS = 2;
 const GOOD_WIN_POINTS = 5;
 const INACCURACY_WIN_POINTS = 10;
-const TURNING_WIN_PERCENT = 50;
 const KEY_MOMENT_WIN_POINTS = 5;
 const KEY_MOMENT_LIMIT = 5;
 const ENDGAME_MATERIAL = 20;
 const OPENING_PLIES = 20;
 
 export type MoveClass =
-  | 'best'
-  | 'excellent'
-  | 'good'
-  | 'inaccuracy'
-  | 'mistake'
-  | 'blunder'
-  | 'missed-win'
-  | 'turning-point'
-  | 'unknown';
+  'best' | 'excellent' | 'good' | 'inaccuracy' | 'mistake' | 'blunder' | 'missed-win' | 'unknown';
 
 /** The classes the score sheet marks with a glyph; the rest stay plain. */
-export type MoveMark =
-  'best' | 'inaccuracy' | 'mistake' | 'blunder' | 'missed-win' | 'turning-point';
+export type MoveMark = 'best' | 'inaccuracy' | 'mistake' | 'blunder' | 'missed-win';
 
 export type Phase = 'opening' | 'middlegame' | 'endgame';
 
@@ -108,7 +98,6 @@ export interface ClassifyInput {
   playedUci: string;
   bestUci: string | null;
   winBefore: number | null;
-  winAfter: number | null;
   forced: boolean;
 }
 
@@ -117,13 +106,12 @@ export interface ClassifyInput {
  * `unknown`: the user had no choice, or the engine said nothing, and neither is a judgement.
  */
 export function classifyMove(input: ClassifyInput): MoveClass {
-  if (input.forced || input.drop === null || input.winBefore === null || input.winAfter === null) {
+  if (input.forced || input.drop === null || input.winBefore === null) {
     return 'unknown';
   }
 
-  const { drop, playedUci, bestUci, winBefore, winAfter } = input;
+  const { drop, playedUci, bestUci, winBefore } = input;
   if (drop < EXCELLENT_WIN_POINTS) {
-    if (winBefore < TURNING_WIN_PERCENT && winAfter >= WINNING_WIN_PERCENT) return 'turning-point';
     return playedUci === bestUci ? 'best' : 'excellent';
   }
   if (drop < GOOD_WIN_POINTS) return 'good';
@@ -141,7 +129,6 @@ export function markOf(kind: MoveClass): MoveMark | null {
     case 'mistake':
     case 'blunder':
     case 'missed-win':
-    case 'turning-point':
       return kind;
     default:
       return null;
@@ -272,7 +259,6 @@ function sideReport(moves: readonly MoveReview[], side: Side): SideReport {
     mistake: 0,
     blunder: 0,
     'missed-win': 0,
-    'turning-point': 0,
     unknown: 0,
   };
 
@@ -296,26 +282,21 @@ function sideReport(moves: readonly MoveReview[], side: Side): SideReport {
   };
 }
 
-/** The user's moves that tell the story: the biggest losses, then one turnaround. */
+/** The user's moves that tell the story: the biggest losses, in game order. */
 export function selectKeyMoments(moves: readonly MoveReview[], userColor: Side): MoveReview[] {
-  const candidates = moves.filter(
-    (move) => move.side === userColor && !move.book && !move.forced && move.class !== 'unknown',
-  );
-  const losses = candidates
-    .filter((move) => move.drop !== null && move.drop >= KEY_MOMENT_WIN_POINTS)
-    .sort((left, right) => right.drop! - left.drop! || left.ply - right.ply);
-  const turning = candidates
-    .filter((move) => move.class === 'turning-point')
-    .sort((left, right) => {
-      const leftGain = (left.winAfter ?? 0) - (left.winBefore ?? 0);
-      const rightGain = (right.winAfter ?? 0) - (right.winBefore ?? 0);
-      return rightGain - leftGain || left.ply - right.ply;
-    })
-    .slice(0, 1);
-
-  const chosen = [...losses.slice(0, KEY_MOMENT_LIMIT - turning.length), ...turning];
-  const unique = new Map(chosen.map((move) => [move.ply, move]));
-  return [...unique.values()].sort((left, right) => left.ply - right.ply);
+  return moves
+    .filter(
+      (move) =>
+        move.side === userColor &&
+        !move.book &&
+        !move.forced &&
+        move.class !== 'unknown' &&
+        move.drop !== null &&
+        move.drop >= KEY_MOMENT_WIN_POINTS,
+    )
+    .sort((left, right) => right.drop! - left.drop! || left.ply - right.ply)
+    .slice(0, KEY_MOMENT_LIMIT)
+    .sort((left, right) => left.ply - right.ply);
 }
 
 const PIECE_VALUE: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
@@ -403,7 +384,6 @@ export function buildReport(input: BuildReportInput): GameReport {
       playedUci: moves[ply - 1]!,
       bestUci,
       winBefore,
-      winAfter,
       forced,
     });
 

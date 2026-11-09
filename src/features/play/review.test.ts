@@ -69,7 +69,6 @@ describe('classifyMove', () => {
       playedUci: 'e2e4',
       bestUci: 'e2e4',
       winBefore: 50,
-      winAfter: 50,
       forced: false,
       ...patch,
     });
@@ -83,15 +82,11 @@ describe('classifyMove', () => {
     expect(classify({ drop: 3 })).toBe('good');
     expect(classify({ drop: 7 })).toBe('inaccuracy');
     expect(classify({ drop: 15 })).toBe('mistake');
-    expect(classify({ drop: 25, winBefore: 50, winAfter: 25 })).toBe('blunder');
+    expect(classify({ drop: 25, winBefore: 50 })).toBe('blunder');
   });
 
   it('names a lost win a missed win, not a blunder', () => {
-    expect(classify({ drop: 25, winBefore: 80, winAfter: 55 })).toBe('missed-win');
-  });
-
-  it('names a move that turns a bad position into a win a turnaround', () => {
-    expect(classify({ winBefore: 45, winAfter: 75 })).toBe('turning-point');
+    expect(classify({ drop: 25, winBefore: 80 })).toBe('missed-win');
   });
 
   it('does not judge a forced move or a move without a score', () => {
@@ -199,7 +194,6 @@ describe('markOf', () => {
     expect(markOf('mistake')).toBe('mistake');
     expect(markOf('blunder')).toBe('blunder');
     expect(markOf('missed-win')).toBe('missed-win');
-    expect(markOf('turning-point')).toBe('turning-point');
     expect(markOf('excellent')).toBeNull();
     expect(markOf('good')).toBeNull();
     expect(markOf('unknown')).toBeNull();
@@ -207,7 +201,7 @@ describe('markOf', () => {
 });
 
 describe('selectKeyMoments', () => {
-  it('keeps the biggest losses and one turnaround, in game order', () => {
+  it('keeps the five biggest losses, in game order', () => {
     const moves = [
       move({ ply: 1, drop: 25, class: 'blunder' }),
       move({ ply: 2, drop: 24, class: 'blunder' }),
@@ -215,10 +209,9 @@ describe('selectKeyMoments', () => {
       move({ ply: 4, drop: 22, class: 'blunder' }),
       move({ ply: 5, drop: 21, class: 'blunder' }),
       move({ ply: 6, drop: 20, class: 'blunder' }),
-      move({ ply: 7, drop: 0, class: 'turning-point', winBefore: 45, winAfter: 80 }),
     ];
 
-    expect(selectKeyMoments(moves, 'white').map((entry) => entry.ply)).toEqual([1, 2, 3, 4, 7]);
+    expect(selectKeyMoments(moves, 'white').map((entry) => entry.ply)).toEqual([1, 2, 3, 4, 5]);
   });
 
   it('breaks a tie by the earlier move', () => {

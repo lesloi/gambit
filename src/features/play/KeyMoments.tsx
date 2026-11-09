@@ -46,9 +46,7 @@ export function KeyMoments({
                     {CLASS_LABEL[move.class]}
                   </span>
                   <span className="text-ink-muted text-xs tabular-nums">{winLabel(move)}</span>
-                  {move.class !== 'turning-point' &&
-                  move.bestSan !== null &&
-                  move.bestUci !== move.uci ? (
+                  {move.bestSan !== null && move.bestUci !== move.uci ? (
                     <span className="text-ink-muted w-full text-xs">
                       {fr.play.analysis.best.replace('{move}', move.bestSan)}
                     </span>

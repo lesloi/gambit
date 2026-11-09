@@ -234,7 +234,6 @@ export const fr = {
         mistake: 'Erreur',
         blunder: 'Gaffe',
         missedWin: 'Gain manqué',
-        turningPoint: 'Tournant',
       },
       unrated: 'Non évalué',
       phases: {
