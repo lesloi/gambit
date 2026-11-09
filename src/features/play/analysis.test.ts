@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { PositionEval, Score } from '../../engine/uci';
-import { findingsBySheetPly, replayMoves, reviewGame, winPercent } from './analysis';
+import {
+  findingsBySheetPly,
+  replayMoves,
+  reviewGame,
+  reviewGameReport,
+  winPercent,
+} from './analysis';
 
 const CP = (cp: number): Score => ({ cp, mate: null });
 
@@ -307,5 +313,43 @@ describe('reviewGame', () => {
     expect(findings).toBeNull();
     expect(evaluations).toBe(2);
     expect(progress).toEqual(['1/5']);
+  });
+});
+
+describe('reviewGameReport', () => {
+  it('returns both sides, the evaluation curve and the repertoire match', async () => {
+    const positions = replayMoves(WHITE_GAME);
+    const { evaluate } = mockEngine(positions, {
+      0: { bestMove: 'e2e4', score: CP(0) },
+      1: { bestMove: 'e7e5', score: CP(0) },
+      2: { bestMove: 'g1f3', score: CP(0) },
+      3: { bestMove: 'b8c6', score: CP(0) },
+      4: { bestMove: null, score: CP(0) },
+    });
+
+    const report = await reviewGameReport(
+      evaluate,
+      { moves: WHITE_GAME, userColor: 'white' },
+      {
+        openings: [
+          {
+            id: 'test',
+            name: 'Test',
+            color: 'white',
+            note: 'A line',
+            moves: ['e2e4', 'e7e5'],
+          },
+        ],
+      },
+    );
+
+    expect(report?.moves).toHaveLength(4);
+    expect(report?.user.moves).toBe(2);
+    expect(report?.opponent.moves).toBe(2);
+    expect(report?.evalCurve).toHaveLength(5);
+    expect(report?.opening).toMatchObject({ followed: 2, deviation: null });
+    expect(report?.moves[0]?.book).toBe(true);
+    expect(report?.moves[1]?.book).toBe(true);
+    expect(report?.moves[2]?.book).toBe(false);
   });
 });

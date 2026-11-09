@@ -2,18 +2,18 @@ import { Chess } from 'chess.js';
 import type { PositionEval, Score } from '../../engine/uci';
 import type { PromotionPiece } from '../../lib/chess';
 import { gameEnd, START_FEN, type Side } from '../../lib/position';
+import type { OpeningLine } from '../openings/opening';
+import { buildReport, type GameReport } from './review';
 
-/** How long the engine looks at each position, in milliseconds. */
-export const ANALYSIS_MOVETIME_MS = 300;
+export { winPercent, userScore } from './score';
+export { BLUNDER_WIN_POINTS, WINNING_WIN_PERCENT } from './review';
 
-/** Points of winning chance a move must give away to count as a blunder. */
-export const BLUNDER_WIN_POINTS = 20;
-
-/** Winning chance above which the position before the move was already won. */
-export const WINNING_WIN_PERCENT = 70;
-
-/** The scale of the logistic that turns centipawns into a winning percentage. */
-const WIN_PERCENT_SCALE = 0.00368208;
+/**
+ * How long the engine looks at each position, in milliseconds. A review used to need only the
+ * moves that lost twenty points, so 300 ms was enough; the classes and the accuracy read finer
+ * differences, so the search gets a little longer.
+ */
+export const ANALYSIS_MOVETIME_MS = 500;
 
 export interface GamePosition {
   fen: string;
@@ -46,6 +46,8 @@ export interface ReviewOptions {
   onProgress?: (done: number, total: number) => void;
   /** Checked between positions, so leaving the screen stops the review. */
   cancelled?: () => boolean;
+  /** The repertoire the game is compared with, for the book moves and the opening report. */
+  openings?: readonly OpeningLine[];
 }
 
 /** Replays the game's moves from its start position, for the board and the analysis. */
@@ -79,15 +81,15 @@ export function replayMoves(
 }
 
 /**
- * Reviews every user move once: each position is evaluated at full strength, and a move is kept
- * when it costs the user at least [BLUNDER_WIN_POINTS] of winning chance. A position that was
- * already won makes it a missed win instead of a blunder.
+ * Reads the game once: every position is evaluated at full strength, then the report turns the
+ * scores into a class for every move, an accuracy for each side, an evaluation curve and the
+ * moments worth looking at.
  */
-export async function reviewGame(
+export async function reviewGameReport(
   evaluate: Evaluate,
   game: { moves: readonly string[]; userColor: Side; startFen?: string },
   options: ReviewOptions = {},
-): Promise<Finding[] | null> {
+): Promise<GameReport | null> {
   const positions = replayMoves(game.moves, game.startFen);
   const fens = positions.map((position) => position.fen);
   const terminals = fens.map((fen, index) => terminalScore(fen, fens.slice(0, index + 1)));
@@ -111,36 +113,47 @@ export async function reviewGame(
     options.onProgress?.(done, total);
   }
 
-  const findings: Finding[] = [];
-  for (let ply = 0; ply < positions.length - 1; ply += 1) {
-    const before = evals[ply];
-    const after = evals[ply + 1];
-    if (positions[ply].turn !== game.userColor || !before?.score || !after?.score) continue;
-    if (!before.bestMove) continue;
+  return buildReport({
+    positions,
+    evals,
+    moves: game.moves,
+    userColor: game.userColor,
+    startFen: game.startFen ?? START_FEN,
+    openings: options.openings ?? [],
+  });
+}
 
-    const beforeScore = userScore(before.score, positions[ply].turn, game.userColor);
-    const afterScore = userScore(after.score, positions[ply + 1].turn, game.userColor);
-    const wonBefore = winPercent(beforeScore);
-    const wonAfter = winPercent(afterScore);
-    if (wonBefore - wonAfter < BLUNDER_WIN_POINTS) continue;
+/**
+ * The findings the score sheet used to show, derived from the report so the older callers keep
+ * their contract. Only the user's moves are judged, and only the two kinds that were kept.
+ */
+export async function reviewGame(
+  evaluate: Evaluate,
+  game: { moves: readonly string[]; userColor: Side; startFen?: string },
+  options: ReviewOptions = {},
+): Promise<Finding[] | null> {
+  const report = await reviewGameReport(evaluate, game, options);
+  if (report === null) return null;
 
-    const bestSan = sanOf(fens[ply], before.bestMove);
-    if (bestSan === null) continue;
-
-    findings.push({
-      ply,
-      moveNumber: positions[ply].moveNumber,
-      side: positions[ply].turn,
-      fen: fens[ply],
-      lastMove: positions[ply].lastMove,
-      playedSan: positions[ply + 1].san ?? '',
-      bestUci: before.bestMove,
-      bestSan,
-      kind: wonBefore >= WINNING_WIN_PERCENT ? 'missed-win' : 'blunder',
-    });
-  }
-
-  return findings;
+  return report.moves
+    .filter(
+      (move) =>
+        move.side === game.userColor &&
+        move.bestUci !== null &&
+        move.bestSan !== null &&
+        (move.class === 'blunder' || move.class === 'missed-win'),
+    )
+    .map((move) => ({
+      ply: move.ply - 1,
+      moveNumber: move.moveNumber,
+      side: move.side,
+      fen: move.fenBefore,
+      lastMove: move.lastMoveBefore,
+      playedSan: move.san,
+      bestUci: move.bestUci!,
+      bestSan: move.bestSan!,
+      kind: move.class as 'blunder' | 'missed-win',
+    }));
 }
 
 /**
@@ -149,24 +162,6 @@ export async function reviewGame(
  */
 export function findingsBySheetPly(findings: readonly Finding[]): ReadonlyMap<number, Finding> {
   return new Map(findings.map((finding) => [finding.ply + 1, finding]));
-}
-
-/** The chance the side holding the score wins, from 0 to 100. */
-export function winPercent(score: Score): number {
-  // Stockfish's `mate 0` means the side to move is already mated, not a draw.
-  if (score.mate !== null) return score.mate > 0 ? 100 : 0;
-
-  return 100 / (1 + Math.exp(-WIN_PERCENT_SCALE * (score.cp ?? 0)));
-}
-
-/** A score written from the side to move to the user's point of view. */
-export function userScore(score: Score, sideToMove: Side, userColor: Side): Score {
-  if (sideToMove === userColor) return score;
-
-  return {
-    cp: score.cp === null ? null : -score.cp,
-    mate: score.mate === null ? null : -score.mate,
-  };
 }
 
 /** A position that already ended is scored from the rules, never from the engine. */
@@ -184,12 +179,4 @@ function moveFromUci(uci: string): { from: string; to: string; promotion?: Promo
     to: uci.slice(2, 4),
     promotion: uci.length > 4 ? (uci.slice(4, 5) as PromotionPiece) : undefined,
   };
-}
-
-function sanOf(fen: string, uci: string): string | null {
-  try {
-    return new Chess(fen).move(moveFromUci(uci)).san;
-  } catch {
-    return null;
-  }
 }
