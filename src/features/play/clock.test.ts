@@ -4,6 +4,7 @@ import {
   createClock,
   flagged,
   formatClock,
+  isLowTime,
   pauseClock,
   remainingMs,
   startClock,
@@ -91,6 +92,13 @@ describe('play clock', () => {
 
     expect(startClock(idle, T0)).toBe(idle);
     expect(startClock(running, T0 + 1_000)).toBe(running);
+  });
+
+  it('reports a clock as low once the display reads under a minute', () => {
+    expect(isLowTime(60_000)).toBe(false);
+    expect(isLowTime(59_500)).toBe(false);
+    expect(isLowTime(59_000)).toBe(true);
+    expect(isLowTime(0)).toBe(true);
   });
 
   it('formats the remaining time as minutes and seconds', () => {
