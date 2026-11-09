@@ -92,3 +92,11 @@ export function formatClock(ms: number): string {
   const seconds = totalSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
+
+/**
+ * Whether the clock reads under a minute. The display rounds up, so the warning starts when it
+ * reads 0:59, not when the exact time drops below 60 seconds.
+ */
+export function isLowTime(ms: number): boolean {
+  return Math.ceil(Math.max(0, ms) / 1000) < 60;
+}

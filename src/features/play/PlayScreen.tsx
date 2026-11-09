@@ -20,6 +20,7 @@ import {
   createClock,
   flagged,
   formatClock,
+  isLowTime,
   pauseClock,
   remainingMs,
   startClock,
@@ -1222,6 +1223,7 @@ function ClockRow({
 }) {
   const label = side === 'white' ? fr.play.clocks.white : fr.play.clocks.black;
   const advantage = side === 'white' ? material.advantage : -material.advantage;
+  const tone = isLowTime(ms) ? 'text-bad' : active ? 'text-ink' : '';
 
   return (
     <div
@@ -1242,7 +1244,7 @@ function ClockRow({
         ) : null}
       </span>
       <span
-        className={`text-[0.9375rem] tabular-nums ${active ? 'text-ink font-semibold' : ''}`}
+        className={`text-[0.9375rem] tabular-nums ${tone} ${active ? 'font-semibold' : ''}`}
         role="timer"
         aria-label={label}
       >
