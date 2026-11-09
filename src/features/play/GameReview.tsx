@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { PositionEval } from '../../engine/uci';
+import type { AnalyseRequest, EngineLine, PositionEval } from '../../engine/uci';
 import { fr } from '../../i18n/fr';
 import { sideToMove } from '../../lib/chess';
 import { START_FEN } from '../../lib/position';
 import { ChessBoard } from '../../ui/ChessBoard';
 import { loadOpenings } from '../openings/content';
-import { ANALYSIS_MOVETIME_MS, reviewGameReport } from './analysis';
+import { ANALYSIS_MOVETIME_MS, LINES_MOVETIME_MS, reviewGameReport } from './analysis';
+import { EngineLines } from './EngineLines';
+import { clearlyBetter, variationPositions, type VariationPosition } from './engineLines';
 import { EvaluationGraph } from './EvaluationGraph';
 import { positionAt, type PlayState } from './game';
 import { KeyMoments } from './KeyMoments';
@@ -31,7 +33,7 @@ export function GameReview({
   game,
   onNewGame,
 }: {
-  analyse: (fen: string, movetimeMs: number) => Promise<PositionEval>;
+  analyse: (fen: string, request: AnalyseRequest) => Promise<PositionEval>;
   game: PlayState;
   onNewGame: () => void;
 }) {
@@ -40,13 +42,21 @@ export function GameReview({
   const [selectedPly, setSelectedPly] = useState(0);
   const [showBest, setShowBest] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [lines, setLines] = useState<{ ply: number; result: PositionEval } | null>(null);
+  const [linesPending, setLinesPending] = useState(false);
+  const [linesFailed, setLinesFailed] = useState(false);
+  const [variation, setVariation] = useState<{
+    positions: VariationPosition[];
+    index: number;
+  } | null>(null);
   const boardHost = useRef<HTMLDivElement>(null);
+  const linesRequest = useRef(0);
   const openings = useMemo(() => loadOpenings(), []);
 
   useEffect(() => {
     let cancelled = false;
 
-    reviewGameReport((fen) => analyse(fen, ANALYSIS_MOVETIME_MS), game, {
+    reviewGameReport((fen) => analyse(fen, { movetimeMs: ANALYSIS_MOVETIME_MS }), game, {
       openings,
       onProgress: (done, total) => {
         if (!cancelled) setState({ status: 'running', done, total });
@@ -95,17 +105,30 @@ export function GameReview({
     selected.bestUci !== null &&
     selected.bestUci !== selected.uci;
   const best = showBest && canShowBest;
+  const variationPosition = variation?.positions[variation.index] ?? null;
   const shown = useMemo(
     () =>
-      best && selected
+      variationPosition ??
+      (best && selected
         ? { fen: selected.fenBefore, lastMove: selected.lastMoveBefore }
-        : positionAt(game, shownPly),
-    [best, selected, game, shownPly],
+        : positionAt(game, shownPly)),
+    [variationPosition, best, selected, game, shownPly],
   );
   const bestHint =
-    best && selected?.bestUci
+    !variationPosition && best && selected?.bestUci
       ? { from: selected.bestUci.slice(0, 2), to: selected.bestUci.slice(2, 4) }
       : null;
+
+  const lineFen = selected?.fenBefore ?? positionAt(game, shownPly).fen;
+  const lineResult = lines?.ply === shownPly ? lines.result : null;
+  const shownLines: EngineLine[] = useMemo(() => {
+    if (lineResult === null) return [];
+    if (lineResult.lines !== undefined) return lineResult.lines;
+    return lineResult.bestMove !== null && lineResult.score !== null
+      ? [{ multipv: 1, score: lineResult.score, pv: [lineResult.bestMove] }]
+      : [];
+  }, [lineResult]);
+  const only = clearlyBetter(shownLines);
 
   const selectionLabel =
     selected === null
@@ -131,12 +154,55 @@ export function GameReview({
     setReport(null);
     setSelectedPly(0);
     setShowBest(false);
+    setLines(null);
+    setLinesPending(false);
+    setLinesFailed(false);
+    setVariation(null);
     setAttempt((value) => value + 1);
   };
 
   const show = (ply: number) => {
+    // A line search for the previous position must not land on the new one.
+    linesRequest.current += 1;
+    setLinesPending(false);
+    setLinesFailed(false);
+    setVariation(null);
     setSelectedPly(Math.min(Math.max(ply, 0), livePly));
     setShowBest(false);
+  };
+
+  const toggleBest = () => {
+    // The best arrow shows the position before the move; a variation would hide it.
+    setVariation(null);
+    setShowBest((value) => !value);
+  };
+
+  const loadLines = () => {
+    const ply = shownPly;
+    const fen = selected?.fenBefore ?? positionAt(game, shownPly).fen;
+    const request = linesRequest.current + 1;
+    linesRequest.current = request;
+    setLinesPending(true);
+    setLinesFailed(false);
+    analyse(fen, { movetimeMs: LINES_MOVETIME_MS, multipv: 2 }).then(
+      (result) => {
+        if (linesRequest.current !== request) return;
+        setLines({ ply, result });
+        setLinesPending(false);
+      },
+      () => {
+        if (linesRequest.current !== request) return;
+        setLinesFailed(true);
+        setLinesPending(false);
+      },
+    );
+  };
+
+  const preview = (line: EngineLine) => {
+    const positions = variationPositions(lineFen, line.pv);
+    if (positions === null || positions.length < 2) return;
+    setShowBest(false);
+    setVariation({ positions, index: 0 });
   };
 
   const select = (ply: number) => {
@@ -158,15 +224,19 @@ export function GameReview({
         ? fr.play.analysis.finished
         : '';
 
-  const line = shownMove
-    ? best && selected
-      ? `${fr.play.analysis.before.replace('{move}', moveLabel(shownMove))} · ${fr.play.analysis.best.replace('{move}', selected.bestSan ?? '')}`
-      : `${moveLabel(shownMove)}${selectionLabel ? ` · ${selectionLabel}` : ''}${
-          selected && !selected.book && selected.bestSan && selected.bestUci !== selected.uci
-            ? ` · ${fr.play.analysis.best.replace('{move}', selected.bestSan)}`
-            : ''
-        }`
-    : fr.play.analysis.startPosition;
+  const line = variationPosition
+    ? variationPosition.san === null
+      ? fr.play.analysis.variationStart
+      : fr.play.analysis.variationMove.replace('{move}', variationPosition.san)
+    : shownMove
+      ? best && selected
+        ? `${fr.play.analysis.before.replace('{move}', moveLabel(shownMove))} · ${fr.play.analysis.best.replace('{move}', selected.bestSan ?? '')}`
+        : `${moveLabel(shownMove)}${selectionLabel ? ` · ${selectionLabel}` : ''}${
+            selected && !selected.book && selected.bestSan && selected.bestUci !== selected.uci
+              ? ` · ${fr.play.analysis.best.replace('{move}', selected.bestSan)}`
+              : ''
+          }`
+      : fr.play.analysis.startPosition;
 
   return (
     <>
@@ -248,21 +318,83 @@ export function GameReview({
             <p className="text-sm font-medium" aria-live="polite">
               {line}
             </p>
-            {selectionLabel ? (
+            {selectionLabel && !variationPosition ? (
               <span className={`shrink-0 rounded-xs px-2.5 py-1 text-xs ${selectionTone}`}>
                 {selectionLabel}
               </span>
             ) : null}
           </div>
 
-          {canShowBest ? (
+          {variation ? (
+            <div className="bg-accent-soft mt-2 flex flex-wrap items-center gap-2 rounded-sm px-2.5 py-1.5 text-xs">
+              <p className="min-w-0 flex-1">
+                {fr.play.analysis.variation
+                  .replace('{index}', String(variation.index + 1))
+                  .replace('{count}', String(variation.positions.length))}
+              </p>
+              <button
+                type="button"
+                onClick={() => setVariation({ ...variation, index: variation.index - 1 })}
+                disabled={variation.index === 0}
+                className="border-line text-ink min-h-11 rounded-xs border px-2 text-[0.6875rem] font-semibold disabled:opacity-50"
+              >
+                {fr.play.review.previous}
+              </button>
+              <button
+                type="button"
+                onClick={() => setVariation({ ...variation, index: variation.index + 1 })}
+                disabled={variation.index === variation.positions.length - 1}
+                className="border-line text-ink min-h-11 rounded-xs border px-2 text-[0.6875rem] font-semibold disabled:opacity-50"
+              >
+                {fr.play.review.next}
+              </button>
+              <button
+                type="button"
+                onClick={() => setVariation(null)}
+                className="border-line text-ink min-h-11 rounded-xs border px-2 text-[0.6875rem] font-semibold"
+              >
+                {fr.play.analysis.closeVariation}
+              </button>
+            </div>
+          ) : null}
+
+          {canShowBest && !variationPosition ? (
             <button
               type="button"
-              onClick={() => setShowBest((value) => !value)}
+              onClick={toggleBest}
               className="border-line text-ink mt-2 min-h-11 w-full rounded-xs border px-3 text-[0.6875rem] font-semibold"
             >
               {best ? fr.play.analysis.showPlayed : fr.play.analysis.showBest}
             </button>
+          ) : null}
+
+          {state.status === 'ready' ? (
+            <div className="mt-2">
+              {lineResult !== null ? (
+                <EngineLines
+                  fen={lineFen}
+                  lines={shownLines}
+                  sideToMove={sideToMove(lineFen)}
+                  userColor={game.userColor}
+                  only={only}
+                  onPreview={preview}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={loadLines}
+                  disabled={linesPending}
+                  className="border-line text-ink min-h-11 w-full rounded-xs border px-3 text-[0.6875rem] font-semibold disabled:opacity-50"
+                >
+                  {linesPending ? fr.play.analysis.linesPending : fr.play.analysis.showLines}
+                </button>
+              )}
+              {linesFailed ? (
+                <p className="text-bad mt-1 text-xs" role="alert">
+                  {fr.play.analysis.linesFailed}
+                </p>
+              ) : null}
+            </div>
           ) : null}
         </div>
 

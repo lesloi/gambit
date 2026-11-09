@@ -28,15 +28,32 @@ export interface Score {
   mate: number | null;
 }
 
+export interface EngineLine {
+  /** 1 is the best line. */
+  multipv: number;
+  score: Score;
+  /** The principal variation in UCI, the best move first. */
+  pv: string[];
+  /** The depth of the last report for this line, when the engine named one. */
+  depth?: number;
+}
+
 export interface PositionEval {
   bestMove: string | null;
   /** The last exact score the engine reported, or null when it reported none. */
   score: Score | null;
+  /**
+   * The lines the engine reported, the best first. Only present when the request asked for more
+   * than one line: a single-line analysis keeps the older shape.
+   */
+  lines?: EngineLine[];
 }
 
 export interface AnalyseRequest {
   /** How long the engine may think, in milliseconds. */
   movetimeMs?: number;
+  /** How many lines to keep, from 1 to [MAX_MULTIPV]; 1 by default. */
+  multipv?: number;
 }
 
 export interface Engine {
@@ -76,10 +93,23 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 /** Skill Level 20 is Stockfish's full strength, the only setting an analysis accepts. */
 export const FULL_SKILL = 20;
 
-const SCORE_PATTERN = /\bscore (cp|mate) (-?\d+)(?: (lowerbound|upperbound))?\b/;
+/** More lines than this cost more search per line than the review panel can use. */
+const MAX_MULTIPV = 5;
 
-/** The exact score of an `info` line; a bounded score says nothing definite about the position. */
-function parseScore(line: string): Score | null {
+const SCORE_PATTERN = /\bscore (cp|mate) (-?\d+)(?: (lowerbound|upperbound))?\b/;
+const MULTIPV_PATTERN = /\bmultipv (\d+)\b/;
+const PV_PATTERN = /\bpv (.+)$/;
+const DEPTH_PATTERN = /\bdepth (\d+)\b/;
+
+interface ParsedInfo {
+  score: Score;
+  multipv: number;
+  pv: string[];
+  depth: number | null;
+}
+
+/** The exact score and line of an `info` line; a bounded score says nothing definite. */
+function parseInfo(line: string): ParsedInfo | null {
   if (!line.startsWith('info ')) return null;
 
   const match = SCORE_PATTERN.exec(line);
@@ -87,7 +117,17 @@ function parseScore(line: string): Score | null {
 
   const value = Number(match[2]);
   if (!Number.isFinite(value)) return null;
-  return match[1] === 'cp' ? { cp: value, mate: null } : { cp: null, mate: value };
+
+  const multipv = Number(MULTIPV_PATTERN.exec(line)?.[1] ?? 1);
+  const pv = PV_PATTERN.exec(line)?.[1]?.trim();
+  const depth = Number(DEPTH_PATTERN.exec(line)?.[1] ?? Number.NaN);
+
+  return {
+    score: match[1] === 'cp' ? { cp: value, mate: null } : { cp: null, mate: value },
+    multipv: Number.isFinite(multipv) && multipv > 0 ? multipv : 1,
+    pv: pv ? pv.split(/\s+/) : [],
+    depth: Number.isFinite(depth) ? depth : null,
+  };
 }
 
 interface PendingAnswer {
@@ -109,8 +149,12 @@ export class UciEngine implements Engine, Analyser {
   private stopped = false;
   /** The Skill Level last sent, so a game does not reset it before every move. */
   private skill: number | null = null;
+  /** The MultiPV last sent; the engine starts at one line, so the first move sends nothing. */
+  private multiPv: number | null = 1;
   /** The last exact score seen since the search started, cleared before every `go`. */
   private lastScore: Score | null = null;
+  /** The last report for each line, cleared before every `go`. */
+  private lines = new Map<number, EngineLine>();
   private queue: Promise<unknown> = Promise.resolve();
 
   constructor(transport: EngineTransport, options: UciEngineOptions = {}) {
@@ -135,6 +179,8 @@ export class UciEngine implements Engine, Analyser {
     return this.enqueue(async () => {
       await this.handshake();
       this.applySkill(request.skill);
+      // A hint after a line search must not be forced to return several lines.
+      this.applyMultiPv(1);
       return (await this.search(fen, request.movetimeMs)).bestMove;
     });
   }
@@ -143,7 +189,9 @@ export class UciEngine implements Engine, Analyser {
     return this.enqueue(async () => {
       await this.handshake();
       this.applySkill(FULL_SKILL);
-      return this.search(fen, request.movetimeMs);
+      const multiPv = Math.min(Math.max(request.multipv ?? 1, 1), MAX_MULTIPV);
+      this.applyMultiPv(multiPv);
+      return this.search(fen, request.movetimeMs, multiPv);
     });
   }
 
@@ -171,8 +219,17 @@ export class UciEngine implements Engine, Analyser {
     this.skill = skill;
   }
 
-  private async search(fen: string, movetimeMs?: number): Promise<PositionEval> {
+  private applyMultiPv(requested: number): void {
+    const multiPv = Math.min(Math.max(requested, 1), MAX_MULTIPV);
+    if (multiPv === this.multiPv) return;
+
+    this.transport.post(`setoption name MultiPV value ${multiPv}`);
+    this.multiPv = multiPv;
+  }
+
+  private async search(fen: string, movetimeMs?: number, multiPv = 1): Promise<PositionEval> {
     this.lastScore = null;
+    this.lines.clear();
     const answer = this.waitFor((line) => line.startsWith('bestmove '), this.timeoutMs);
     this.transport.post(`position fen ${fen}`);
     this.transport.post(`go movetime ${movetimeMs ?? this.movetimeMs}`);
@@ -180,9 +237,18 @@ export class UciEngine implements Engine, Analyser {
     // `bestmove` may carry a `ponder` move after the move itself; only the first token is ours.
     const line = await answer;
     const [move] = line.slice('bestmove '.length).trim().split(/\s+/);
+    // With several lines, the last `info` line is usually the worst one: the score comes from
+    // the first line, which is the move the review will show.
+    const firstLine = this.lines.get(1) ?? null;
+    const score = multiPv > 1 ? (firstLine?.score ?? null) : this.lastScore;
+    const lines = [...this.lines.values()]
+      .filter((entry) => entry.pv.length > 0)
+      .sort((left, right) => left.multipv - right.multipv);
+
     return {
       bestMove: !move || move === '(none)' ? null : move,
-      score: this.lastScore,
+      score,
+      ...(multiPv > 1 ? { lines } : {}),
     };
   }
 
@@ -242,8 +308,18 @@ export class UciEngine implements Engine, Analyser {
       const trimmed = line.trim();
       if (trimmed === '') continue;
 
-      const score = parseScore(trimmed);
-      if (score !== null) this.lastScore = score;
+      const info = parseInfo(trimmed);
+      if (info !== null) {
+        this.lastScore = info.score;
+        const previous = this.lines.get(info.multipv);
+        const line: EngineLine = {
+          multipv: info.multipv,
+          score: info.score,
+          pv: info.pv.length > 0 ? info.pv : (previous?.pv ?? []),
+          ...(info.depth === null ? {} : { depth: info.depth }),
+        };
+        this.lines.set(info.multipv, line);
+      }
       if (this.pending?.match(trimmed)) this.pending.settle(trimmed);
     }
   }

@@ -15,6 +15,13 @@ export { BLUNDER_WIN_POINTS, WINNING_WIN_PERCENT } from './review';
  */
 export const ANALYSIS_MOVETIME_MS = 500;
 
+/**
+ * The one-off search behind the line panel. It is read, not skimmed, and two lines split the
+ * search: a little longer than the pass keeps the depths close enough for the "clearly better"
+ * badge to mean something.
+ */
+export const LINES_MOVETIME_MS = 1200;
+
 export interface GamePosition {
   fen: string;
   /** The move that reached this position in SAN, or null at the start. */
