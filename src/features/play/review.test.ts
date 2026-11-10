@@ -13,8 +13,6 @@ import {
   materialTotal,
   moveAccuracy,
   phaseOf,
-  selectKeyMoments,
-  type MoveReview,
 } from './review';
 
 const CP = (cp: number): Score => ({ cp, mate: null });
@@ -35,31 +33,6 @@ function reportFor(
     startFen,
     openings: options.openings ?? [],
   });
-}
-
-function move(patch: Partial<MoveReview> = {}): MoveReview {
-  return {
-    ply: 1,
-    moveNumber: 1,
-    side: 'white',
-    san: 'e4',
-    uci: 'e2e4',
-    fenBefore: START_FEN,
-    lastMoveBefore: null,
-    bestUci: 'e2e4',
-    bestSan: 'e4',
-    scoreBefore: CP(0),
-    scoreAfter: CP(0),
-    winBefore: 50,
-    winAfter: 50,
-    drop: 0,
-    class: 'best',
-    phase: 'opening',
-    book: false,
-    forced: false,
-    deviation: false,
-    ...patch,
-  };
 }
 
 describe('classifyMove', () => {
@@ -200,39 +173,6 @@ describe('markOf', () => {
   });
 });
 
-describe('selectKeyMoments', () => {
-  it('keeps the five biggest losses, in game order', () => {
-    const moves = [
-      move({ ply: 1, drop: 25, class: 'blunder' }),
-      move({ ply: 2, drop: 24, class: 'blunder' }),
-      move({ ply: 3, drop: 23, class: 'blunder' }),
-      move({ ply: 4, drop: 22, class: 'blunder' }),
-      move({ ply: 5, drop: 21, class: 'blunder' }),
-      move({ ply: 6, drop: 20, class: 'blunder' }),
-    ];
-
-    expect(selectKeyMoments(moves, 'white').map((entry) => entry.ply)).toEqual([1, 2, 3, 4, 5]);
-  });
-
-  it('breaks a tie by the earlier move', () => {
-    const moves = [
-      move({ ply: 5, drop: 25, class: 'blunder' }),
-      move({ ply: 2, drop: 25, class: 'blunder' }),
-    ];
-
-    expect(selectKeyMoments(moves, 'white').map((entry) => entry.ply)).toEqual([2, 5]);
-  });
-
-  it('leaves the repertoire and the opponent out', () => {
-    expect(selectKeyMoments([move({ drop: 30, class: 'blunder', book: true })], 'white')).toEqual(
-      [],
-    );
-    expect(
-      selectKeyMoments([move({ side: 'black', drop: 30, class: 'blunder' })], 'white'),
-    ).toEqual([]);
-  });
-});
-
 describe('buildReport', () => {
   it('reports both sides from a game where every move is best', () => {
     const report = reportFor(['e2e4', 'e7e5'], {
@@ -256,7 +196,6 @@ describe('buildReport', () => {
     expect(report.user.counts.best).toBe(1);
     expect(report.evalCurve).toHaveLength(3);
     expect(report.evalCurve[0]?.userWin).toBeGreaterThan(50);
-    expect(report.keyMoments).toEqual([]);
   });
 
   it('grades a blunder, its accuracy and the key moment', () => {
@@ -269,7 +208,6 @@ describe('buildReport', () => {
     expect(report.moves[0]).toMatchObject({ class: 'blunder', bestSan: 'd4' });
     expect(report.user.counts.blunder).toBe(1);
     expect(report.user.accuracy).toBeLessThan(20);
-    expect(report.keyMoments.map((entry) => entry.ply)).toEqual([1]);
     expect(report.evalCurve[1]?.userWin).toBeLessThan(20);
   });
 
@@ -319,7 +257,6 @@ describe('buildReport', () => {
     expect(report.moves).toEqual([]);
     expect(report.user.accuracy).toBeNull();
     expect(report.evalCurve).toEqual([{ ply: 0, userWin: null }]);
-    expect(report.keyMoments).toEqual([]);
   });
 
   it('keeps the one-move accuracy on a short game', () => {

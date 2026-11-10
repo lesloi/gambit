@@ -10,7 +10,6 @@ import { EngineLines } from './EngineLines';
 import { clearlyBetter, variationPositions, type VariationPosition } from './engineLines';
 import { EvaluationGraph } from './EvaluationGraph';
 import { positionAt, type PlayState } from './game';
-import { KeyMoments } from './KeyMoments';
 import { MoveSheet, MoveSheetSkeleton } from './MoveSheet';
 import { moveLabel, scoreSheet } from './notation';
 import { markOf, type GameReport, type MoveMark } from './review';
@@ -25,8 +24,7 @@ const ignoreMove = () => {};
 
 /**
  * Reads the finished game back at full strength, then lets the user replay every move. The report
- * above the board tells the story; the score sheet marks the moves, and the key moments bring the
- * board to the positions that decided it.
+ * above the board tells the story and the score sheet marks the moves that decided it.
  */
 export function GameReview({
   analyse,
@@ -220,9 +218,7 @@ export function GameReview({
         : fr.play.analysis.progress
             .replace('{done}', String(state.done))
             .replace('{total}', String(state.total))
-      : state.status === 'ready'
-        ? fr.play.analysis.finished
-        : '';
+      : '';
 
   const line = variationPosition
     ? variationPosition.san === null
@@ -242,9 +238,11 @@ export function GameReview({
     <>
       <h2 className="text-lg">{fr.play.analysis.title}</h2>
 
-      <p className="text-ink-muted mt-1 text-sm" role="status">
-        {progress}
-      </p>
+      {progress ? (
+        <p className="text-ink-muted mt-1 text-sm" role="status">
+          {progress}
+        </p>
+      ) : null}
 
       {state.status === 'running' ? (
         <div
@@ -420,10 +418,6 @@ export function GameReview({
           ) : null}
         </aside>
       </div>
-
-      {report !== null && state.status === 'ready' ? (
-        <KeyMoments moments={report.keyMoments} onSelect={select} />
-      ) : null}
 
       {game.startFen !== START_FEN ? (
         <div className="mt-3">

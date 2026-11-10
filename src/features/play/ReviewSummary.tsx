@@ -98,29 +98,23 @@ export function ReviewSummary({ report }: { report: GameReport }) {
           ))}
       </div>
 
-      {report.startFen === START_FEN ? (
+      {report.startFen === START_FEN && report.opening !== null ? (
         <div className="border-line-soft mt-3 rounded-xs border p-2.5">
           <p className="text-ink-muted text-[0.625rem] font-semibold tracking-[0.08em] uppercase">
             {fr.play.analysis.openingTitle}
           </p>
-          {report.opening ? (
-            <>
-              <p className="mt-1 text-sm font-medium">{report.opening.line.name}</p>
-              <p className="text-ink-muted mt-0.5 text-xs">
-                {openingDetail(report.opening, report.userColor)}
-              </p>
-              <details className="mt-1.5">
-                <summary className="text-ink-muted cursor-pointer text-xs">
-                  {fr.play.analysis.openingNote}
-                </summary>
-                <p className="text-ink-muted mt-1 text-xs leading-relaxed">
-                  {report.opening.line.note}
-                </p>
-              </details>
-            </>
-          ) : (
-            <p className="text-ink-muted mt-1 text-xs">{fr.play.analysis.openingUnknown}</p>
-          )}
+          <p className="mt-1 text-sm font-medium">{report.opening.line.name}</p>
+          <p className="text-ink-muted mt-0.5 text-xs">
+            {openingDetail(report.opening, report.userColor)}
+          </p>
+          <details className="mt-1.5">
+            <summary className="text-ink-muted cursor-pointer text-xs">
+              {fr.play.analysis.openingNote}
+            </summary>
+            <p className="text-ink-muted mt-1 text-xs leading-relaxed">
+              {report.opening.line.note}
+            </p>
+          </details>
         </div>
       ) : null}
     </section>

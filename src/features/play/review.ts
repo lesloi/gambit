@@ -15,8 +15,6 @@ export const WINNING_WIN_PERCENT = 70;
 const EXCELLENT_WIN_POINTS = 2;
 const GOOD_WIN_POINTS = 5;
 const INACCURACY_WIN_POINTS = 10;
-const KEY_MOMENT_WIN_POINTS = 5;
-const KEY_MOMENT_LIMIT = 5;
 const ENDGAME_MATERIAL = 20;
 const OPENING_PLIES = 20;
 
@@ -87,7 +85,6 @@ export interface GameReport {
   opponent: SideReport;
   /** The user's winning chance after every position, the start included. */
   evalCurve: EvalPoint[];
-  keyMoments: MoveReview[];
   opening: OpeningReport | null;
   userColor: Side;
   startFen: string;
@@ -282,23 +279,6 @@ function sideReport(moves: readonly MoveReview[], side: Side): SideReport {
   };
 }
 
-/** The user's moves that tell the story: the biggest losses, in game order. */
-export function selectKeyMoments(moves: readonly MoveReview[], userColor: Side): MoveReview[] {
-  return moves
-    .filter(
-      (move) =>
-        move.side === userColor &&
-        !move.book &&
-        !move.forced &&
-        move.class !== 'unknown' &&
-        move.drop !== null &&
-        move.drop >= KEY_MOMENT_WIN_POINTS,
-    )
-    .sort((left, right) => right.drop! - left.drop! || left.ply - right.ply)
-    .slice(0, KEY_MOMENT_LIMIT)
-    .sort((left, right) => left.ply - right.ply);
-}
-
 const PIECE_VALUE: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
 
 /** The material on the board, both sides, in pawns; kings count zero. */
@@ -423,7 +403,6 @@ export function buildReport(input: BuildReportInput): GameReport {
     user: sideReport(reviews, userColor),
     opponent: sideReport(reviews, userColor === 'white' ? 'black' : 'white'),
     evalCurve,
-    keyMoments: selectKeyMoments(reviews, userColor),
     opening,
     userColor,
     startFen,

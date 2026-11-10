@@ -216,7 +216,6 @@ export const fr = {
       unavailable: 'Le moteur n’est pas disponible : la partie ne peut pas être analysée.',
       failed: 'L’analyse n’a pas abouti.',
       retry: 'Réessayer',
-      finished: 'Analyse terminée.',
       startPosition: 'Position de départ',
       before: 'Avant {move}',
       best: 'Meilleur : {move}',
@@ -250,14 +249,10 @@ export const fr = {
       openingDeviation: 'Tu quittes la ligne au coup {ply} : {played} au lieu de {expected}.',
       openingOpponentDeviation:
         'L’adversaire quitte la ligne au coup {ply} : {played} (la ligne prévoit {expected}).',
-      openingUnknown: 'Pas de ligne du répertoire pour cette ouverture.',
       openingNote: 'Note du répertoire',
       evaluation: 'Évaluation',
       evaluationCaption:
         'En haut, ton avantage. Clique une position, ou choisis un moment clé ou la feuille de coups plus bas.',
-      keyMoments: 'Moments clés',
-      keyMomentsIntro: 'Les coups qui ont le plus changé la partie.',
-      noMoments: 'Aucun moment décisif.',
       engineLines: 'Lignes du moteur',
       showLines: 'Afficher les lignes du moteur',
       linesPending: 'Recherche des lignes…',
