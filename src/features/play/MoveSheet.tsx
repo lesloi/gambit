@@ -2,18 +2,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useRef, type RefObject } from 'react';
 import { fr } from '../../i18n/fr';
 import { moveLabel, type MovePair, type SheetMove } from './notation';
-
-export type MoveMark = 'blunder' | 'missed-win';
-
-const MARK_LABEL: Record<MoveMark, string> = {
-  blunder: fr.play.analysis.blunder,
-  'missed-win': fr.play.analysis.missedWin,
-};
-
-const MARK_DOT: Record<MoveMark, string> = {
-  blunder: 'bg-bad',
-  'missed-win': 'bg-accent',
-};
+import type { MoveMark } from './review';
+import { MARK_GLYPH, MARK_LABEL, MARK_TONE } from './reviewLabels';
 
 const NO_MARKS: ReadonlyMap<number, MoveMark> = new Map();
 
@@ -212,7 +202,12 @@ function SheetMoveButton({
       }`}
     >
       {mark ? (
-        <span aria-hidden="true" className={`size-1.5 shrink-0 rounded-full ${MARK_DOT[mark]}`} />
+        <span
+          aria-hidden="true"
+          className={`w-3 shrink-0 text-center text-[0.625rem] font-semibold ${MARK_TONE[mark]}`}
+        >
+          {MARK_GLYPH[mark]}
+        </span>
       ) : null}
       {move.san}
     </button>

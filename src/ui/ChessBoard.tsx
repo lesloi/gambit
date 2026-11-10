@@ -1,5 +1,6 @@
 import { Chessground } from '@lichess-org/chessground';
 import type { Api } from '@lichess-org/chessground/api';
+import type { DrawBrushes } from '@lichess-org/chessground/draw';
 import type { Key, Piece } from '@lichess-org/chessground/types';
 import { useEffect, useRef } from 'react';
 import { normalizePremove, type Premove } from '../lib/chess';
@@ -20,6 +21,8 @@ export interface ChessBoardProps {
   onMove: (from: string, to: string) => void;
   /** A suggested move drawn as an arrow, or null to clear it. */
   hint?: { from: string; to: string } | null;
+  /** The review uses a thinner, more visible arrow; the game and the endgame keep the default. */
+  hintBrush?: 'paleBlue' | 'hint';
   /** The square a puzzle's hint points at, ringed, or null to clear it. */
   mark?: string | null;
   /** Bumped to apply `fen` again after the board moved a piece without a state change. */
@@ -36,10 +39,33 @@ function asMove(lastMove: [string, string] | null): Key[] | undefined {
   return lastMove as Key[] | undefined;
 }
 
+/**
+ * The review's arrow: chessground's dark blue, opaque, and thinner than its pale blue. The app's
+ * accent is too light for the dark square, where this keeps the 3:1 non-text contrast of WCAG
+ * 1.4.11 (about 3.9:1 there, 8.6:1 on the light square).
+ */
+const HINT_BRUSH = {
+  key: 'hint',
+  color: '#003088',
+  opacity: 1,
+  lineWidth: 10,
+};
+
+/** The four brushes chessground's type requires, plus the default and the review's arrow. */
+const HINT_BRUSHES: DrawBrushes = {
+  green: { key: 'g', color: '#15781B', opacity: 1, lineWidth: 10 },
+  red: { key: 'r', color: '#882020', opacity: 1, lineWidth: 10 },
+  blue: { key: 'b', color: '#003088', opacity: 1, lineWidth: 10 },
+  yellow: { key: 'y', color: '#e68f00', opacity: 1, lineWidth: 10 },
+  paleBlue: { key: 'pb', color: '#003088', opacity: 0.4, lineWidth: 15 },
+  hint: HINT_BRUSH,
+};
+
 function asShapes(
   hint: { from: string; to: string } | null,
+  brush: 'paleBlue' | 'hint',
 ): { orig: Key; dest: Key; brush: string }[] {
-  return hint ? [{ orig: hint.from as Key, dest: hint.to as Key, brush: 'paleBlue' }] : [];
+  return hint ? [{ orig: hint.from as Key, dest: hint.to as Key, brush }] : [];
 }
 
 /** Chessground paints a custom highlight as a class on the square it names. */
@@ -88,6 +114,7 @@ export function ChessBoard({
   dests,
   onMove,
   hint = null,
+  hintBrush = 'paleBlue',
   mark = null,
   resetKey = 0,
 }: ChessBoardProps) {
@@ -113,7 +140,7 @@ export function ChessBoard({
       animation: { enabled: true, duration: 180 },
       highlight: { lastMove: true, check: true, custom: asHighlight(mark) },
       lastMove: asMove(lastMove),
-      drawable: { autoShapes: asShapes(hint) },
+      drawable: { autoShapes: asShapes(hint, hintBrush), brushes: HINT_BRUSHES },
       movable: {
         free: false,
         color: movable ? turn : premovable ? other(turn) : undefined,
@@ -168,7 +195,7 @@ export function ChessBoard({
       orientation,
       turnColor: turn,
       lastMove: asMove(lastMove),
-      drawable: { autoShapes: asShapes(hint) },
+      drawable: { autoShapes: asShapes(hint, hintBrush), brushes: HINT_BRUSHES },
       highlight: { custom: asHighlight(mark) },
       movable: {
         color: movable ? turn : premovable ? other(turn) : undefined,
@@ -192,6 +219,7 @@ export function ChessBoard({
     premoves,
     dests,
     hint,
+    hintBrush,
     mark,
     resetKey,
   ]);

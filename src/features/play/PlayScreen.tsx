@@ -4,7 +4,7 @@ import { database } from '../../db/db';
 import { HINT_MOVETIME_MS, HINT_SKILL } from '../../engine/hint';
 import { createMaiaEngine } from '../../engine/maiaEngine';
 import { createStockfishEngine, type StockfishEngine } from '../../engine/stockfish';
-import type { Engine, PositionEval } from '../../engine/uci';
+import type { AnalyseRequest, Engine, PositionEval } from '../../engine/uci';
 import { fr } from '../../i18n/fr';
 import { legalDests, promotionPieces, sideToMove, type PromotionPiece } from '../../lib/chess';
 import type { GameReason, GameResult, Side } from '../../lib/position';
@@ -809,12 +809,15 @@ function PlayGame({
 
   // The review asks for a position rather than the engine itself: the ref is read when the search
   // starts, never during a render, and the game screen keeps owning the worker.
-  const analysePosition = useCallback((fen: string, movetimeMs: number): Promise<PositionEval> => {
-    const instance = engine.current;
-    return instance
-      ? instance.analyse(fen, { movetimeMs })
-      : Promise.reject(new Error('The engine is not ready'));
-  }, []);
+  const analysePosition = useCallback(
+    (fen: string, request: AnalyseRequest): Promise<PositionEval> => {
+      const instance = engine.current;
+      return instance
+        ? instance.analyse(fen, request)
+        : Promise.reject(new Error('The engine is not ready'));
+    },
+    [],
+  );
 
   const clockRunning =
     state.clocked && state.outcome === 'playing' && clock.running !== null && clock.since !== null;

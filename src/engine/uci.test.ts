@@ -278,4 +278,136 @@ describe('UCI analysis', () => {
       'setoption name Skill Level value 20',
     ]);
   });
+
+  it('reads each multi-line report and takes the score from the first line', async () => {
+    const transport = new FakeTransport((command) =>
+      command.startsWith('go ')
+        ? [
+            'info depth 12 multipv 1 score cp 40 pv e2e4 e7e5',
+            'info depth 12 multipv 2 score cp 10 pv d2d4 d7d5',
+            'info depth 13 multipv 1 score cp 55 pv e2e4 e7e5 g1f3',
+            'info depth 13 multipv 2 score cp 15 pv d2d4 d7d5 c2c4',
+            'bestmove e2e4',
+          ]
+        : stockfish(command),
+    );
+    const engine = new UciEngine(transport);
+
+    const result = await engine.analyse(START, { multipv: 2 });
+
+    expect(transport.commands).toContain('setoption name MultiPV value 2');
+    expect(result).toEqual({
+      bestMove: 'e2e4',
+      score: { cp: 55, mate: null },
+      lines: [
+        {
+          multipv: 1,
+          score: { cp: 55, mate: null },
+          pv: ['e2e4', 'e7e5', 'g1f3'],
+          depth: 13,
+        },
+        {
+          multipv: 2,
+          score: { cp: 15, mate: null },
+          pv: ['d2d4', 'd7d5', 'c2c4'],
+          depth: 13,
+        },
+      ],
+    });
+  });
+
+  it('drops a line that has no principal variation', async () => {
+    const transport = new FakeTransport((command) =>
+      command.startsWith('go ')
+        ? [
+            'info depth 12 multipv 1 score cp 40 pv e2e4',
+            'info depth 12 multipv 2 score cp 10',
+            'bestmove e2e4',
+          ]
+        : stockfish(command),
+    );
+    const engine = new UciEngine(transport);
+
+    const result = await engine.analyse(START, { multipv: 2 });
+
+    expect(result.lines).toEqual([
+      { multipv: 1, score: { cp: 40, mate: null }, pv: ['e2e4'], depth: 12 },
+    ]);
+  });
+
+  it('keeps a mated position to a null move and no line', async () => {
+    const transport = new FakeTransport((command) =>
+      command.startsWith('go ')
+        ? ['info depth 0 score mate 0', 'bestmove (none)']
+        : stockfish(command),
+    );
+    const engine = new UciEngine(transport);
+
+    await expect(engine.analyse(START, { multipv: 2 })).resolves.toEqual({
+      bestMove: null,
+      score: { cp: null, mate: 0 },
+      lines: [],
+    });
+  });
+
+  it('keeps the last exact line when a later report is bounded', async () => {
+    const transport = new FakeTransport((command) =>
+      command.startsWith('go ')
+        ? [
+            'info depth 12 multipv 1 score cp 40 pv e2e4',
+            'info depth 12 multipv 2 score cp 10 pv d2d4',
+            'info depth 13 multipv 1 score cp 200 lowerbound pv e2e4',
+            'bestmove e2e4',
+          ]
+        : stockfish(command),
+    );
+    const engine = new UciEngine(transport);
+
+    const result = await engine.analyse(START, { multipv: 2 });
+
+    expect(result.score).toEqual({ cp: 40, mate: null });
+    expect(result.lines?.[0]).toMatchObject({
+      score: { cp: 40, mate: null },
+      pv: ['e2e4'],
+    });
+  });
+
+  it('drops a report that names a line without a score', async () => {
+    const transport = new FakeTransport((command) =>
+      command.startsWith('go ')
+        ? ['info depth 12 multipv 1 pv e2e4', 'bestmove e2e4']
+        : stockfish(command),
+    );
+    const engine = new UciEngine(transport);
+
+    const result = await engine.analyse(START, { multipv: 2 });
+
+    expect(result).toEqual({ bestMove: 'e2e4', score: null, lines: [] });
+  });
+
+  it('cuts the line count to the option range', async () => {
+    const transport = new FakeTransport();
+    const engine = new UciEngine(transport);
+
+    await engine.analyse(START, { multipv: 7 });
+
+    expect(transport.commands).toContain('setoption name MultiPV value 5');
+  });
+
+  it('resets MultiPV once after a multi-line analysis', async () => {
+    const transport = new FakeTransport((command) =>
+      command.startsWith('go ')
+        ? ['info depth 12 multipv 1 score cp 40 pv e2e4', 'bestmove e2e4']
+        : stockfish(command),
+    );
+    const engine = new UciEngine(transport);
+
+    await engine.analyse(START, { multipv: 2 });
+    await engine.bestMove(START);
+    await engine.bestMove(START);
+
+    expect(
+      transport.commands.filter((command) => command === 'setoption name MultiPV value 1'),
+    ).toHaveLength(1);
+  });
 });
