@@ -18,7 +18,9 @@ import { CLASS_LABEL, CLASS_TONE } from './reviewLabels';
 import { ReviewSummary } from './ReviewSummary';
 
 type ReviewState =
-  { status: 'running'; done: number; total: number } | { status: 'ready' } | { status: 'failed' };
+  | { status: 'running'; done: number; total: number }
+  | { status: 'ready' }
+  | { status: 'failed'; message: string };
 
 const NO_DESTS = new Map<string, string[]>();
 const ignoreMove = () => {};
@@ -71,8 +73,13 @@ export function GameReview({
         setReport(result);
         setState({ status: 'ready' });
       },
-      () => {
-        if (!cancelled) setState({ status: 'failed' });
+      (error: unknown) => {
+        if (!cancelled) {
+          setState({
+            status: 'failed',
+            message: error instanceof Error ? error.message : String(error),
+          });
+        }
       },
     );
 
@@ -277,6 +284,9 @@ export function GameReview({
           className="border-line bg-paper-raised mt-4 rounded-sm border p-4 text-center"
         >
           <p className="text-sm">{fr.play.analysis.failed}</p>
+          {state.message ? (
+            <p className="text-ink-muted mt-1 text-xs break-words">{state.message}</p>
+          ) : null}
           <button
             type="button"
             onClick={retry}
