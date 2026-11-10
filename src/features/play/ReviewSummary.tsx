@@ -54,7 +54,13 @@ function AccuracyCard({
  * The shape of the game before the board: how accurately each side played, how the phases went,
  * and whether the game stayed in the repertoire.
  */
-export function ReviewSummary({ report }: { report: GameReport }) {
+export function ReviewSummary({
+  report,
+  performance,
+}: {
+  report: GameReport;
+  performance: number | null;
+}) {
   return (
     <section className="border-line bg-paper-raised mt-3 rounded-sm border p-3">
       <h2 className="text-sm font-semibold">{fr.play.analysis.reviewTitle}</h2>
@@ -63,6 +69,12 @@ export function ReviewSummary({ report }: { report: GameReport }) {
         <AccuracyCard label={fr.play.analysis.you} accuracy={report.user.accuracy} highlight />
         <AccuracyCard label={fr.play.analysis.opponent} accuracy={report.opponent.accuracy} />
       </div>
+
+      {performance !== null ? (
+        <p className="text-ink-muted mt-2 text-xs">
+          {fr.play.analysis.performance.replace('{elo}', String(performance))}
+        </p>
+      ) : null}
 
       <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
         {CLASS_ORDER.map((kind) => (

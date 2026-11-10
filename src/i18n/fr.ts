@@ -225,6 +225,7 @@ export const fr = {
       you: 'Toi',
       opponent: 'Adversaire',
       accuracy: 'Précision',
+      performance: 'Performance estimée : ≈ {elo} Elo',
       counts: {
         best: 'Meilleur',
         excellent: 'Très bon',

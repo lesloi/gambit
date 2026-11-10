@@ -12,6 +12,7 @@ import { EvaluationGraph } from './EvaluationGraph';
 import { positionAt, type PlayState } from './game';
 import { MoveSheet, MoveSheetSkeleton } from './MoveSheet';
 import { moveLabel, scoreSheet } from './notation';
+import { performanceRating } from './performance';
 import { markOf, type GameReport, type MoveMark } from './review';
 import { CLASS_LABEL, CLASS_TONE } from './reviewLabels';
 import { ReviewSummary } from './ReviewSummary';
@@ -29,10 +30,13 @@ const ignoreMove = () => {};
 export function GameReview({
   analyse,
   game,
+  opponentElo,
   onNewGame,
 }: {
   analyse: (fen: string, request: AnalyseRequest) => Promise<PositionEval>;
   game: PlayState;
+  /** The level the engine played at, for the one-game performance estimate. */
+  opponentElo: number;
   onNewGame: () => void;
 }) {
   const [state, setState] = useState<ReviewState>({ status: 'running', done: 0, total: 0 });
@@ -50,6 +54,7 @@ export function GameReview({
   const boardHost = useRef<HTMLDivElement>(null);
   const linesRequest = useRef(0);
   const openings = useMemo(() => loadOpenings(), []);
+  const performance = performanceRating(game.result, game.userColor, opponentElo);
 
   useEffect(() => {
     let cancelled = false;
@@ -282,7 +287,9 @@ export function GameReview({
         </div>
       ) : null}
 
-      {report !== null && state.status === 'ready' ? <ReviewSummary report={report} /> : null}
+      {report !== null && state.status === 'ready' ? (
+        <ReviewSummary report={report} performance={performance} />
+      ) : null}
 
       {report !== null && state.status === 'ready' ? (
         <EvaluationGraph
