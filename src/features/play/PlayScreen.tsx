@@ -882,14 +882,7 @@ function PlayGame({
   };
 
   if (reviewing) {
-    return (
-      <GameReview
-        analyse={analysePosition}
-        game={state}
-        opponentElo={level.elo}
-        onNewGame={restart}
-      />
-    );
+    return <GameReview analyse={analysePosition} game={state} onNewGame={restart} />;
   }
 
   const status =
