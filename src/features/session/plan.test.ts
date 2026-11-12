@@ -1,8 +1,6 @@
 import { Rating } from 'ts-fsrs';
 import { describe, expect, it } from 'vitest';
 import { cardId } from '../../db/cards';
-import type { Endgame } from '../endgames/endgame';
-import type { OpeningLine } from '../openings/opening';
 import type { Puzzle } from '../puzzles/puzzle';
 import { cellId, sessionCatalog } from './catalog';
 import { planSession, type SessionPlanOptions } from './plan';
@@ -23,35 +21,16 @@ function puzzle(id: string, themes: string[], rating: number): Puzzle {
   };
 }
 
-function endgame(id: string, name: string): Endgame {
-  return {
-    id,
-    name,
-    fen: '8/8/8/4k3/8/8/5K2/6Q1 w - - 0 1',
-    result: 'win',
-    goal: 'Mater.',
-    hint: 'Rapproche le roi avant de mater.',
-  };
-}
-
-function opening(id: string, name: string): OpeningLine {
-  return { id, name, note: 'Une note.', color: 'white', moves: ['d2d4', 'd7d5'] };
-}
-
-const catalog = sessionCatalog(
-  [
-    puzzle('a', ['fork'], 900),
-    puzzle('b', ['fork'], 950),
-    puzzle('c', ['pin'], 1250),
-    puzzle('d', ['mate'], 1700),
-    puzzle('e', ['skewer'], 1050),
-    puzzle('f', ['discovery'], 1300),
-    puzzle('g', ['skewer'], 1100),
-    puzzle('h', ['sacrifice'], 2100),
-  ],
-  [endgame('kqk', 'Dame contre roi'), endgame('kpk', 'Pion contre roi')],
-  [opening('london', 'London'), opening('french', 'Française')],
-);
+const catalog = sessionCatalog([
+  puzzle('a', ['fork'], 900),
+  puzzle('b', ['fork'], 950),
+  puzzle('c', ['pin'], 1250),
+  puzzle('d', ['mate'], 1700),
+  puzzle('e', ['skewer'], 1050),
+  puzzle('f', ['discovery'], 1300),
+  puzzle('g', ['skewer'], 1100),
+  puzzle('h', ['sacrifice'], 2100),
+]);
 
 const reviews: JournalReview[] = [
   { id: 1, cardId: cardId('puzzle', 'a'), rating: Rating.Good, reviewedAt: START - DAY },
@@ -77,11 +56,13 @@ const puzzleIds = (result: ReturnType<typeof plan>): string[] =>
   result.cards.filter((card) => card.kind === 'puzzle').map((card) => card.puzzle.id);
 
 describe('planSession', () => {
-  it('puts the due cards of every mode first, one mode at a time', () => {
+  it('serves puzzle cards only, even when an endgame or an opening is due', () => {
     const result = plan();
 
-    expect(result.dueCount).toBe(3);
-    expect(kinds(result).slice(0, 3)).toEqual(['puzzle', 'endgame', 'opening']);
+    expect(result.dueCount).toBe(1);
+    expect(kinds(result).every((kind) => kind === 'puzzle')).toBe(true);
+    expect(kinds(result)).not.toContain('endgame');
+    expect(kinds(result)).not.toContain('opening');
   });
 
   it('serves an unseen puzzle of a due motif cell', () => {
@@ -95,18 +76,13 @@ describe('planSession', () => {
   it('fills the rest with at most N new cards', () => {
     const result = plan({ newCount: 2 });
 
-    expect(result.dueCount).toBe(3);
+    expect(result.dueCount).toBe(1);
     expect(result.newCount).toBe(2);
-    expect(kinds(result).slice(3)).toEqual(['puzzle', 'endgame']);
+    expect(result.cards).toHaveLength(3);
+    expect(kinds(result).every((kind) => kind === 'puzzle')).toBe(true);
   });
 
-  it('interleaves the new cards across the modes', () => {
-    const result = plan();
-
-    expect(kinds(result).slice(result.dueCount)).toEqual(['puzzle', 'endgame', 'opening']);
-  });
-
-  it('interleaves the due cards of every mode, each mode by urgency', () => {
+  it('puts the due puzzle cells first, each cell by urgency', () => {
     const more: JournalReview[] = [
       ...reviews,
       {
@@ -123,7 +99,7 @@ describe('planSession', () => {
       return card.kind;
     });
 
-    expect(due).toEqual(['puzzle:b', 'endgame', 'opening', 'puzzle:g']);
+    expect(due).toEqual(['puzzle:b', 'puzzle:g']);
   });
 
   it('never serves the same position twice', () => {
@@ -145,8 +121,7 @@ describe('planSession', () => {
 
     const result = plan({ reviews: exhausted, lastEntryId: 4 });
 
-    expect(result.dueCount).toBe(2);
-    expect(kinds(result).slice(0, 2)).toEqual(['endgame', 'opening']);
+    expect(result.dueCount).toBe(0);
     expect(puzzleIds(result)).not.toContain('a');
     expect(puzzleIds(result)).not.toContain('b');
   });
@@ -221,35 +196,29 @@ describe('planSession', () => {
     expect(fresh).toEqual([]);
   });
 
-  it('drops a due card whose content the catalog does not hold', () => {
+  it('drops a puzzle review whose content the catalog does not hold', () => {
     const gone: JournalReview[] = [
       ...reviews,
-      { id: 4, cardId: cardId('endgame', 'gone'), rating: Rating.Good, reviewedAt: START - DAY },
+      { id: 4, cardId: cardId('puzzle', 'gone'), rating: Rating.Good, reviewedAt: START - DAY },
     ];
 
     const result = plan({ reviews: gone, lastEntryId: 4 });
 
-    expect(result.dueCount).toBe(3);
-    expect(kinds(result).slice(0, 3)).toEqual(['puzzle', 'endgame', 'opening']);
+    expect(result.dueCount).toBe(1);
+    expect(puzzleIds(result)).not.toContain('gone');
   });
 
-  it('counts only the new cards it could resolve', () => {
-    const small = sessionCatalog(
-      [puzzle('a', ['fork'], 900)],
-      [endgame('kqk', 'Dame contre roi')],
-      [],
-    );
+  it('counts no due card when the only cell has no unseen puzzle left', () => {
+    const small = sessionCatalog([puzzle('a', ['fork'], 900)]);
 
     const result = plan({ catalog: small, newCount: 5 });
-    const fresh = result.newCount;
-    const due = result.dueCount;
 
-    expect(due).toBe(1);
-    expect(fresh).toBe(0);
+    expect(result.dueCount).toBe(0);
+    expect(result.newCount).toBe(0);
   });
 
   it('has nothing on an empty catalog', () => {
-    const empty = sessionCatalog([], [], []);
+    const empty = sessionCatalog([]);
 
     expect(plan({ catalog: empty, reviews: [], lastEntryId: 0 })).toEqual({
       cards: [],

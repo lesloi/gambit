@@ -49,13 +49,13 @@ no network.
 - The hero is a decorative board, about 300 px and centred, never wider than the column. The
   session card overlaps its lower edge, inset by 12 px; it carries the state, the counts, the
   screen's primary action (start, resume, or start a new one) and the session settings.
-- The trainers are numbered rows (01–03): the number, the name, the goal, a due badge when the
-  session preview knows it, then a chevron. A mode whose flow does not work yet is disabled and
-  shows the "Bientôt" badge in the chevron's place. Playing is a row of its own under them, with
-  the level and the time control; it opens the play screen, where a stored game resumes. The
-  mistakes row follows, and opens the puzzles marked for review.
+- The trainers are numbered rows (01–03): the number, the name, the goal, a due badge on the
+  puzzles row when the session preview knows it, then a chevron. A mode whose flow does not work
+  yet is disabled and shows the "Bientôt" badge in the chevron's place. Playing is a row of its own
+  under them, with the level and the time control; it opens the play screen, where a stored game
+  resumes. The mistakes row follows, and opens the puzzles marked for review.
 - The session screen holds the progress (`done / total`, a bar and the remaining counts), then the
-  current card in the player of its mode. The next button says "Terminer" on the last one.
+  current puzzle card in the puzzle player. The next button says "Terminer" on the last one.
 - The appearance row is the last thing before the footer: a three-way choice, always visible, no
   hidden state. A preference set once does not deserve a menu.
 - The session card's button is the home screen's only filled action; the play and mistakes rows are
