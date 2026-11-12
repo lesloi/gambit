@@ -47,7 +47,7 @@ export const fr = {
     doneBody: 'Les fiches reviendront au moment prévu.',
     doneCards: 'Fiches travaillées : {count}.',
     emptyTitle: 'Rien à réviser',
-    emptyBody: 'La session se remplira dès qu’une fiche sera due.',
+    emptyBody: 'La session se remplira dès qu’une fiche de tactique sera due.',
     dueNone: 'Aucune fiche à revoir',
     dueOne: '1 fiche à revoir',
     dueMany: '{count} fiches à revoir',

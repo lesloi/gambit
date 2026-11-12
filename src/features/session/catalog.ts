@@ -1,7 +1,3 @@
-import { loadEndgames } from '../endgames/content';
-import type { Endgame } from '../endgames/endgame';
-import { loadOpenings } from '../openings/content';
-import type { OpeningLine } from '../openings/opening';
 import { loadPuzzleArchive, ratingBand, type PuzzleBand } from '../puzzles/content';
 import type { Puzzle } from '../puzzles/puzzle';
 
@@ -16,11 +12,6 @@ export interface PuzzleCell {
 
 export interface SessionCatalog {
   puzzles: readonly Puzzle[];
-  endgames: readonly Endgame[];
-  openings: readonly OpeningLine[];
-  puzzleById: ReadonlyMap<string, Puzzle>;
-  endgameById: ReadonlyMap<string, Endgame>;
-  openingById: ReadonlyMap<string, OpeningLine>;
   cells: ReadonlyMap<string, PuzzleCell>;
   cellByPuzzle: ReadonlyMap<string, string>;
 }
@@ -46,11 +37,7 @@ export function primaryTheme(
 }
 
 /** Puts each puzzle in exactly one motif cell, so a review cannot be evidence for another cell. */
-export function sessionCatalog(
-  puzzles: readonly Puzzle[],
-  endgames: readonly Endgame[],
-  openings: readonly OpeningLine[],
-): SessionCatalog {
+export function sessionCatalog(puzzles: readonly Puzzle[]): SessionCatalog {
   const counts = new Map<string, number>();
   for (const puzzle of puzzles) {
     for (const theme of puzzle.themes) {
@@ -71,16 +58,7 @@ export function sessionCatalog(
     cellByPuzzle.set(puzzle.id, id);
   }
 
-  return {
-    puzzles,
-    endgames,
-    openings,
-    puzzleById: new Map(puzzles.map((puzzle) => [puzzle.id, puzzle])),
-    endgameById: new Map(endgames.map((endgame) => [endgame.id, endgame])),
-    openingById: new Map(openings.map((line) => [line.id, line])),
-    cells,
-    cellByPuzzle,
-  };
+  return { puzzles, cells, cellByPuzzle };
 }
 
 /** Loaded once per visit and shared by the home preview and the session; a failure is retryable. */
@@ -88,7 +66,7 @@ let catalog: Promise<SessionCatalog> | null = null;
 
 export function loadSessionCatalog(): Promise<SessionCatalog> {
   catalog ??= loadPuzzleArchive()
-    .then((puzzles) => sessionCatalog(puzzles, loadEndgames(), loadOpenings()))
+    .then((puzzles) => sessionCatalog(puzzles))
     .catch((error: unknown) => {
       catalog = null;
       throw error;

@@ -4,8 +4,6 @@ import { database } from '../../db/db';
 import { journalMark } from '../../db/journal';
 import { fr } from '../../i18n/fr';
 import type { Side } from '../../lib/position';
-import { EndgamePlayer } from '../endgames/EndgameScreen';
-import { OpeningPlayer } from '../openings/OpeningScreen';
 import type { PuzzleBand } from '../puzzles/content';
 import { PuzzlePlayer } from '../puzzles/PuzzlePlayer';
 import { loadSessionCatalog } from './catalog';
@@ -246,32 +244,13 @@ export function SessionScreen({
             </div>
           ) : null}
 
-          {state.status === 'ready' && !completed && card?.kind === 'puzzle' ? (
+          {state.status === 'ready' && !completed && card !== undefined ? (
             <PuzzlePlayer
               key={card.key}
               puzzle={card.puzzle}
               onNext={advance}
               nextLabel={nextLabel}
               onPlayPosition={playPosition}
-            />
-          ) : null}
-
-          {state.status === 'ready' && !completed && card?.kind === 'endgame' ? (
-            <EndgamePlayer
-              key={card.key}
-              endgame={card.endgame}
-              onOther={advance}
-              nextLabel={nextLabel}
-            />
-          ) : null}
-
-          {state.status === 'ready' && !completed && card?.kind === 'opening' ? (
-            <OpeningPlayer
-              key={card.key}
-              line={card.line}
-              onReviewed={() => undefined}
-              onOther={advance}
-              nextLabel={nextLabel}
             />
           ) : null}
         </div>

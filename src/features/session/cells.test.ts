@@ -2,8 +2,6 @@ import { Rating, type Grade } from 'ts-fsrs';
 import { describe, expect, it } from 'vitest';
 import { cardId } from '../../db/cards';
 import { replayCard } from '../../db/fsrs';
-import type { Endgame } from '../endgames/endgame';
-import type { OpeningLine } from '../openings/opening';
 import type { Puzzle } from '../puzzles/puzzle';
 import { cellId, sessionCatalog } from './catalog';
 import { pinnedJournal, type JournalReview } from './cells';
@@ -23,25 +21,8 @@ function puzzle(id: string, themes: string[], rating: number): Puzzle {
   };
 }
 
-const endgame: Endgame = {
-  id: 'kqk',
-  name: 'Dame contre roi',
-  fen: '8/8/8/4k3/8/8/5K2/6Q1 w - - 0 1',
-  result: 'win',
-  goal: 'Mater.',
-  hint: 'Rapproche le roi avant de mater.',
-};
-
-const opening: OpeningLine = {
-  id: 'london',
-  name: 'London',
-  note: 'Une note.',
-  color: 'white',
-  moves: ['d2d4', 'd7d5'],
-};
-
 const puzzles = [puzzle('a', ['fork'], 900), puzzle('b', ['fork'], 950), puzzle('c', ['pin'], 900)];
-const catalog = sessionCatalog(puzzles, [endgame], [opening]);
+const catalog = sessionCatalog(puzzles);
 
 function review(id: number, card: string, rating: Grade, reviewedAt: number): JournalReview {
   return { id, cardId: card, rating, reviewedAt };
@@ -66,7 +47,7 @@ describe('pinnedJournal', () => {
     });
   });
 
-  it('puts the endgame and opening reviews in their own cards', () => {
+  it('ignores endgame and opening reviews', () => {
     const reviews = [
       review(1, cardId('endgame', 'kqk'), Rating.Good, START),
       review(2, cardId('opening', 'london'), Rating.Again, START),
@@ -74,9 +55,8 @@ describe('pinnedJournal', () => {
 
     const journal = pinnedJournal(reviews, catalog, 2);
 
-    expect(journal.cards.get(cardId('endgame', 'kqk'))?.cardId).toBe('endgame:kqk');
-    expect(journal.cards.get(cardId('opening', 'london'))?.cardId).toBe('opening:london');
     expect(journal.cells.size).toBe(0);
+    expect(journal.seenPuzzles.size).toBe(0);
   });
 
   it('ignores the reviews written after the pin', () => {

@@ -23,14 +23,11 @@ import {
   type SessionSettings,
 } from '../session/settings';
 import { MODES, type ModeId } from './modes';
-import { dueCountsByMode } from './sessionPreview';
 
 interface Preview {
   due: number;
   newCards: number;
   total: number;
-  /** The due cards of the plan, per mode, for the trainer rows. */
-  dueByMode: Record<ModeId, number>;
 }
 
 const EYEBROW = 'text-ink-muted text-[0.6875rem] font-semibold tracking-[0.12em] uppercase';
@@ -134,7 +131,6 @@ export function HomePage({
           due: plan.dueCount,
           newCards: plan.newCount,
           total: plan.cards.length,
-          dueByMode: dueCountsByMode(plan.cards, plan.dueCount),
         });
       },
       () => {
@@ -315,7 +311,8 @@ export function HomePage({
 
             <ol className="mt-1 list-none">
               {trainModes.map(({ id, available }, index) => {
-                const due = preview === null ? 0 : preview.dueByMode[id];
+                // The due badge belongs to the session, which holds puzzles only.
+                const due = preview === null || id !== 'puzzles' ? 0 : preview.due;
                 return (
                   <li key={id} data-testid={`mode-${id}`}>
                     <button

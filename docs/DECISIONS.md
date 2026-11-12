@@ -32,9 +32,9 @@ propose another with your arguments, then rewrite the entry. Git keeps the histo
   plies are genuinely forced, precomputed by the content pipeline; the Lichess database has no such
   flag, and rejecting a winning alternative would teach the wrong lesson.
 - **A session starts with what is due, then a few new cards.** Without that rule the first weeks
-  are random: FSRS has nothing to schedule yet. The session takes the due cards, then N new ones
-  (five by default, adjustable), so the habit has something to do from the first day. It
-  interleaves the modes, so a sitting is not a pile of puzzles.
+  are random: FSRS has nothing to schedule yet. The session takes the due puzzle cards, then N new
+  ones (five by default, adjustable), so the habit has something to do from the first day. Endgames
+  and opening lines are trained from their own screen and never enter the session.
 - **A puzzle card is a motif at a rating band, not a position.** A due cell serves an unseen
   position of that motif and band, never the same board twice: re-solving a seen puzzle trains
   memory, not calculation. The cell's state is the replay of the attempts of the positions it

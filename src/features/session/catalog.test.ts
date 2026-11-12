@@ -1,6 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import type { Endgame } from '../endgames/endgame';
-import type { OpeningLine } from '../openings/opening';
 import type { Puzzle } from '../puzzles/puzzle';
 import { cellId, primaryTheme, sessionCatalog } from './catalog';
 
@@ -14,23 +12,6 @@ function puzzle(id: string, themes: string[], rating: number): Puzzle {
     fullLine: true,
   };
 }
-
-const endgame: Endgame = {
-  id: 'kqk',
-  name: 'Dame contre roi',
-  fen: '8/8/8/4k3/8/8/5K2/6Q1 w - - 0 1',
-  result: 'win',
-  goal: 'Mater.',
-  hint: 'Rapproche le roi avant de mater.',
-};
-
-const opening: OpeningLine = {
-  id: 'london',
-  name: 'London',
-  note: 'Une note.',
-  color: 'white',
-  moves: ['d2d4', 'd7d5'],
-};
 
 describe('primaryTheme', () => {
   it('takes the rarest theme, so a common tag does not swallow the others', () => {
@@ -61,7 +42,7 @@ describe('the session catalog', () => {
     puzzle('d', ['fork', 'pin'], 1700),
     puzzle('no-theme', [], 1200),
   ];
-  const catalog = sessionCatalog(puzzles, [endgame], [opening]);
+  const catalog = sessionCatalog(puzzles);
 
   it('gives each puzzle exactly one cell, its rarest theme at its own band', () => {
     expect(catalog.cellByPuzzle.get('a')).toBe(cellId('fork', 'low'));
@@ -82,11 +63,5 @@ describe('the session catalog', () => {
     expect([...catalog.cells.values()].some((cell) => cell.puzzles.includes(puzzles[4]!))).toBe(
       false,
     );
-  });
-
-  it('indexes every content set for the session', () => {
-    expect(catalog.puzzleById.get('a')).toBe(puzzles[0]);
-    expect(catalog.endgameById.get('kqk')).toBe(endgame);
-    expect(catalog.openingById.get('london')).toBe(opening);
   });
 });
